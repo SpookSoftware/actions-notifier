@@ -1,0 +1,8 @@
+{
+  "name": "Github Action Browser Notifications",
+	"author": "Kory Smith",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "action": {
+  }
+}
