@@ -1,0 +1,14 @@
+name: Wait for a Minute
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for a minute
+        run: sleep 60
