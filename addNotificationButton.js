@@ -24,7 +24,7 @@ filteredDivs.forEach((element) => {
   btn.addEventListener("click", function (event) {
     const runId = event.target.dataset.runId;
     const owner = event.target.dataset.owner;
-    const repository = event.target.dataset.repo;
+    const repository = event.target.dataset.repository;
 
     chrome.runtime.sendMessage(
       { action: "startMonitoring", runId, owner, repository }

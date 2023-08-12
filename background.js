@@ -4,29 +4,13 @@ self.addEventListener("activate", (event) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startMonitoring") {
-    const githubToken = "hehe";
+    const {runId, owner, repository} = request;
 
     let checkWorkflowInterval;
-
-    async function checkWorkflowStatus() {
-      const response = await fetch(
-        `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`,
-        {
-          headers: {
-            Authorization: `token ${githubToken}`,
-            Accept: "application/vnd.github.v3+json",
-          },
-        }
-      );
-
-      const data = await response.json();
-      const latestRunStatus = data.status;
-
-      return latestRunStatus;
-    }
-
     checkWorkflowInterval = setInterval(async () => {
-      const status = await checkWorkflowStatus();
+      self.ServiceWorkerRegistration.active
+      const status = await checkWorkflowStatus(runId, owner, repository);
+      console.log(`Polling. Status is ${status}`)
 
       if (status === "completed") {
         chrome.notifications.create({
@@ -42,3 +26,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }, 5000);
   }
 });
+
+async function checkWorkflowStatus(runId, owner, repository) {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`,
+    {
+      headers: {
+        Authorization: `token ${githubToken}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    }
+  );
+
+  const data = await response.json();
+  const latestRunStatus = data.status;
+
+  return latestRunStatus;
+}
