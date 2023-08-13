@@ -13,14 +13,17 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
     // Let's be fancy so we don't have to use any storage
     const encoded = `${runId}|${owner}|${repository}`;
-    // We are going to need to create an alarm here
     // this tells chrome to fire the alarm every 6 seconds
     try {
+
       console.debug(`Creating alarm with name ${encoded}`);
+
       await chrome.alarms.create(encoded, {
         periodInMinutes: 0.1,
       });
+
       console.debug(`Alarm ${encoded} created`);
+
     } catch (error) {
       console.error(error);
       throw error;
