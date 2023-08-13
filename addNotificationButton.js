@@ -6,8 +6,6 @@ const filteredDivs = Array.from(workflowRunElements).filter((div) => {
 });
 
 
-console.log({ filteredDivs });
-
 filteredDivs.forEach((element) => {
   // Get the first a element inside the element
   // https://github.com/kory-smith/peat/actions/runs/5786709541

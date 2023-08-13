@@ -2,28 +2,53 @@ self.addEventListener("activate", (event) => {
   // Do activation stuff here
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.action === "startMonitoring") {
-    const {runId, owner, repository} = request;
+    console.debug(
+      `Received request to monitor ${request.runId} for ${request.owner}/${request.repository}`
+    );
 
-    let checkWorkflowInterval;
-    checkWorkflowInterval = setInterval(async () => {
-      self.ServiceWorkerRegistration.active
-      const status = await checkWorkflowStatus(runId, owner, repository);
-      console.log(`Polling. Status is ${status}`)
+    const { runId, owner, repository } = request;
 
-      if (status === "completed") {
-        chrome.notifications.create({
-          type: "basic",
-          title: "GitHub Actions",
-          message: "Your workflow run has completed",
-          iconUrl: "images/notification-24.png",
-          requireInteraction: true,
-        });
+    // Let's be fancy so we don't have to use any storage
+    const encoded = `${runId}|${owner}|${repository}`;
+    // We are going to need to create an alarm here
+    // this tells chrome to fire the alarm every 6 seconds
+    try {
+      console.debug(`Creating alarm with name ${encoded}`);
+      await chrome.alarms.create(encoded, {
+        periodInMinutes: 0.1,
+      });
+      console.debug(`Alarm ${encoded} created`);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+});
 
-        clearInterval(checkWorkflowInterval);
-      }
-    }, 5000);
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  const [runId, owner, repository] = alarm.name.split("|");
+
+  const latestRunStatus = await checkWorkflowStatus(runId, owner, repository);
+
+  console.debug(`Alarm ${alarm.name} fired with status ${latestRunStatus}`);
+
+  if (latestRunStatus === "completed") {
+    chrome.notifications.create({
+      type: "basic",
+      title: "GitHub Actions",
+      message: "Your workflow run has completed",
+      iconUrl: "images/notification-24.png",
+      requireInteraction: true,
+    });
+
+    console.debug(`Clearing alarm ${alarm.name}`);
+
+    await chrome.alarms.clear(alarm.name);
+
+    console.debug(`Alarm ${alarm.name} cleared`);
   }
 });
 
