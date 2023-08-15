@@ -5,8 +5,11 @@ function processElements() {
 
   const filteredDivs = Array.from(workflowRunElements).filter((div) => {
     return (
-      div.querySelector("svg[aria-label='currently running']") !== null ||
-      div.querySelector("svg[aria-label='queued']") !== null
+      // Either currently running or queued 
+      (div.querySelector("svg[aria-label='currently running']") !== null ||
+        div.querySelector("svg[aria-label='queued']") !== null) &&
+        // Ensures we don't grab the container div
+      div.id.startsWith("check_suite")
     );
   });
 
@@ -45,7 +48,6 @@ function processElements() {
 
     element.appendChild(svgButton);
 
-    // Add a click listener to handle clicks
     svgButton.addEventListener("click", function (event) {
       const runId = event.currentTarget.dataset.runId;
       const owner = event.currentTarget.dataset.owner;
@@ -58,6 +60,9 @@ function processElements() {
         repository,
       });
     });
+
+    console.debug(`Successfully added button with callback to element ${element}`)
+
   });
 }
 
@@ -71,15 +76,14 @@ const config = { attributes: true, childList: true, subtree: true };
 const callback = function (mutationsList, observer) {
   mutationsList.forEach((mutation) => {
     if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-
-      console.debug("Nodes added:", mutation.addedNodes);
-
       for (const addedNode of mutation.addedNodes) {
         if (weWantIt(addedNode)) {
-          // If I coded this correctly, only now do we want to process the elements!
 
           console.debug("We want it:", addedNode);
 
+          console.debug("Processing elements because a relevant change was detected in the page");
+
+          processElements();
         }
       }
     }
@@ -87,8 +91,12 @@ const callback = function (mutationsList, observer) {
 };
 
 function weWantIt(node) {
-  return node.id && node.id.startsWith('check_suite')
+  return node.id && node.id.startsWith('check_suite') && node.querySelector("svg[aria-label='completed successfully']") === null
 }
+
+console.debug(`Processing elements because of page refresh`)
+
+processElements()
 
 const observer = new MutationObserver(callback);
 observer.observe(targetNode, config);
