@@ -5,10 +5,10 @@ function processElements() {
 
   const filteredDivs = Array.from(workflowRunElements).filter((div) => {
     return (
-      // Either currently running or queued 
+      // Either currently running or queued
       (div.querySelector("svg[aria-label='currently running']") !== null ||
         div.querySelector("svg[aria-label='queued']") !== null) &&
-        // Ensures we don't grab the container div
+      // Ensures we don't grab the container div
       div.id.startsWith("check_suite")
     );
   });
@@ -61,8 +61,9 @@ function processElements() {
       });
     });
 
-    console.debug(`Successfully added button with callback to element ${element}`)
-
+    console.debug(
+      `Successfully added button with callback to element ${element}`
+    );
   });
 }
 
@@ -78,10 +79,11 @@ const callback = function (mutationsList, observer) {
     if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
       for (const addedNode of mutation.addedNodes) {
         if (weWantIt(addedNode)) {
-
           console.debug("We want it:", addedNode);
 
-          console.debug("Processing elements because a relevant change was detected in the page");
+          console.debug(
+            "Processing elements because a relevant change was detected in the page"
+          );
 
           processElements();
         }
@@ -91,12 +93,16 @@ const callback = function (mutationsList, observer) {
 };
 
 function weWantIt(node) {
-  return node.id && node.id.startsWith('check_suite') && node.querySelector("svg[aria-label='completed successfully']") === null
+  return (
+    node.id &&
+    node.id.startsWith("check_suite") &&
+    node.querySelector("svg[aria-label='completed successfully']") === null
+  );
 }
 
-console.debug(`Processing elements because of page refresh`)
+console.debug(`Processing elements because of page refresh`);
 
-processElements()
+processElements();
 
 const observer = new MutationObserver(callback);
 observer.observe(targetNode, config);
