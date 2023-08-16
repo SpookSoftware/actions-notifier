@@ -3,39 +3,42 @@ self.addEventListener("activate", (event) => {
 });
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  if (request.action === "startMonitoring") {
-    console.debug(
-      `Received request to monitor ${request.runId} for ${request.owner}/${request.repository}`
-    );
-
-    const { runId, owner, repository } = request;
-
-    // Let's be fancy so we don't have to use any storage
-    const encoded = `${runId}|${owner}|${repository}`;
-    try {
-      console.debug(`Creating alarm with name ${encoded}`);
-
-      await chrome.alarms.create(encoded, {
-        periodInMinutes: 0.1,
-      });
-
-      console.debug(`Resgistering notification click handler for ${encoded}`);
-      await chrome.notifications.onClicked.addListener((notificationId) => {
-        const [runId, owner, repository] = notificationId.split("|");
-        const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}`;
-        chrome.tabs.create({
-          active: true,
-          url: resultsURL,
+  if (request.type === "action" && request.action === "startMonitoring") {
+      console.debug(
+        `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
+      );
+  
+      const { runId, owner, repository } = request;
+  
+      // Let's be fancy so we don't have to use any storage
+      const encoded = `${runId}|${owner}|${repository}`;
+      try {
+        console.debug(`Creating alarm with name ${encoded}`);
+  
+        await chrome.alarms.create(encoded, {
+          periodInMinutes: 0.1,
         });
-        chrome.notifications.clear(encoded)
-      });
-      console.debug(`Notification click handler registered for ${encoded}`);
+  
+        console.debug(`Resgistering notification click handler for ${encoded}`);
+        await chrome.notifications.onClicked.addListener((notificationId) => {
+          const [runId, owner, repository] = notificationId.split("|");
+          const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}`;
+          chrome.tabs.create({
+            active: true,
+            url: resultsURL,
+          });
+          chrome.notifications.clear(encoded)
+        });
+        console.debug(`Notification click handler registered for ${encoded}`);
+  
+        console.debug(`Alarm ${encoded} created`);
+      } catch (error) {
+        console.error(error);
+        throw error;
+      }
+  }
+  else if (request.type === "job" && request.action === "startMonitoring") {
 
-      console.debug(`Alarm ${encoded} created`);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
   }
 });
 
@@ -80,4 +83,19 @@ async function checkActionStatus(runId, owner, repository) {
   return latestRunStatus;
 }
 
-async function checkJobStatus(jobId, owner, repository) {}
+async function checkJobStatus(jobId, owner, repository) {
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repository}/actions/jobs/${jobId}`,
+    {
+      headers: {
+        Authorization: `token ${githubToken}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    }
+  );
+
+  const data = await response.json();
+  const latestRunStatus = data.status;
+
+  return latestRunStatus;
+}
