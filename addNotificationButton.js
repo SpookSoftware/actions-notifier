@@ -66,6 +66,7 @@ function processElements() {
         runId,
         owner,
         repository,
+        type: "action"
       });
 
       console.debug(
