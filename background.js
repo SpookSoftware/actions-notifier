@@ -1,3 +1,5 @@
+import { githubToken } from "./credentials.js";
+
 self.addEventListener("activate", (event) => {
   // Do activation stuff here
 });
