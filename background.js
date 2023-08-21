@@ -57,7 +57,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       console.debug(`Registering notification click handler for ${encoded}`);
       chrome.notifications.onClicked.addListener((notificationId) => {
         const [runId, jobId, owner, repository] = notificationId.split("|");
-        const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}/jobs/${jobId}`;
+        const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}/job/${jobId}`;
         chrome.tabs.create({
           active: true,
           url: resultsURL,
