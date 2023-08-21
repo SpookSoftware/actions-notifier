@@ -200,4 +200,5 @@ if (shouldAddActionNotificationButton(currentPage)) {
   workflowObserver.observe(workflowRunsContainer, config);
 } else if (shouldAddJobNotificationButton(currentPage)) {
   console.debug("Heading down the job path");
+  processElementsForJob();
 }
