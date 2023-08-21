@@ -79,15 +79,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (isActionRun) {
     const [runId, owner, repository] = alarm.name.split("|");
 
-    const latestRunStatus = await checkActionStatus(runId, owner, repository);
+    const {status, name} = await checkActionStatus(runId, owner, repository);
   
-    console.debug(`Alarm ${alarm.name} fired with status ${latestRunStatus}`);
+    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
   
-    if (latestRunStatus === "completed") {
+    if (status === "completed") {
       chrome.notifications.create(alarm.name, {
         type: "basic",
         title: "Action Completed",
-        message: `Action ${runId} has completed. Click the notification to view the results.`,
+        message: `Action ${name} has completed. Click the notification to view the results.`,
         iconUrl: "images/notification-24.png",
         requireInteraction: true,
       });
@@ -101,15 +101,15 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   } else {
     const [runId, jobId, owner, repository] = alarm.name.split("|");
 
-    const latestRunStatus = await checkJobStatus(jobId, owner, repository);
+    const { status, name } = await checkJobStatus(jobId, owner, repository);
   
-    console.debug(`Alarm ${alarm.name} fired with status ${latestRunStatus}`);
+    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
   
-    if (latestRunStatus === "completed") {
+    if (status === "completed") {
       chrome.notifications.create(alarm.name, {
         type: "basic",
-        title: "Action Completed",
-        message: `Job ${jobId} under action ${runId} has completed. Click the notification to view the results.`,
+        title: "Job completed",
+        message: `Job ${name} has completed. Click the notification to view the results.`,
         iconUrl: "images/notification-24.png",
         requireInteraction: true,
       });
@@ -135,9 +135,11 @@ async function checkActionStatus(runId, owner, repository) {
   );
 
   const data = await response.json();
-  const latestRunStatus = data.status;
 
-  return latestRunStatus;
+  return {
+    status: data.status,
+    name: data.name,
+  }
 }
 
 async function checkJobStatus(jobId, owner, repository) {
@@ -152,7 +154,9 @@ async function checkJobStatus(jobId, owner, repository) {
   );
 
   const data = await response.json();
-  const latestRunStatus = data.status;
 
-  return latestRunStatus;
+  return {
+    status: data.status,
+    name: data.name,
+  }
 }
