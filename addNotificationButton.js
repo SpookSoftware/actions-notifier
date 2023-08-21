@@ -15,7 +15,7 @@ const NOTIFICATION_BELL_HEIGHT = "24";
 const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
 
-function processElements() {
+function processElementsForAction() {
   const workflowRunElements = document.querySelectorAll(
     WORKFLOW_RUN_ATTRIBUTE_SELECTOR
   );
@@ -81,6 +81,64 @@ function processElements() {
   });
 }
 
+function processElementsForJob() {
+  // Find the anchor tag with a link to #logs
+const logsTarget = document.querySelector("a[href='#logs']");
+
+// add a button next to it
+const [_, _2, _3, owner, repository, _4, _5, runId, _6, maybePollutedJobId] =
+  window.location.href.split("/");
+
+// remove all non-numeric characters from the job id
+const jobId = maybePollutedJobId.replace(/\D/g, "");
+
+// Create a new button to contain the SVG
+const svgButton = document.createElement("button");
+svgButton.dataset.runId = runId;
+svgButton.dataset.jobId = jobId;
+svgButton.dataset.owner = owner;
+svgButton.dataset.repository = repository;
+
+const svgElement = document.createElementNS(
+  "http://www.w3.org/2000/svg",
+  "svg"
+);
+svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
+svgElement.setAttributeNS(null, "width", "24");
+svgElement.setAttributeNS(null, "height", "24");
+
+const pathElement = document.createElementNS(
+  "http://www.w3.org/2000/svg",
+  "path"
+);
+pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
+
+svgElement.appendChild(pathElement);
+svgButton.appendChild(svgElement);
+logsTarget.appendChild(svgButton);
+
+svgButton.addEventListener("click", function (event) {
+  const runId = event.currentTarget.dataset.runId;
+  const jobId = event.currentTarget.dataset.jobId;
+  const owner = event.currentTarget.dataset.owner;
+  const repository = event.currentTarget.dataset.repository;
+
+  chrome.runtime.sendMessage({
+    action: "startMonitoring",
+    runId,
+		jobId,
+    owner,
+    repository,
+    type: "job",
+  });
+
+  console.debug(
+    `Sent message to start monitoring for job ${jobId} under action ${runId} with owner ${owner} and repository ${repository}`
+  );
+});
+
+}
+
 const workflowRunsContainer = document.querySelector(
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
 );
@@ -98,7 +156,7 @@ const processNewNodes = function (mutationsList, observer) {
             "Processing elements because a relevant change was detected in the page"
           );
 
-          processElements();
+          processElementsForAction();
         }
       }
     }
@@ -115,7 +173,31 @@ function weWantIt(node) {
 
 console.debug(`Processing elements because of page refresh`);
 
-processElements();
+function shouldAddActionNotificationButton(url) {
+  // This is black magic. Basically, this regex matches the following kinds of URLs:
+  // - https://github.com/kory-smith/github-actions-browser-notifications/actions
+  // - https://github.com/kory-smith/github-actions-browser-notifications/pull/22932/checks
+  // - https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
+  const pattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/(actions|actions\/workflows\/[^/]+|pull\/[^/]+\/checks)$/;
+  return pattern.test(url);
+}
 
-const workflowObserver = new MutationObserver(processNewNodes);
-workflowObserver.observe(workflowRunsContainer, config);
+function shouldAddJobNotificationButton(url) {
+  // This is black magic. Basically, this regex matches the following kinds of URLs:
+  // - https://github.com/kory-smith/github-actions-browser-notifications/pull/22932
+  // - https://github.com/krogertechnology/esperanto/actions/runs/5868323719/job/16080910446
+  // - https://github.com/krogertechnology/esperanto/actions/runs/5868323719
+  const pattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/(pull\/[^/]+|actions\/runs\/[^/]+(\/job\/[^/]+)?)$/;
+  return pattern.test(url);
+}
+
+const currentPage = window.location.href;
+
+if (shouldAddActionNotificationButton(currentPage)) {
+  console.debug("Heading down the action path");
+  processElementsForAction();
+  const workflowObserver = new MutationObserver(processNewNodes);
+  workflowObserver.observe(workflowRunsContainer, config);
+} else if (shouldAddJobNotificationButton(currentPage)) {
+  console.debug("Heading down the job path");
+}
