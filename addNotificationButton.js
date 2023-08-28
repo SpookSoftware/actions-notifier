@@ -191,15 +191,15 @@ function shouldAddJobNotificationButton(url) {
   return pattern.test(url);
 }
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  if (request.action === "refreshNotificationButtons") {
-    console.debug("Received request to refresh notification buttons because of a url change");
-    if (shouldAddActionNotificationButton(currentPage)) {
+chrome.runtime.onMessage.addListener(function(request) {
+  if (request && request.type === 'page-rendered') {
+    console.debug("Received request to refresh notification buttons because of a url change. URL: ", request.url);
+    if (shouldAddActionNotificationButton(request.url)) {
       console.debug("Heading down the action path");
       processElementsForAction(request.url);
       const workflowObserver = new MutationObserver(processNewNodes);
       workflowObserver.observe(workflowRunsContainer, config);
-    } else if (shouldAddJobNotificationButton(currentPage)) {
+    } else if (shouldAddJobNotificationButton(request.url)) {
       console.debug("Heading down the job path");
       processElementsForJob(request.url);
     }
