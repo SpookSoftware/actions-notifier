@@ -1,3 +1,5 @@
+// ------------------- CONSTANTS ---------------------------------
+// ---------------------------------------------------------------
 const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
 
 const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
@@ -15,70 +17,117 @@ const NOTIFICATION_BELL_HEIGHT = "24";
 const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
 
-function processElementsForAction() {
-  const workflowRunElements = document.querySelectorAll(
-    WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+// Action URLs
+// https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
+const specificWorkflowPageRegex = /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/actions\/workflows\/.*/;
+// https://github.com/kory-smith/github-actions-browser-notifications/actions
+const allWorkflowsPageRegex = /https:\/\/github\.com\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+\/actions/;
+// https://github.com/krogertechnology/esperanto/pull/22932/checks
+const prChecksPageRegex = /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/pull\/[a-zA-Z0-9-]+\/checks/;
+// ---------------------------------------------------------------
+// ---------------------------------------------------------------
+
+function isWorkflowRunDOMNode(node) {
+  return (
+    node.id &&
+    node.id.startsWith("check_suite") &&
+    node.querySelector(COMPLETED_ATTRIBUTE_SELECTOR) === null
   );
+}
 
-  const filteredDivs = Array.from(workflowRunElements).filter((div) => {
-    const isCurrentlyRunning =
-      div.querySelector(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR) !== null;
-    const isQueued = div.querySelector(QUEUED_ATTRIBUTE_SELECTOR) !== null;
-    const isWorkflowRun = div.id.startsWith("check_suite");
-    return (isCurrentlyRunning || isQueued) && isWorkflowRun;
+function processSpecificWorkflowPageNodes(mutationsList) {
+  mutationsList.forEach((mutation) => {
+    if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
+      for (const addedNode of mutation.addedNodes) {
+        if (isWorkflowRunDOMNode(addedNode)) {
+          console.debug("Added node is workflow run: ", addedNode);
+
+          console.debug(
+            "Processing elements because a relevant change was detected in the page"
+          );
+
+          processElementsForAction(window.location.href);
+        }
+      }
+    }
   });
+}
 
-  filteredDivs.forEach((element) => {
-    const link = element.querySelector("a");
-    const [_, _2, _3, owner, repository, _4, _5, runId] = link.href.split("/");
 
-    // Create a new button to contain the SVG
-    const svgButton = document.createElement("button");
-    svgButton.dataset.runId = runId;
-    svgButton.dataset.owner = owner;
-    svgButton.dataset.repository = repository;
-
-    const svgElement = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "svg"
+// Job URLs
+function processElementsForAction(url) {
+  const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
+  if (isSpecificWorkflowPage) {
+    const workflowRunElements = document.querySelectorAll(
+      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
     );
-    svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
-    svgElement.setAttributeNS(null, "width", "24");
-    svgElement.setAttributeNS(null, "height", "24");
-
-    const pathElement = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "path"
-    );
-    pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
-
-    svgElement.appendChild(pathElement);
-    svgButton.appendChild(svgElement);
-    element.appendChild(svgButton);
-
-    svgButton.addEventListener("click", function (event) {
-      const runId = event.currentTarget.dataset.runId;
-      const owner = event.currentTarget.dataset.owner;
-      const repository = event.currentTarget.dataset.repository;
-
-      chrome.runtime.sendMessage({
-        action: "startMonitoring",
-        runId,
-        owner,
-        repository,
-        type: "action",
+  
+    const filteredDivs = Array.from(workflowRunElements).filter((div) => {
+      const isCurrentlyRunning =
+        div.querySelector(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR) !== null;
+      const isQueued = div.querySelector(QUEUED_ATTRIBUTE_SELECTOR) !== null;
+      const isWorkflowRun = div.id.startsWith("check_suite");
+      return (isCurrentlyRunning || isQueued) && isWorkflowRun;
+    });
+  
+    filteredDivs.forEach((element) => {
+      const link = element.querySelector("a");
+      const [_, _2, _3, owner, repository, _4, _5, runId] = link.href.split("/");
+  
+      // Create a new button to contain the SVG
+      const svgButton = document.createElement("button");
+      svgButton.dataset.runId = runId;
+      svgButton.dataset.owner = owner;
+      svgButton.dataset.repository = repository;
+  
+      const svgElement = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "svg"
+      );
+      svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
+      svgElement.setAttributeNS(null, "width", "24");
+      svgElement.setAttributeNS(null, "height", "24");
+  
+      const pathElement = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path"
+      );
+      pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
+  
+      svgElement.appendChild(pathElement);
+      svgButton.appendChild(svgElement);
+      element.appendChild(svgButton);
+  
+      svgButton.addEventListener("click", function (event) {
+        const runId = event.currentTarget.dataset.runId;
+        const owner = event.currentTarget.dataset.owner;
+        const repository = event.currentTarget.dataset.repository;
+  
+        chrome.runtime.sendMessage({
+          action: "startMonitoring",
+          runId,
+          owner,
+          repository,
+          type: "action",
+        });
+  
+        console.debug(
+          `Sent message to start monitoring for ${runId} with owner ${owner} and repository ${repository}`
+        );
       });
-
+  
       console.debug(
-        `Sent message to start monitoring for ${runId} with owner ${owner} and repository ${repository}`
+        "Successfully added button with callback to element",
+        element
       );
     });
+  }
 
-    console.debug(
-      "Successfully added button with callback to element",
-      element
-    );
-  });
+  const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
+  if (isAllWorkflowsPage) {}
+
+  const isPrChecksPage = prChecksPageRegex.test(url);
+  if (isPrChecksPage) {}
 }
 
 function processElementsForJob() {
@@ -144,32 +193,6 @@ const workflowRunsContainer = document.querySelector(
 
 const config = { attributes: true, childList: true, subtree: true };
 
-const processNewNodes = function (mutationsList, observer) {
-  mutationsList.forEach((mutation) => {
-    if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-      for (const addedNode of mutation.addedNodes) {
-        if (weWantIt(addedNode)) {
-          console.debug("We want it:", addedNode);
-
-          console.debug(
-            "Processing elements because a relevant change was detected in the page"
-          );
-
-          processElementsForAction();
-        }
-      }
-    }
-  });
-};
-
-function weWantIt(node) {
-  return (
-    node.id &&
-    node.id.startsWith("check_suite") &&
-    node.querySelector(COMPLETED_ATTRIBUTE_SELECTOR) === null
-  );
-}
-
 function shouldAddActionNotificationButton(url) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
   // - https://github.com/kory-smith/github-actions-browser-notifications/actions
@@ -190,16 +213,6 @@ function shouldAddJobNotificationButton(url) {
   return pattern.test(url);
 }
 
-console.debug(`Processing elements because of page refresh`);
-
-if (shouldAddActionNotificationButton(window.location.href)) {
-  processElementsForAction(window.location.href);
-  const workflowObserver = new MutationObserver(processNewNodes);
-  workflowObserver.observe(workflowRunsContainer, config);
-}
-if (shouldAddJobNotificationButton(window.location.href)) {
-}
-
 chrome.runtime.onMessage.addListener(function (request) {
   if (request && request.type === "page-rendered") {
     console.debug(
@@ -209,7 +222,7 @@ chrome.runtime.onMessage.addListener(function (request) {
     if (shouldAddActionNotificationButton(request.url)) {
       console.debug("Heading down the action path");
       processElementsForAction(request.url);
-      const workflowObserver = new MutationObserver(processNewNodes);
+      const workflowObserver = new MutationObserver(processSpecificWorkflowPageNodes);
       workflowObserver.observe(workflowRunsContainer, config);
     } else if (shouldAddJobNotificationButton(request.url)) {
       console.debug("Heading down the job path");
@@ -217,3 +230,12 @@ chrome.runtime.onMessage.addListener(function (request) {
     }
   }
 });
+
+console.debug(`Processing elements because of page refresh`);
+if (shouldAddActionNotificationButton(window.location.href)) {
+  processElementsForAction(window.location.href);
+  const workflowObserver = new MutationObserver(processNewNodes);
+  workflowObserver.observe(workflowRunsContainer, config);
+}
+if (shouldAddJobNotificationButton(window.location.href)) {
+}
