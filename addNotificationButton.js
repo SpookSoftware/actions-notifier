@@ -19,11 +19,14 @@ const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
 
 // Action URLs
 // https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
-const specificWorkflowPageRegex = /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/actions\/workflows\/.*/;
+const specificWorkflowPageRegex =
+  /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/actions\/workflows\/.*/;
 // https://github.com/kory-smith/github-actions-browser-notifications/actions
-const allWorkflowsPageRegex = /https:\/\/github\.com\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+\/actions/;
+const allWorkflowsPageRegex =
+  /https:\/\/github\.com\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+\/actions/;
 // https://github.com/krogertechnology/esperanto/pull/22932/checks
-const prChecksPageRegex = /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/pull\/[a-zA-Z0-9-]+\/checks/;
+const prChecksPageRegex =
+  /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/pull\/[a-zA-Z0-9-]+\/checks/;
 // ---------------------------------------------------------------
 // ---------------------------------------------------------------
 
@@ -53,7 +56,6 @@ function processSpecificWorkflowPageNodes(mutationsList) {
   });
 }
 
-
 // Job URLs
 function processElementsForAction(url) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
@@ -61,7 +63,7 @@ function processElementsForAction(url) {
     const workflowRunElements = document.querySelectorAll(
       WORKFLOW_RUN_ATTRIBUTE_SELECTOR
     );
-  
+
     const filteredDivs = Array.from(workflowRunElements).filter((div) => {
       const isCurrentlyRunning =
         div.querySelector(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR) !== null;
@@ -69,17 +71,18 @@ function processElementsForAction(url) {
       const isWorkflowRun = div.id.startsWith("check_suite");
       return (isCurrentlyRunning || isQueued) && isWorkflowRun;
     });
-  
+
     filteredDivs.forEach((element) => {
       const link = element.querySelector("a");
-      const [_, _2, _3, owner, repository, _4, _5, runId] = link.href.split("/");
-  
+      const [_, _2, _3, owner, repository, _4, _5, runId] =
+        link.href.split("/");
+
       // Create a new button to contain the SVG
       const svgButton = document.createElement("button");
       svgButton.dataset.runId = runId;
       svgButton.dataset.owner = owner;
       svgButton.dataset.repository = repository;
-  
+
       const svgElement = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "svg"
@@ -87,22 +90,22 @@ function processElementsForAction(url) {
       svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
       svgElement.setAttributeNS(null, "width", "24");
       svgElement.setAttributeNS(null, "height", "24");
-  
+
       const pathElement = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "path"
       );
       pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
-  
+
       svgElement.appendChild(pathElement);
       svgButton.appendChild(svgElement);
       element.appendChild(svgButton);
-  
+
       svgButton.addEventListener("click", function (event) {
         const runId = event.currentTarget.dataset.runId;
         const owner = event.currentTarget.dataset.owner;
         const repository = event.currentTarget.dataset.repository;
-  
+
         chrome.runtime.sendMessage({
           action: "startMonitoring",
           runId,
@@ -110,12 +113,12 @@ function processElementsForAction(url) {
           repository,
           type: "action",
         });
-  
+
         console.debug(
           `Sent message to start monitoring for ${runId} with owner ${owner} and repository ${repository}`
         );
       });
-  
+
       console.debug(
         "Successfully added button with callback to element",
         element
@@ -124,10 +127,12 @@ function processElementsForAction(url) {
   }
 
   const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
-  if (isAllWorkflowsPage) {}
+  if (isAllWorkflowsPage) {
+  }
 
   const isPrChecksPage = prChecksPageRegex.test(url);
-  if (isPrChecksPage) {}
+  if (isPrChecksPage) {
+  }
 }
 
 function processElementsForJob() {
@@ -222,7 +227,9 @@ chrome.runtime.onMessage.addListener(function (request) {
     if (shouldAddActionNotificationButton(request.url)) {
       console.debug("Heading down the action path");
       processElementsForAction(request.url);
-      const workflowObserver = new MutationObserver(processSpecificWorkflowPageNodes);
+      const workflowObserver = new MutationObserver(
+        processSpecificWorkflowPageNodes
+      );
       workflowObserver.observe(workflowRunsContainer, config);
     } else if (shouldAddJobNotificationButton(request.url)) {
       console.debug("Heading down the job path");
