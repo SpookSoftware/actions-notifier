@@ -66,7 +66,7 @@ function processElementsForAction() {
         runId,
         owner,
         repository,
-        type: "action"
+        type: "action",
       });
 
       console.debug(
@@ -83,60 +83,59 @@ function processElementsForAction() {
 
 function processElementsForJob() {
   // Find the anchor tag with a link to #logs
-const logsTarget = document.querySelector("a[href='#logs']");
+  const logsTarget = document.querySelector("a[href='#logs']");
 
-// add a button next to it
-const [_, _2, _3, owner, repository, _4, _5, runId, _6, maybePollutedJobId] =
-  window.location.href.split("/");
+  // add a button next to it
+  const [_, _2, _3, owner, repository, _4, _5, runId, _6, maybePollutedJobId] =
+    window.location.href.split("/");
 
-// remove all non-numeric characters from the job id
-const jobId = maybePollutedJobId.replace(/\D/g, "");
+  // remove all non-numeric characters from the job id
+  const jobId = maybePollutedJobId.replace(/\D/g, "");
 
-// Create a new button to contain the SVG
-const svgButton = document.createElement("button");
-svgButton.dataset.runId = runId;
-svgButton.dataset.jobId = jobId;
-svgButton.dataset.owner = owner;
-svgButton.dataset.repository = repository;
+  // Create a new button to contain the SVG
+  const svgButton = document.createElement("button");
+  svgButton.dataset.runId = runId;
+  svgButton.dataset.jobId = jobId;
+  svgButton.dataset.owner = owner;
+  svgButton.dataset.repository = repository;
 
-const svgElement = document.createElementNS(
-  "http://www.w3.org/2000/svg",
-  "svg"
-);
-svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
-svgElement.setAttributeNS(null, "width", "24");
-svgElement.setAttributeNS(null, "height", "24");
-
-const pathElement = document.createElementNS(
-  "http://www.w3.org/2000/svg",
-  "path"
-);
-pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
-
-svgElement.appendChild(pathElement);
-svgButton.appendChild(svgElement);
-logsTarget.appendChild(svgButton);
-
-svgButton.addEventListener("click", function (event) {
-  const runId = event.currentTarget.dataset.runId;
-  const jobId = event.currentTarget.dataset.jobId;
-  const owner = event.currentTarget.dataset.owner;
-  const repository = event.currentTarget.dataset.repository;
-
-  chrome.runtime.sendMessage({
-    action: "startMonitoring",
-    runId,
-		jobId,
-    owner,
-    repository,
-    type: "job",
-  });
-
-  console.debug(
-    `Sent message to start monitoring for job ${jobId} under action ${runId} with owner ${owner} and repository ${repository}`
+  const svgElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
   );
-});
+  svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
+  svgElement.setAttributeNS(null, "width", "24");
+  svgElement.setAttributeNS(null, "height", "24");
 
+  const pathElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path"
+  );
+  pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
+
+  svgElement.appendChild(pathElement);
+  svgButton.appendChild(svgElement);
+  logsTarget.appendChild(svgButton);
+
+  svgButton.addEventListener("click", function (event) {
+    const runId = event.currentTarget.dataset.runId;
+    const jobId = event.currentTarget.dataset.jobId;
+    const owner = event.currentTarget.dataset.owner;
+    const repository = event.currentTarget.dataset.repository;
+
+    chrome.runtime.sendMessage({
+      action: "startMonitoring",
+      runId,
+      jobId,
+      owner,
+      repository,
+      type: "job",
+    });
+
+    console.debug(
+      `Sent message to start monitoring for job ${jobId} under action ${runId} with owner ${owner} and repository ${repository}`
+    );
+  });
 }
 
 const workflowRunsContainer = document.querySelector(
@@ -171,14 +170,13 @@ function weWantIt(node) {
   );
 }
 
-console.debug(`Processing elements because of page refresh`);
-
 function shouldAddActionNotificationButton(url) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
   // - https://github.com/kory-smith/github-actions-browser-notifications/actions
   // - https://github.com/kory-smith/github-actions-browser-notifications/pull/22932/checks
   // - https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
-  const pattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/(actions|actions\/workflows\/[^/]+|pull\/[^/]+\/checks)$/;
+  const pattern =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/(actions|actions\/workflows\/[^/]+|pull\/[^/]+\/checks)$/;
   return pattern.test(url);
 }
 
@@ -187,13 +185,27 @@ function shouldAddJobNotificationButton(url) {
   // - https://github.com/kory-smith/github-actions-browser-notifications/pull/22932
   // - https://github.com/krogertechnology/esperanto/actions/runs/5868323719/job/16080910446
   // - https://github.com/krogertechnology/esperanto/actions/runs/5868323719
-  const pattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/(pull\/[^/]+|actions\/runs\/[^/]+(\/job\/[^/]+)?)$/;
+  const pattern =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/(pull\/[^/]+|actions\/runs\/[^/]+(\/job\/[^/]+)?)$/;
   return pattern.test(url);
 }
 
-chrome.runtime.onMessage.addListener(function(request) {
-  if (request && request.type === 'page-rendered') {
-    console.debug("Received request to refresh notification buttons because of a url change. URL: ", request.url);
+console.debug(`Processing elements because of page refresh`);
+
+if (shouldAddActionNotificationButton(window.location.href)) {
+  processElementsForAction(window.location.href);
+  const workflowObserver = new MutationObserver(processNewNodes);
+  workflowObserver.observe(workflowRunsContainer, config);
+}
+if (shouldAddJobNotificationButton(window.location.href)) {
+}
+
+chrome.runtime.onMessage.addListener(function (request) {
+  if (request && request.type === "page-rendered") {
+    console.debug(
+      "Received request to refresh notification buttons because of a url change. URL: ",
+      request.url
+    );
     if (shouldAddActionNotificationButton(request.url)) {
       console.debug("Heading down the action path");
       processElementsForAction(request.url);
