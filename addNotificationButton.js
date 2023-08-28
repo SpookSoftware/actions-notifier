@@ -1,5 +1,5 @@
-// ------------------- CONSTANTS ---------------------------------
-// ---------------------------------------------------------------
+// ------------------------- CONSTANTS ------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
 const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
 
 const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
@@ -27,8 +27,13 @@ const allWorkflowsPageRegex =
 // https://github.com/krogertechnology/esperanto/pull/22932/checks
 const prChecksPageRegex =
   /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/pull\/[a-zA-Z0-9-]+\/checks/;
-// ---------------------------------------------------------------
-// ---------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------
+
+
+// ------------------------- Specific-workflow page tools ----------------------------------------
+// -----------------------------------------------------------------------------------------------
+// https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
 
 function isWorkflowRunDOMNode(node) {
   return (
@@ -55,8 +60,9 @@ function processSpecificWorkflowPageNodes(mutationsList) {
     }
   });
 }
+// -----------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------
 
-// Job URLs
 function processElementsForAction(url) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
   if (isSpecificWorkflowPage) {
