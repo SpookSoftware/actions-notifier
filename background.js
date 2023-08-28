@@ -161,22 +161,16 @@ async function checkJobStatus(jobId, owner, repository) {
   }
 }
 
+// Capture SPA navigation
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // ChangeInfo.url only appears once, whereas the actual onupdated fucntion fires roughly 9 times for every tab update
-  if (changeInfo.url === undefined) {
-    // do nothing
-  } else {
-    console.debug(`Page refresh detected for ${changeInfo.url}. Sending message to refresh notification buttons`)
-    chrome.runtime
-      .sendMessage({
-        action: "refreshNotificationButtons",
+  if (changeInfo.url) {
+    const isGithubURL = new URL(changeInfo.url).hostname === "github.com";
+    if (isGithubURL) {
+      console.debug("Detected a Github URL change to", changeInfo.url);
+      chrome.tabs.sendMessage(tabId, {
+        type: "page-rendered",
         url: changeInfo.url,
-      })
-      .then(() => {
-        console.debug(`Sent notification refresh message`);
-      })
-      .catch((error) => {
-        console.error("Error sending notificaiton refresh message: ", error);
       });
+    }
   }
 });
