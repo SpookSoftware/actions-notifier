@@ -65,7 +65,10 @@ function processSpecificWorkflowPageNodes(mutationsList) {
 
 function processElementsForAction(url) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
-  if (isSpecificWorkflowPage) {
+  const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
+  console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`)
+  console.debug(`isAllWorkflowsPage: ${isAllWorkflowsPage}`)
+  if (isSpecificWorkflowPage || isAllWorkflowsPage) {
     const workflowRunElements = document.querySelectorAll(
       WORKFLOW_RUN_ATTRIBUTE_SELECTOR
     );
@@ -128,15 +131,12 @@ function processElementsForAction(url) {
       console.debug(
         "Successfully added button with callback to element",
         element
-      );
-    });
-  }
-
-  const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
-  if (isAllWorkflowsPage) {
-  }
+        );
+      });
+    }
 
   const isPrChecksPage = prChecksPageRegex.test(url);
+  console.debug(`isPrChecksPage: ${isPrChecksPage}`)
   if (isPrChecksPage) {
   }
 }
