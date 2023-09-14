@@ -20,13 +20,13 @@ const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
 // Action URLs
 // https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
 const specificWorkflowPageRegex =
-  /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/actions\/workflows\/.*/;
+  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/actions\/workflows\/.*/;
 // https://github.com/kory-smith/github-actions-browser-notifications/actions
 const allWorkflowsPageRegex =
-  /https:\/\/github\.com\/[a-zA-Z0-9]+\/[a-zA-Z0-9]+\/actions/;
+  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/actions/;
 // https://github.com/krogertechnology/esperanto/pull/22932/checks
 const prChecksPageRegex =
-  /https:\/\/github\.com\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+\/pull\/[a-zA-Z0-9-]+\/checks/;
+  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/pull\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/checks/;
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
 
