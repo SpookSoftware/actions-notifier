@@ -63,81 +63,68 @@ function processSpecificWorkflowPageNodes(mutationsList) {
 // -----------------------------------------------------------------------------------------------
 // -----------------------------------------------------------------------------------------------
 
-function processElementsForAction(url) {
-  const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
-  const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
-  console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`)
-  console.debug(`isAllWorkflowsPage: ${isAllWorkflowsPage}`)
-  if (isSpecificWorkflowPage || isAllWorkflowsPage) {
-    const workflowRunElements = document.querySelectorAll(
-      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
-    );
+// Todo: Handle error states. What happens if we don't provide some required args?
+// https://todoist.com/showTask?id=7231923254
+function addNotificationButton(parentElement, { runId, owner, repository }) {
+  const NOTIFICATION_BELL_PATH =
+  "M12 1c3.681 0 7 2.565 7 6v4.539c0 .642.189 1.269.545 1.803l2.2 3.298A1.517 1.517 0 0 1 20.482 19H15.5a3.5 3.5 0 1 1-7 0H3.519a1.518 1.518 0 0 1-1.265-2.359l2.2-3.299A3.25 3.25 0 0 0 5 11.539V7c0-3.435 3.318-6 7-6ZM6.5 7v4.539a4.75 4.75 0 0 1-.797 2.635l-2.2 3.298-.003.01.001.007.004.006.006.004.007.001h16.964l.007-.001.006-.004.004-.006.001-.006a.017.017 0 0 0-.003-.01l-2.199-3.299a4.753 4.753 0 0 1-.798-2.635V7c0-2.364-2.383-4.5-5.5-4.5S6.5 4.636 6.5 7ZM14 19h-4a2 2 0 1 0 4 0Z";
+  const NOTIFICATION_BELL_VIEW_BOX = "0 0 24 24";
+  const NOTIFICATION_BELL_WIDTH = "24";
+  const NOTIFICATION_BELL_HEIGHT = "24";
 
-    const filteredDivs = Array.from(workflowRunElements).filter((div) => {
-      const isCurrentlyRunning =
-        div.querySelector(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR) !== null;
-      const isQueued = div.querySelector(QUEUED_ATTRIBUTE_SELECTOR) !== null;
-      const isWorkflowRun = div.id.startsWith("check_suite");
-      return (isCurrentlyRunning || isQueued) && isWorkflowRun;
+  // Create a new button to contain the SVG
+  const svgButton = document.createElement("button");
+  svgButton.dataset.runId = runId;
+  svgButton.dataset.owner = owner;
+  svgButton.dataset.repository = repository;
+
+  const svgElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "svg"
+  );
+  svgElement.setAttributeNS(null, "viewBox", NOTIFICATION_BELL_VIEW_BOX);
+  svgElement.setAttributeNS(null, "width", NOTIFICATION_BELL_WIDTH);
+  svgElement.setAttributeNS(null, "height", NOTIFICATION_BELL_HEIGHT);
+
+  const pathElement = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "path"
+  );
+  pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
+
+  svgElement.appendChild(pathElement);
+  svgButton.appendChild(svgElement);
+  parentElement.appendChild(svgButton);
+
+  svgButton.addEventListener("click", function (event) {
+    const runId = event.currentTarget.dataset.runId;
+    const owner = event.currentTarget.dataset.owner;
+    const repository = event.currentTarget.dataset.repository;
+
+    chrome.runtime.sendMessage({
+      action: "startMonitoring",
+      runId,
+      owner,
+      repository,
+      type: "action",
     });
 
-    filteredDivs.forEach((element) => {
-      const link = element.querySelector("a");
-      const [_, _2, _3, owner, repository, _4, _5, runId] =
-        link.href.split("/");
+    console.debug(
+      `Sent message to start monitoring for ${runId} with owner ${owner} and repository ${repository}`
+    );
+  });
 
-      // Create a new button to contain the SVG
-      const svgButton = document.createElement("button");
-      svgButton.dataset.runId = runId;
-      svgButton.dataset.owner = owner;
-      svgButton.dataset.repository = repository;
+  console.debug("Successfully added button with callback to element", parentElement);
+}
 
-      const svgElement = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "svg"
-      );
-      svgElement.setAttributeNS(null, "viewBox", "0 0 24 24");
-      svgElement.setAttributeNS(null, "width", "24");
-      svgElement.setAttributeNS(null, "height", "24");
-
-      const pathElement = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "path"
-      );
-      pathElement.setAttributeNS(null, "d", NOTIFICATION_BELL_PATH);
-
-      svgElement.appendChild(pathElement);
-      svgButton.appendChild(svgElement);
-      element.appendChild(svgButton);
-
-      svgButton.addEventListener("click", function (event) {
-        const runId = event.currentTarget.dataset.runId;
-        const owner = event.currentTarget.dataset.owner;
-        const repository = event.currentTarget.dataset.repository;
-
-        chrome.runtime.sendMessage({
-          action: "startMonitoring",
-          runId,
-          owner,
-          repository,
-          type: "action",
-        });
-
-        console.debug(
-          `Sent message to start monitoring for ${runId} with owner ${owner} and repository ${repository}`
-        );
-      });
-
-      console.debug(
-        "Successfully added button with callback to element",
-        element
-        );
+      addNotificationButton(element, { runId, owner, repository });
       });
     }
 
   const isPrChecksPage = prChecksPageRegex.test(url);
   console.debug(`isPrChecksPage: ${isPrChecksPage}`)
   if (isPrChecksPage) {
+      addNotificationButton(link, { runId, owner, repository });
   }
 }
 
