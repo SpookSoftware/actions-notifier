@@ -151,7 +151,10 @@ function processElementsForAction(url) {
       const [_, _2, _3, owner, repository, _4, _5, runId] =
       link.href.split("/");
 
-      addNotificationButton(link, { runId, owner, repository });
+      // Prevent the button click from triggering the link
+      const parent = link.parentElement
+
+      addNotificationButton(parent, { runId, owner, repository });
     });
   }
 }
