@@ -4,6 +4,12 @@
   "author": "Kory Smith",
   "version": "0.0.1",
   "manifest_version": 3,
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "addon@example.com",
+      "strict_min_version": "57.0"
+    }
+  },
   "content_scripts": [
     {
       "matches": ["https://github.com/*"],
