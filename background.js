@@ -1,10 +1,11 @@
 import { githubToken } from "./credentials.js";
+import browser from "webextension-polyfill";
 
 self.addEventListener("activate", (event) => {
   // Do activation stuff here
 });
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === "action" && request.action === "startMonitoring") {
     console.debug(
       `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
@@ -17,19 +18,19 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     try {
       console.debug(`Creating alarm with name ${encoded}`);
 
-      await chrome.alarms.create(encoded, {
+      browser.alarms.create(encoded, {
         periodInMinutes: 0.1,
       });
 
       console.debug(`Registering notification click handler for ${encoded}`);
-      await chrome.notifications.onClicked.addListener((notificationId) => {
+      browser.notifications.onClicked.addListener((notificationId) => {
         const [runId, owner, repository] = notificationId.split("|");
         const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}`;
-        chrome.tabs.create({
+        browser.tabs.create({
           active: true,
           url: resultsURL,
         });
-        chrome.notifications.clear(encoded);
+        browser.notifications.clear(encoded);
       });
       console.debug(`Notification click handler registered for ${encoded}`);
 
@@ -49,19 +50,19 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     try {
       console.debug(`Creating alarm with name ${encoded}`);
 
-      await chrome.alarms.create(encoded, {
+      browser.alarms.create(encoded, {
         periodInMinutes: 0.1,
       });
 
       console.debug(`Registering notification click handler for ${encoded}`);
-      chrome.notifications.onClicked.addListener((notificationId) => {
+      browser.notifications.onClicked.addListener((notificationId) => {
         const [runId, jobId, owner, repository] = notificationId.split("|");
         const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}/job/${jobId}`;
-        chrome.tabs.create({
+        browser.tabs.create({
           active: true,
           url: resultsURL,
         });
-        chrome.notifications.clear(encoded);
+        browser.notifications.clear(encoded);
       });
       console.debug(`Notification click handler registered for ${encoded}`);
 
@@ -73,7 +74,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   }
 });
 
-chrome.alarms.onAlarm.addListener(async (alarm) => {
+browser.alarms.onAlarm.addListener(async (alarm) => {
   const isActionRun = alarm.name.split("|").length === 3;
   if (isActionRun) {
     const [runId, owner, repository] = alarm.name.split("|");
@@ -83,7 +84,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
     if (status === "completed") {
-      chrome.notifications.create(alarm.name, {
+      browser.notifications.create(alarm.name, {
         type: "basic",
         title: "Action Completed",
         message: `Action ${name} has completed. Click the notification to view the results.`,
@@ -93,7 +94,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
       console.debug(`Clearing alarm ${alarm.name}`);
 
-      await chrome.alarms.clear(alarm.name);
+      await browser.alarms.clear(alarm.name);
 
       console.debug(`Alarm ${alarm.name} cleared`);
     }
@@ -105,7 +106,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
     if (status === "completed") {
-      chrome.notifications.create(alarm.name, {
+      browser.notifications.create(alarm.name, {
         type: "basic",
         title: "Job completed",
         message: `Job ${name} has completed. Click the notification to view the results.`,
@@ -115,7 +116,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
       console.debug(`Clearing alarm ${alarm.name}`);
 
-      await chrome.alarms.clear(alarm.name);
+      await browser.alarms.clear(alarm.name);
 
       console.debug(`Alarm ${alarm.name} cleared`);
     }
@@ -161,12 +162,12 @@ async function checkJobStatus(jobId, owner, repository) {
 }
 
 // Capture SPA navigation
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url) {
     const isGithubURL = new URL(changeInfo.url).hostname === "github.com";
     if (isGithubURL) {
       console.debug("Detected a Github URL change to", changeInfo.url);
-      chrome.tabs.sendMessage(tabId, {
+      browser.tabs.sendMessage(tabId, {
         type: "page-rendered",
         url: changeInfo.url,
       });

@@ -104,7 +104,7 @@ function addNotificationButton(
       const owner = event.currentTarget.dataset.owner;
       const repository = event.currentTarget.dataset.repository;
 
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         action: "startMonitoring",
         runId,
         jobId,
@@ -152,7 +152,7 @@ function addNotificationButton(
       const owner = event.currentTarget.dataset.owner;
       const repository = event.currentTarget.dataset.repository;
 
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         action: "startMonitoring",
         runId,
         owner,
@@ -265,7 +265,7 @@ function shouldAddJobNotificationButton(url) {
   return isPrPage || isJobPage || isRunsPage;
 }
 
-chrome.runtime.onMessage.addListener(function (request) {
+browser.runtime.onMessage.addListener(function (request) {
   if (request && request.type === "page-rendered") {
     console.debug(
       "Received request to refresh notification buttons because of a url change. URL: ",
