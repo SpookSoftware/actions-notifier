@@ -6,6 +6,7 @@
     "@playwright/test": "^1.48.2",
     "@types/chrome": "^0.0.243",
     "@types/node": "^22.9.0",
+    "chrome-remote-interface": "^0.33.2",
     "playwright": "^1.48.2"
   }
 }
