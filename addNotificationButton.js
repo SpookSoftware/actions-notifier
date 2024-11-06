@@ -3,9 +3,9 @@
 const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
 
 const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
-  "svg[aria-label='currently running']";
-const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label='queued']";
-const COMPLETED_ATTRIBUTE_SELECTOR = "svg[aria-label='completed successfully']";
+  "svg[aria-label*='currently running']"
+const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
+const COMPLETED_ATTRIBUTE_SELECTOR = "svg[aria-label*='completed successfully']";
 
 // This is ripped from the DOM "copy selector" option and will surely need to be refactored
 const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =

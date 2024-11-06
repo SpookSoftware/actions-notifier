@@ -22,7 +22,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       });
 
       console.debug(`Registering notification click handler for ${encoded}`);
-      await chrome.notifications.onClicked.addListener((notificationId) => {
+      chrome.notifications.onClicked.addListener((notificationId) => {
         const [runId, owner, repository] = notificationId.split("|");
         const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}`;
         chrome.tabs.create({
@@ -123,18 +123,17 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 async function checkActionStatus(runId, owner, repository) {
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`,
-    {
-      headers: {
-        Authorization: `token ${githubToken}`,
-        Accept: "application/vnd.github.v3+json",
-      },
-    }
-  );
+  const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `token ${githubToken}`,
+      Accept: "application/vnd.github.v3+json",
+    },
+  });
 
   const data = await response.json();
 
+  console.log(`Queried ${url} and got response ${JSON.stringify(data)}`);
   return {
     status: data.status,
     name: data.name,
