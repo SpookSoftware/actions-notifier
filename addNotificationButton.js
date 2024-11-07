@@ -244,11 +244,11 @@ chrome.runtime.onMessage.addListener(function (request) {
   }
 });
 
-console.debug(`Processing elements because of page refresh`);
-if (shouldAddActionNotificationButton(window.location.href)) {
-  processElementsForAction(window.location.href);
-  const workflowObserver = new MutationObserver(processNewNodes);
-  workflowObserver.observe(workflowRunsContainer, config);
-}
-if (shouldAddJobNotificationButton(window.location.href)) {
-}
+// console.debug(`Processing elements because of page refresh`);
+// if (shouldAddActionNotificationButton(window.location.href)) {
+//   processElementsForAction(window.location.href);
+//   const workflowObserver = new MutationObserver(processNewNodes);
+//   workflowObserver.observe(workflowRunsContainer, config);
+// }
+// if (shouldAddJobNotificationButton(window.location.href)) {
+// }
