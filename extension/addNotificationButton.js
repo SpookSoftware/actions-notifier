@@ -10,35 +10,6 @@ import {
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
 } from "./selectors";
-// ------------------------- CONSTANTS ------------------------------------------------------------
-// ------------------------------------------------------------------------------------------------
-const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
-
-const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
-  "svg[aria-label*='currently running']";
-const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
-const COMPLETED_ATTRIBUTE_SELECTOR =
-  "svg[aria-label*='completed successfully']";
-
-// This is ripped from the DOM "copy selector" option and will surely need to be refactored
-const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
-  "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
-
-// Action URLs
-// https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
-const specificWorkflowPageRegex =
-  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/actions\/workflows\/.*/;
-// https://github.com/kory-smith/github-actions-browser-notifications/actions
-const allWorkflowsPageRegex =
-  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/actions/;
-// https://github.com/krogertechnology/esperanto/pull/22932/checks
-const prChecksPageRegex =
-  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/pull\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/checks/;
-
-const PR_CHECKS_CONTAINER_SELECTOR = "aside";
-const PR_CHECKS_ACTION_LINK_SELECTOR = "a.Link--primary";
-// ------------------------------------------------------------------------------------------------
-// ------------------------------------------------------------------------------------------------
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
 // -----------------------------------------------------------------------------------------------
