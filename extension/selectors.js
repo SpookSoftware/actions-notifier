@@ -1,9 +1,10 @@
 export const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
 
 export const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
-  "svg[aria-label*='currently running']"
+  "svg[aria-label*='currently running']";
 export const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
-export const COMPLETED_ATTRIBUTE_SELECTOR = "svg[aria-label*='completed successfully']";
+export const COMPLETED_ATTRIBUTE_SELECTOR =
+  "svg[aria-label*='completed successfully']";
 
 // This is ripped from the DOM "copy selector" option and will surely need to be refactored
 export const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
@@ -20,5 +21,5 @@ export const allWorkflowsPageRegex =
 export const prChecksPageRegex =
   /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/pull\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/checks/;
 
-export const PR_CHECKS_CONTAINER_SELECTOR = "aside"
-export const PR_CHECKS_ACTION_LINK_SELECTOR = "a.Link--primary"
+export const PR_CHECKS_CONTAINER_SELECTOR = "aside";
+export const PR_CHECKS_ACTION_LINK_SELECTOR = "a.Link--primary";

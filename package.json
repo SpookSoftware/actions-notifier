@@ -1,5 +1,5 @@
 {
-    "@types/chrome": "^0.0.243",
+  "@types/chrome": "^0.0.243",
   "scripts": {
     "playwright": "playwright test"
   },

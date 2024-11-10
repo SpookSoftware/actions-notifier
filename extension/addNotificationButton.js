@@ -15,9 +15,10 @@ import {
 const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
 
 const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
-  "svg[aria-label*='currently running']"
+  "svg[aria-label*='currently running']";
 const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
-const COMPLETED_ATTRIBUTE_SELECTOR = "svg[aria-label*='completed successfully']";
+const COMPLETED_ATTRIBUTE_SELECTOR =
+  "svg[aria-label*='completed successfully']";
 
 // This is ripped from the DOM "copy selector" option and will surely need to be refactored
 const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
@@ -34,11 +35,10 @@ const allWorkflowsPageRegex =
 const prChecksPageRegex =
   /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/pull\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/checks/;
 
-const PR_CHECKS_CONTAINER_SELECTOR = "aside"
-const PR_CHECKS_ACTION_LINK_SELECTOR = "a.Link--primary"
+const PR_CHECKS_CONTAINER_SELECTOR = "aside";
+const PR_CHECKS_ACTION_LINK_SELECTOR = "a.Link--primary";
 // ------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------
-
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
 // -----------------------------------------------------------------------------------------------
@@ -74,10 +74,7 @@ function processSpecificWorkflowPageNodes(mutationsList) {
 
 // Todo: Handle error states. What happens if we don't provide some required args?
 // https://todoist.com/showTask?id=7231923254
-function addNotificationButton(
-  element,
-  { runId, jobId, owner, repository }
-) {
+function addNotificationButton(element, { runId, jobId, owner, repository }) {
   const NOTIFICATION_BELL_PATH =
     "M12 1c3.681 0 7 2.565 7 6v4.539c0 .642.189 1.269.545 1.803l2.2 3.298A1.517 1.517 0 0 1 20.482 19H15.5a3.5 3.5 0 1 1-7 0H3.519a1.518 1.518 0 0 1-1.265-2.359l2.2-3.299A3.25 3.25 0 0 0 5 11.539V7c0-3.435 3.318-6 7-6ZM6.5 7v4.539a4.75 4.75 0 0 1-.797 2.635l-2.2 3.298-.003.01.001.007.004.006.006.004.007.001h16.964l.007-.001.006-.004.004-.006.001-.006a.017.017 0 0 0-.003-.01l-2.199-3.299a4.753 4.753 0 0 1-.798-2.635V7c0-2.364-2.383-4.5-5.5-4.5S6.5 4.636 6.5 7ZM14 19h-4a2 2 0 1 0 4 0Z";
   const NOTIFICATION_BELL_VIEW_BOX = "0 0 24 24";
@@ -187,8 +184,8 @@ function addNotificationButton(
 function processElementsForAction(url) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
   const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
-  console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`)
-  console.debug(`isAllWorkflowsPage: ${isAllWorkflowsPage}`)
+  console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`);
+  console.debug(`isAllWorkflowsPage: ${isAllWorkflowsPage}`);
   if (isSpecificWorkflowPage || isAllWorkflowsPage) {
     const workflowRunElements = document.querySelectorAll(
       WORKFLOW_RUN_ATTRIBUTE_SELECTOR
@@ -208,49 +205,55 @@ function processElementsForAction(url) {
         link.href.split("/");
 
       addNotificationButton(element, { runId, owner, repository });
-      });
-    }
+    });
+  }
 
   const isPrChecksPage = prChecksPageRegex.test(url);
-  console.debug(`isPrChecksPage: ${isPrChecksPage}`)
+  console.debug(`isPrChecksPage: ${isPrChecksPage}`);
   if (isPrChecksPage) {
-    const linksContainer = document.querySelector(PR_CHECKS_CONTAINER_SELECTOR)
-    const links = linksContainer.querySelectorAll(PR_CHECKS_ACTION_LINK_SELECTOR)
+    const linksContainer = document.querySelector(PR_CHECKS_CONTAINER_SELECTOR);
+    const links = linksContainer.querySelectorAll(
+      PR_CHECKS_ACTION_LINK_SELECTOR
+    );
 
     links.forEach((link) => {
       const [_, _2, _3, owner, repository, _4, _5, runId] =
-      link.href.split("/");
+        link.href.split("/");
 
       // Prevent the button click from triggering the link
-      const parent = link.parentElement
+      const parent = link.parentElement;
 
       addNotificationButton(parent, { runId, owner, repository });
     });
   }
 }
 
-const PR_PAGE_CONTAINER_SELECTOR = "div.branch-action-body"
-const PR_PAGE_JOB_SELECTOR = "div.merge-status-item"
-const PR_PAGE_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/[^/]+\/?$/
+const PR_PAGE_CONTAINER_SELECTOR = "div.branch-action-body";
+const PR_PAGE_JOB_SELECTOR = "div.merge-status-item";
+const PR_PAGE_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/[^/]+\/?$/;
 
 function processElementsForJob(url) {
   const isPrPage = PR_PAGE_REGEX.test(url);
-  console.debug(`isPrPage: ${isPrPage}`)
+  console.debug(`isPrPage: ${isPrPage}`);
   if (isPrPage) {
-    console.debug("Processing elements for PR page")
+    console.debug("Processing elements for PR page");
 
-    const container = document?.querySelector(PR_PAGE_CONTAINER_SELECTOR)
-    const jobs = container?.querySelectorAll(PR_PAGE_JOB_SELECTOR)
-    const inProgressJobs = jobs.length > 0 && jobs.filter(job => job.querySelector("svg.anim-rotate"))
+    const container = document?.querySelector(PR_PAGE_CONTAINER_SELECTOR);
+    const jobs = container?.querySelectorAll(PR_PAGE_JOB_SELECTOR);
+    const inProgressJobs =
+      jobs.length > 0 &&
+      jobs.filter((job) => job.querySelector("svg.anim-rotate"));
 
-    inProgressJobs.length > 0 && inProgressJobs.forEach((job) => {
-      const link = job.querySelector("a.status-actions")
-      const [_, _2, _3, owner, repository, _4, _5, runId, _6, pollutedJobId] = link.href.split("/");
-      const jobId = pollutedJobId.split("?")[0]
-      console.log({owner, repository, runId, jobId})
+    inProgressJobs.length > 0 &&
+      inProgressJobs.forEach((job) => {
+        const link = job.querySelector("a.status-actions");
+        const [_, _2, _3, owner, repository, _4, _5, runId, _6, pollutedJobId] =
+          link.href.split("/");
+        const jobId = pollutedJobId.split("?")[0];
+        console.log({ owner, repository, runId, jobId });
 
-      addNotificationButton(job, { runId, jobId, owner, repository });
-    })
+        addNotificationButton(job, { runId, jobId, owner, repository });
+      });
   }
 }
 
@@ -273,7 +276,7 @@ function shouldAddActionNotificationButton(url) {
 function shouldAddJobNotificationButton(url) {
   const isPrPage = PR_PAGE_REGEX.test(url);
   const isJobPage = false;
-  const isRunsPage = false
+  const isRunsPage = false;
   return isPrPage || isJobPage || isRunsPage;
 }
 
@@ -299,12 +302,12 @@ chrome.runtime.onMessage.addListener(function (request) {
 
 console.debug(`Processing elements because of page refresh`);
 if (shouldAddActionNotificationButton(window.location.href)) {
-  console.debug("Determined we should process elements for action")
+  console.debug("Determined we should process elements for action");
   processElementsForAction(window.location.href);
   // const workflowObserver = new MutationObserver(processNewNodes);
   // workflowObserver.observe(workflowRunsContainer, config);
 }
 if (shouldAddJobNotificationButton(window.location.href)) {
-  console.debug("Determined we should process elements for job")
+  console.debug("Determined we should process elements for job");
   processElementsForJob(window.location.href);
 }

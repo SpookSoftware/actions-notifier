@@ -9,23 +9,23 @@ const watcher = watch(
   EXTENSION_PATH,
   { recursive: true },
   (eventType, filename) => {
-		console.log("File changed. Reloading.")
-		reloadExtension();
+    console.log("File changed. Reloading.");
+    reloadExtension();
   }
 );
 
 async function reloadExtension() {
-	const client = await CDP();
-	const { Runtime } = client;
+  const client = await CDP();
+  const { Runtime } = client;
 
-	// This command reloads the extension
-	await Runtime.evaluate({
-		expression: `chrome.runtime.reload()`,
-		contextId: 0,
-	});
+  // This command reloads the extension
+  await Runtime.evaluate({
+    expression: `chrome.runtime.reload()`,
+    contextId: 0,
+  });
 
-	await client.close();
-	console.log("Extension reloaded");
+  await client.close();
+  console.log("Extension reloaded");
 }
 
 process.on("SIGINT", () => {
