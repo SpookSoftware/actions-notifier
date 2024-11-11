@@ -14,7 +14,7 @@ import { shouldAddActionNotificationButton } from "./helpers";
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
 // -----------------------------------------------------------------------------------------------
-// https://github.com/kory-smith/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
+// https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
 
 function isWorkflowRunDOMNode(node) {
   return (
