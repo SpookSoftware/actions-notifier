@@ -1,9 +1,6 @@
 name: Wait for a Minute
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
