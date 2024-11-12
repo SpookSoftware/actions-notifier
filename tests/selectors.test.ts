@@ -23,7 +23,7 @@ const fsCache = {
     }
   },
   async set(path: string, contents: string): Promise<void> {
-    await mkdir("./test/.cache", { recursive: true });
+    await mkdir("./tests/.cache", { recursive: true });
     await writeFile(path, contents);
   },
   async has(path: string): Promise<boolean> {
@@ -50,7 +50,9 @@ const fetchDocument = pMemoize(
   },
   {
     cacheKey: ([url]) =>
-      `./test/.cache/${filenamify(url.replace("https://github.com", ""))}.html`,
+      `./tests/.cache/${filenamify(
+        url.replace("https://github.com", "")
+      )}.html`,
     cache: fsCache,
   }
 );
