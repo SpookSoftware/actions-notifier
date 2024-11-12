@@ -36,6 +36,26 @@ async function dispatchWorkflow() {
   return response.json();
 }
 
+async function dispatchWorkflowButCooler({ token, body, workflowURL }) {
+  const response = await fetch(workflowURL, {
+    method: "POST",
+    headers: {
+      Accept: "application/vnd.github.v3+json",
+      Authorization: `token ${token}`,
+    },
+    body,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `Failed to dispatch workflow: ${response.status} ${response.statusText} - ${errorBody}`
+    );
+  }
+
+  return response.json();
+}
+
 const fetchDocument = pMemoize(async (url: string): Promise<string> => {
   const request = await fetch(url, {
     headers: {
