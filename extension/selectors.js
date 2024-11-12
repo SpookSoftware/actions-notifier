@@ -1,4 +1,5 @@
-export const WORKFLOW_RUN_ATTRIBUTE_SELECTOR = "[data-url*='workflow-run']";
+export const WORKFLOW_RUN_ATTRIBUTE_SELECTOR =
+  "#partial-actions-workflow-runs [data-url*='workflow-run']";
 
 export const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
   "svg[aria-label*='currently running']";
