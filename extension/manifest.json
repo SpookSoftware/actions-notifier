@@ -1,7 +1,7 @@
 {
   "name": "Github Action Notifier",
   "description": "Notifies when a Github action run completes.",
-  "author": "Kory Smith",
+  "author": "Spook Software",
   "version": "0.0.1",
   "manifest_version": 3,
   "content_scripts": [
