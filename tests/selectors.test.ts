@@ -1,4 +1,4 @@
-import { expect, describe, it, jest } from "bun:test";
+import { expect, describe, it } from "bun:test";
 import { writeFile, mkdir, unlink, readFile, access } from "node:fs/promises";
 import pMemoize from "p-memoize";
 import filenamify from "filenamify";
@@ -7,7 +7,7 @@ import {
   WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
-  COMPLETED_ATTRIBUTE_SELECTOR,
+  SUCCESSFUL_ATTRIBUTE_SELECTOR,
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
@@ -64,9 +64,40 @@ async function getMatchesFor(url: string, selector: string) {
 describe("WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
   it("selects the workflow container", async () => {
     const matches = await getMatchesFor(
-      "https://github.com/kory-smith/peat/actions",
+      "https://github.com/SpookSoftware/sandbox/actions",
       WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
     );
-    expect(matches.length).toBe(1);
+    expect(matches).toHaveLength(1);
+  });
+});
+
+describe("WORKFLOW_RUN_ATTRIBUTE_SELECTOR", () => {
+  it("selects the workflow runs", async () => {
+    const matches = await getMatchesFor(
+      "https://github.com/SpookSoftware/sandbox/actions",
+      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+    );
+    expect(matches).toHaveLength(25);
+  });
+  it("does not select the parent element of the workflow runs", async () => {
+    const matches = await getMatchesFor(
+      "https://github.com/SpookSoftware/sandbox/actions",
+      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+    );
+    expect(
+      Array.from(matches).some(
+        (match) => match.id === "partial-actions-workflow-runs"
+      )
+    ).toBeFalse();
+  });
+});
+
+describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
+  it("selects successful workflow runs", async () => {
+    const matches = await getMatchesFor(
+      "https://github.com/SpookSoftware/sandbox/actions?query=is%3Asuccess",
+      SUCCESSFUL_ATTRIBUTE_SELECTOR
+    );
+    expect(matches).toHaveLength(25);
   });
 });
