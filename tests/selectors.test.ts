@@ -96,12 +96,12 @@ describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
   it("selects currently running workflows", async () => {
     // Start a workflow and give it a little time to start up.
     await dispatchWorkflow();
-    await Bun.sleep(10_000);
+    await Bun.sleep(60_000);
 
     const matches = await getMatchesFor(
       "https://github.com/SpookSoftware/sandbox/actions?query=is%3Ain_progress",
       CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
     );
     expect(matches.length).toBeGreaterThanOrEqual(1);
-  }, 20_000);
+  }, 80_000);
 });
