@@ -4,7 +4,7 @@ export const WORKFLOW_RUN_ATTRIBUTE_SELECTOR =
 export const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
   "svg[aria-label*='currently running']";
 export const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
-export const COMPLETED_ATTRIBUTE_SELECTOR =
+export const SUCCESSFUL_ATTRIBUTE_SELECTOR =
   "svg[aria-label*='completed successfully']";
 
 // This is ripped from the DOM "copy selector" option and will surely need to be refactored

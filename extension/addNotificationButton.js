@@ -2,7 +2,7 @@ import {
   WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
-  COMPLETED_ATTRIBUTE_SELECTOR,
+  SUCCESSFUL_ATTRIBUTE_SELECTOR,
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
   specificWorkflowPageRegex,
   allWorkflowsPageRegex,
@@ -20,7 +20,7 @@ function isWorkflowRunDOMNode(node) {
   return (
     node.id &&
     node.id.startsWith("check_suite") &&
-    node.querySelector(COMPLETED_ATTRIBUTE_SELECTOR) === null
+    node.querySelector(SUCCESSFUL_ATTRIBUTE_SELECTOR) === null
   );
 }
 
