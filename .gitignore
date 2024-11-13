@@ -3,3 +3,4 @@ credentials.js
 test-results
 .cache
 .env
+dist

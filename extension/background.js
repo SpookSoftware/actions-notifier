@@ -1,7 +1,9 @@
-import { githubToken } from "../credentials.js";
-
 self.addEventListener("activate", (event) => {
-  // Do activation stuff here
+  console.log("I'm active! Whee!");
+
+  chrome.alarms.clearAll(() => {
+    console.log("Cleared all old alarms.");
+  });
 });
 
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
@@ -158,17 +160,3 @@ async function checkJobStatus(jobId, owner, repository) {
     name: data.name,
   };
 }
-
-// Capture SPA navigation
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url) {
-    const isGithubURL = new URL(changeInfo.url).hostname === "github.com";
-    if (isGithubURL) {
-      console.debug("Detected a Github URL change to", changeInfo.url);
-      chrome.tabs.sendMessage(tabId, {
-        type: "page-rendered",
-        url: changeInfo.url,
-      });
-    }
-  }
-});

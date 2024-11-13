@@ -7,7 +7,7 @@
   "content_scripts": [
     {
       "matches": ["https://github.com/*"],
-      "js": ["addNotificationButton.js"]
+      "js": ["./dist/addNotificationButton.js"]
     }
   ],
   "background": {
