@@ -11,32 +11,7 @@ import {
   PR_CHECKS_ACTION_LINK_SELECTOR,
 } from "../extension/selectors";
 
-async function dispatchWorkflow() {
-  const token = process.env.SANDBOX_REPO_GITHUB_TOKEN;
-  const url = `https://api.github.com/repos/SpookSoftware/sandbox/dispatches`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Accept: "application/vnd.github.v3+json",
-      Authorization: `token ${token}`,
-    },
-    body: JSON.stringify({
-      event_type: "wait-for-five-minutes",
-    }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(
-      `Failed to dispatch workflow: ${response.status} ${response.statusText} - ${errorBody}`
-    );
-  }
-
-  return response.json();
-}
-
-async function dispatchWorkflowButCooler({ token, body, workflowURL }) {
+async function dispatchWorkflow({ token, body, workflowURL }) {
   const response = await fetch(workflowURL, {
     method: "POST",
     headers: {
@@ -115,7 +90,15 @@ describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
 describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
   it("selects currently running workflows", async () => {
     // Start a workflow and give it a little time to start up.
-    await dispatchWorkflow();
+    if (!process.env.GITHUB_TOKEN) {
+      throw new Error("GITHUB_TOKEN is not set.");
+    }
+    await dispatchWorkflow({
+      token: process.env.GITHUB_TOKEN,
+      workflowURL:
+        "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
+      body: JSON.stringify({ event_type: "wait-for-five-minutes" }),
+    });
     await Bun.sleep(60_000);
 
     const matches = await getMatchesFor(
