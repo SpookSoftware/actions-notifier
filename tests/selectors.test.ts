@@ -88,10 +88,10 @@ describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
 
 describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
   it("selects currently running workflows", async () => {
-    // Start a workflow and give it a little time to start up.
     if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
       throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");
     }
+    // Start a workflow and give it a little time to start up.
     await dispatchWorkflow({
       token: process.env.SANDBOX_REPO_GITHUB_TOKEN,
       workflowURL:
