@@ -89,11 +89,11 @@ describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
 describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
   it("selects currently running workflows", async () => {
     // Start a workflow and give it a little time to start up.
-    if (!process.env.GITHUB_TOKEN) {
-      throw new Error("GITHUB_TOKEN is not set.");
+    if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
+      throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");
     }
     await dispatchWorkflow({
-      token: process.env.GITHUB_TOKEN,
+      token: process.env.SANDBOX_REPO_GITHUB_TOKEN,
       workflowURL:
         "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
       body: JSON.stringify({ event_type: "wait-for-five-minutes" }),
