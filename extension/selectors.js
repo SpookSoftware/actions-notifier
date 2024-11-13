@@ -23,4 +23,4 @@ export const prChecksPageRegex =
   /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/pull\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/checks/;
 
 export const PR_CHECKS_CONTAINER_SELECTOR = "aside";
-export const PR_CHECKS_ACTION_LINK_SELECTOR = "a.Link--primary";
+export const PR_CHECKS_ACTION_LINK_SELECTOR = ".checks-list-item-name a";

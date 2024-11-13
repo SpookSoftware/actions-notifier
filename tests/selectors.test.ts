@@ -4,7 +4,6 @@ import { parseHTML } from "linkedom";
 import {
   WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
-  QUEUED_ATTRIBUTE_SELECTOR,
   SUCCESSFUL_ATTRIBUTE_SELECTOR,
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
@@ -107,4 +106,24 @@ describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
     );
     expect(matches.length).toBeGreaterThanOrEqual(1);
   }, 80_000);
+});
+
+describe("PR_CHECKS_CONTAINER_SELECTOR", () => {
+  it("selects the PR checks container", async () => {
+    const matches = await getMatchesFor(
+      "https://github.com/SpookSoftware/sandbox/pull/1/checks",
+      PR_CHECKS_CONTAINER_SELECTOR
+    );
+    expect(matches).toHaveLength(1);
+  });
+});
+
+describe("PR_CHECKS_ACTION_LINK_SELECTOR", () => {
+  it("selects all the action links", async () => {
+    const matches = await getMatchesFor(
+      "https://github.com/SpookSoftware/sandbox/pull/1/checks",
+      PR_CHECKS_ACTION_LINK_SELECTOR
+    );
+    expect(matches).toHaveLength(3);
+  });
 });
