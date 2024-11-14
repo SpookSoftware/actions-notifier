@@ -124,6 +124,6 @@ describe("PR_CHECKS_ACTION_LINK_SELECTOR", () => {
       "https://github.com/SpookSoftware/sandbox/pull/1/checks",
       PR_CHECKS_ACTION_LINK_SELECTOR
     );
-    expect(matches).toHaveLength(3);
+    expect(matches).toHaveLength(6);
   });
 });
