@@ -56,6 +56,7 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   if (jobId) {
     // Create a new button to contain the SVG
     const svgButton = document.createElement("button");
+    svgButton.classList.add("Button");
     svgButton.dataset.runId = runId;
     svgButton.dataset.jobId = jobId;
     svgButton.dataset.owner = owner;
@@ -106,6 +107,7 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   } else {
     // Create a new button to contain the SVG
     const svgButton = document.createElement("button");
+    svgButton.classList.add("Button");
     svgButton.dataset.runId = runId;
     svgButton.dataset.owner = owner;
     svgButton.dataset.repository = repository;
@@ -153,6 +155,21 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
+export function createNotificationButton({ runId, jobId, owner, repository }: {
+  runId: string;
+  jobId: string;
+  owner: string;
+  repository: string;
+}) {
+  const button = new HTMLButtonElement();
+  button.classList.add("Button");
+  button.dataset.runId = runId;
+  button.dataset.jobId = jobId;
+  button.dataset.owner = owner;
+  button.dataset.repository = repository;
+  return button;
+}
+
 function processElementsForAction(url) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
   const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
@@ -176,7 +193,9 @@ function processElementsForAction(url) {
       const [_, _2, _3, owner, repository, _4, _5, runId] =
         link.href.split("/");
 
-      addNotificationButton(element, { runId, owner, repository });
+      // todo: test this
+      const thingToInsertInto = element.querySelector(".d-table")
+      addNotificationButton(thingToInsertInto, { runId, owner, repository });
     });
   }
 

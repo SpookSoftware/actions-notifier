@@ -1,5 +1,5 @@
 import { watch } from "fs";
-import { os } from "os";
+import os from "os";
 
 const mainBrowser =
   os.hostname() === "Giskard" ? "Brave Browser" : "Google Chrome";
@@ -10,13 +10,17 @@ const watcher = watch(
   EXTENSION_PATH,
   { recursive: true },
   (_eventType, filename) => {
-    console.log(`File ${filename} changed. Reloading.`);
-    reloadExtension();
+    // Prevents infinite loop when the dist folder is updated. There is probably (definitely) a better way to do this.
+    if (filename && !filename.startsWith("dist/")) {
+      console.log(`File ${filename} changed. Reloading.`);
+      reloadExtension();
+    }
   }
 );
 
 // For this to work, you must have https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid?pli=1 installed
 async function reloadExtension() {
+  Bun.spawnSync(["bun", "run", "build"]);
   Bun.spawnSync([
     "osascript",
     "-e",
@@ -36,3 +40,5 @@ process.on("SIGINT", () => {
 
   process.exit(0);
 });
+
+await reloadExtension();

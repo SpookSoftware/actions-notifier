@@ -1,4 +1,4 @@
-export function shouldAddActionNotificationButton(url) {
+export function shouldAddActionNotificationButton(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/pull/22932/checks
