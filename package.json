@@ -1,17 +1,14 @@
 {
-  "@types/chrome": "^0.0.243",
   "scripts": {
     "test": "bun test",
     "build": "bun build extension/addNotificationButton.js --outdir ./extension/dist --target browser --sourcemap",
-    "dev": "concurrently --kill-others 'one' 'two'"
+    "build:production": "bun build extension/addNotificationButton.js --outdir ./extension/dist --target browser --minify --drop=console",
+    "dev": "bun ./watcher.js"
   },
   "devDependencies": {
-    "@playwright/test": "^1.48.2",
     "@types/bun": "latest",
     "@types/chrome": "^0.0.243",
     "@types/node": "^22.9.0",
-    "chrome-remote-interface": "^0.33.2",
-    "concurrently": "^9.1.0",
     "linkedom": "^0.18.5",
     "p-memoize": "^7.1.1"
   },
