@@ -1,31 +1,18 @@
-import CDP from "chrome-remote-interface";
-
 import { watch } from "fs";
 
-const EXTENSION_ID = "your-extension-id"; // We'll obtain this later
-const EXTENSION_PATH = "./extension"; // Path to your extension directory
+const EXTENSION_PATH = "./";
 
 const watcher = watch(
   EXTENSION_PATH,
   { recursive: true },
   (eventType, filename) => {
-    console.log("File changed. Reloading.");
+    console.log(`File ${filename} changed. Reloading.`);
     reloadExtension();
   }
 );
 
 async function reloadExtension() {
-  const client = await CDP();
-  const { Runtime } = client;
-
-  // This command reloads the extension
-  await Runtime.evaluate({
-    expression: `chrome.runtime.reload()`,
-    contextId: 0,
-  });
-
-  await client.close();
-  console.log("Extension reloaded");
+  Bun.spawn(["open", "-a", "Brave Browser", "http://reload.extensions/"]);
 }
 
 process.on("SIGINT", () => {
