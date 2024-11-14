@@ -1,18 +1,32 @@
 import { watch } from "fs";
+import { os } from "os";
 
-const EXTENSION_PATH = "./";
+const mainBrowser =
+  os.hostname() === "Giskard" ? "Brave Browser" : "Google Chrome";
+
+const EXTENSION_PATH = "./extension";
 
 const watcher = watch(
   EXTENSION_PATH,
   { recursive: true },
-  (eventType, filename) => {
+  (_eventType, filename) => {
     console.log(`File ${filename} changed. Reloading.`);
     reloadExtension();
   }
 );
 
+// For this to work, you must have https://chromewebstore.google.com/detail/extensions-reloader/fimgfedafeadlieiabdeeaodndnlbhid?pli=1 installed
 async function reloadExtension() {
-  Bun.spawn(["open", "-a", "Brave Browser", "http://reload.extensions/"]);
+  Bun.spawnSync([
+    "osascript",
+    "-e",
+    `tell application "${mainBrowser}" to open location "http://reload.extensions"`,
+  ]);
+  Bun.spawnSync([
+    "osascript",
+    "-e",
+    'tell application "Visual Studio Code" to activate',
+  ]);
 }
 
 process.on("SIGINT", () => {
