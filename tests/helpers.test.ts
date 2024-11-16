@@ -31,6 +31,15 @@ describe("shouldAddActionNotificationButton", () => {
       )
     ).toBeTrue();
   });
+  it("returns false for all other URLs", () => {
+    const urls = [
+      "https://github.com/orgs/SpookSoftware/projects?query=is%3Aopen",
+      "https://github.com/orgs/SpookSoftware/repositories?type=source",
+      "https://github.com/SpookSoftware",
+    ];
+    const results = urls.map((url) => shouldAddActionNotificationButton(url));
+    expect(results.every((result) => result === false)).toBeTrue();
+  });
 });
 
 describe("createNotificationButton", () => {
