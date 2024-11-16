@@ -6,6 +6,7 @@
     "dev": "bun ./watcher.js"
   },
   "devDependencies": {
+    "@happy-dom/global-registrator": "^15.11.6",
     "@types/bun": "latest",
     "@types/chrome": "^0.0.243",
     "@types/node": "^22.9.0",

@@ -155,21 +155,6 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-export function createNotificationButton({ runId, jobId, owner, repository }: {
-  runId: string;
-  jobId: string;
-  owner: string;
-  repository: string;
-}) {
-  const button = new HTMLButtonElement();
-  button.classList.add("Button");
-  button.dataset.runId = runId;
-  button.dataset.jobId = jobId;
-  button.dataset.owner = owner;
-  button.dataset.repository = repository;
-  return button;
-}
-
 function processElementsForAction(url) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
   const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
@@ -194,7 +179,7 @@ function processElementsForAction(url) {
         link.href.split("/");
 
       // todo: test this
-      const thingToInsertInto = element.querySelector(".d-table")
+      const thingToInsertInto = element.querySelector(".d-table");
       addNotificationButton(thingToInsertInto, { runId, owner, repository });
     });
   }
@@ -248,12 +233,6 @@ function processElementsForJob(url) {
   }
 }
 
-const workflowRunsContainer = document.querySelector(
-  WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
-);
-
-const config = { attributes: true, childList: true, subtree: true };
-
 function shouldAddJobNotificationButton(url) {
   const isPrPage = PR_PAGE_REGEX.test(url);
   const isJobPage = false;
@@ -273,7 +252,6 @@ chrome.runtime.onMessage.addListener(function (request) {
       const workflowObserver = new MutationObserver(
         processSpecificWorkflowPageNodes
       );
-      workflowObserver.observe(workflowRunsContainer, config);
     } else if (shouldAddJobNotificationButton(request.url)) {
       console.debug("Heading down the job path");
       processElementsForJob(request.url);
