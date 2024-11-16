@@ -10,7 +10,11 @@ import {
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
 } from "./selectors";
-import { shouldAddActionNotificationButton } from "./helpers";
+import {
+  shouldAddActionNotificationButton,
+  selectorMatches,
+  getCurrentlyRunningOrQueuedDivs,
+} from "./helpers";
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
 // -----------------------------------------------------------------------------------------------
@@ -155,7 +159,21 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-function processElementsForAction(url) {
+// This has global dependencies (the selectors) and I'm not sure what to do about that.
+function getCurrentlyRunningOrQueuedDivs(divs: NodeListOf<Element>) {
+  return Array.from(divs).filter((div) => {
+    const isCurrentlyRunning = selectorMatches(
+      div,
+      CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
+    );
+    const isQueued = selectorMatches(div, QUEUED_ATTRIBUTE_SELECTOR);
+    const isWorkflowRun = div.id.startsWith("check_suite");
+    return (isCurrentlyRunning || isQueued) && isWorkflowRun;
+  });
+}
+
+// is this my "doer" script? It should just call other things, I think.
+function processElementsForAction(url: string) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
   const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
   console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`);
@@ -165,15 +183,10 @@ function processElementsForAction(url) {
       WORKFLOW_RUN_ATTRIBUTE_SELECTOR
     );
 
-    const filteredDivs = Array.from(workflowRunElements).filter((div) => {
-      const isCurrentlyRunning =
-        div.querySelector(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR) !== null;
-      const isQueued = div.querySelector(QUEUED_ATTRIBUTE_SELECTOR) !== null;
-      const isWorkflowRun = div.id.startsWith("check_suite");
-      return (isCurrentlyRunning || isQueued) && isWorkflowRun;
-    });
+    const currentlyRunningOrQueued =
+      getCurrentlyRunningOrQueuedDivs(workflowRunElements);
 
-    filteredDivs.forEach((element) => {
+    currentlyRunningOrQueued.forEach((element) => {
       const link = element.querySelector("a");
       const [_, _2, _3, owner, repository, _4, _5, runId] =
         link.href.split("/");
@@ -233,33 +246,30 @@ function processElementsForJob(url) {
   }
 }
 
-function shouldAddJobNotificationButton(url) {
-  const isPrPage = PR_PAGE_REGEX.test(url);
-  const isJobPage = false;
-  const isRunsPage = false;
-  return isPrPage || isJobPage || isRunsPage;
-}
+//   const isPrPage = PR_PAGE_REGEX.test(url);
+//   const isJobPage = false;
+//   const isRunsPage = false;
+//   return isPrPage || isJobPage || isRunsPage;
+// }
 
-chrome.runtime.onMessage.addListener(function (request) {
-  if (request && request.type === "page-rendered") {
-    console.debug(
-      "Received request to refresh notification buttons because of a url change. URL: ",
-      request.url
-    );
-    if (shouldAddActionNotificationButton(request.url)) {
-      console.debug("Heading down the action path");
-      processElementsForAction(request.url);
-      const workflowObserver = new MutationObserver(
-        processSpecificWorkflowPageNodes
-      );
-    } else if (shouldAddJobNotificationButton(request.url)) {
-      console.debug("Heading down the job path");
-      processElementsForJob(request.url);
-    }
-  }
-});
+//   if (request && request.type === "page-rendered") {
+//     console.debug(
+//       "Received request to refresh notification buttons because of a url change. URL: ",
+//       request.url
+//     );
+//     if (shouldAddActionNotificationButton(request.url)) {
+//       console.debug("Heading down the action path");
+//       processElementsForAction(request.url);
+//       const workflowObserver = new MutationObserver(
+//         processSpecificWorkflowPageNodes
+//       );
+//     } else if (shouldAddJobNotificationButton(request.url)) {
+//       console.debug("Heading down the job path");
+//       processElementsForJob(request.url);
+//     }
+//   }
+// });
 
-console.debug(`Processing elements because of page refresh`);
 if (shouldAddActionNotificationButton(window.location.href)) {
   console.debug("Determined we should process elements for action");
   processElementsForAction(window.location.href);

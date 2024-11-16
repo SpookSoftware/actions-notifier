@@ -160,3 +160,7 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
     );
   }
 }
+
+export function selectorMatches(element: Element, selector: string) {
+  return element.querySelector(selector) !== null;
+}
