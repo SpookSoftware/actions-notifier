@@ -2,7 +2,7 @@ import { watch } from "fs";
 import os from "os";
 
 const mainBrowser =
-  os.hostname() === "Giskard" ? "Brave Browser" : "Google Chrome";
+  os.hostname() === "Giskard.local" ? "Brave" : "Google Chrome";
 
 const EXTENSION_PATH = "./extension";
 
