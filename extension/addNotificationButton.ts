@@ -13,7 +13,9 @@ import {
 import {
   shouldAddActionNotificationButton,
   selectorMatches,
-  getCurrentlyRunningOrQueuedDivs,
+  getCurrentlyRunningOrQueuedDivs as getCurrentlyRunningOrQueuedWorkflowElements,
+  createNotificationButton,
+  createNotificationSVG,
 } from "./helpers";
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
@@ -159,16 +161,18 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-// This has global dependencies (the selectors) and I'm not sure what to do about that.
-function getCurrentlyRunningOrQueuedDivs(divs: NodeListOf<Element>) {
+// This has global dependencies (the selectors) and I'm not sure what to do about that. It's probably simple enough to not require testing
+// (especially since the selectors are being tested) but I'm not sure.
+function getCurrentlyRunningOrQueuedWorkflowElements(
+  divs: NodeListOf<Element>
+) {
   return Array.from(divs).filter((div) => {
     const isCurrentlyRunning = selectorMatches(
       div,
       CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
     );
     const isQueued = selectorMatches(div, QUEUED_ATTRIBUTE_SELECTOR);
-    const isWorkflowRun = div.id.startsWith("check_suite");
-    return (isCurrentlyRunning || isQueued) && isWorkflowRun;
+    return isCurrentlyRunning || isQueued;
   });
 }
 
@@ -183,18 +187,39 @@ function processElementsForAction(url: string) {
       WORKFLOW_RUN_ATTRIBUTE_SELECTOR
     );
 
-    const currentlyRunningOrQueued =
-      getCurrentlyRunningOrQueuedDivs(workflowRunElements);
+    const currentlyRunningOrQueuedElements =
+      getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
 
-    currentlyRunningOrQueued.forEach((element) => {
+    for (const element of currentlyRunningOrQueuedElements) {
       const link = element.querySelector("a");
+
+      console.assert(link, "Link doesn't exist");
+      if (!link) {
+        continue;
+      }
+
+      // Make this a function? Probably...
       const [_, _2, _3, owner, repository, _4, _5, runId] =
         link.href.split("/");
 
-      // todo: test this
-      const thingToInsertInto = element.querySelector(".d-table");
-      addNotificationButton(thingToInsertInto, { runId, owner, repository });
-    });
+      const button = createNotificationButton({ runId, owner, repository });
+      const svg = createNotificationSVG();
+
+      button.appendChild(svg);
+
+      const childDiv = element.children[0];
+      const betweenBranchAndTime = childDiv.children[2];
+
+      console.assert(
+        betweenBranchAndTime,
+        "Couldn't find proper place to insert notification button"
+      );
+      if (!betweenBranchAndTime) {
+        continue;
+      }
+
+      childDiv.insertBefore(button, betweenBranchAndTime);
+    }
   }
 
   const isPrChecksPage = prChecksPageRegex.test(url);
@@ -276,7 +301,7 @@ if (shouldAddActionNotificationButton(window.location.href)) {
   // const workflowObserver = new MutationObserver(processNewNodes);
   // workflowObserver.observe(workflowRunsContainer, config);
 }
-if (shouldAddJobNotificationButton(window.location.href)) {
-  console.debug("Determined we should process elements for job");
-  processElementsForJob(window.location.href);
-}
+// if (shouldAddJobNotificationButton(window.location.href)) {
+//   console.debug("Determined we should process elements for job");
+//   processElementsForJob(window.location.href);
+// }
