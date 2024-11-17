@@ -14,8 +14,8 @@ export function createNotificationButton({
   owner,
   repository,
 }: {
-  runId: string;
-  jobId: string;
+  runId?: string;
+  jobId?: string;
   owner: string;
   repository: string;
 }) {
@@ -41,6 +41,9 @@ export function createNotificationSVG() {
   svgElement.setAttributeNS(null, "viewBox", NOTIFICATION_BELL_VIEW_BOX);
   svgElement.setAttributeNS(null, "width", NOTIFICATION_BELL_WIDTH);
   svgElement.setAttributeNS(null, "height", NOTIFICATION_BELL_HEIGHT);
+
+  svgElement.classList.add("octicon");
+  svgElement.classList.add("color-fg-muted");
 
   const pathElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
