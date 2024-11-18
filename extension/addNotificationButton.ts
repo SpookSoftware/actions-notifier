@@ -161,19 +161,15 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-// This has global dependencies (the selectors) and I'm not sure what to do about that. It's probably simple enough to not require testing
-// (especially since the selectors are being tested) but I'm not sure.
-function getCurrentlyRunningOrQueuedWorkflowElements(
-  divs: NodeListOf<Element>
-) {
-  return Array.from(divs).filter((div) => {
-    const isCurrentlyRunning = selectorMatches(
-      div,
-      CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
-    );
-    const isQueued = selectorMatches(div, QUEUED_ATTRIBUTE_SELECTOR);
-    return isCurrentlyRunning || isQueued;
+// This is the one I am going to test I think
+function getElementsMatchingSelectors(elements: NodeListOf<Element>, selectors: string[]) {
+  return Array.from(elements).filter(element => {
+    return selectors.some(selector => element.querySelector(selector) !== null);
   });
+} 
+
+function getCurrentlyRunningOrQueuedWorkflowElements(divs: NodeListOf<Element>) {
+  return getElementsMatchingSelectors(divs, [CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR, QUEUED_ATTRIBUTE_SELECTOR]);
 }
 
 // is this my "doer" script? It should just call other things, I think.
