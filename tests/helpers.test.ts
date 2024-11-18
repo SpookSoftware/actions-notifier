@@ -88,7 +88,7 @@ describe("createNotificationSVG", () => {
     );
   });
 });
-describe.only("getElementsMatchingSelectors", () => {
+describe("getElementsMatchingSelectors", () => {
   it("returns elements that match any of the selectors", () => {
     document.body.innerHTML = `
       <div class="test1"></div>
