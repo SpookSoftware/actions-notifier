@@ -3,7 +3,7 @@ import {
   createNotificationButton,
   shouldAddActionNotificationButton,
   createNotificationSVG,
-  selectorMatches,
+  getElementsMatchingSelectors,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -88,39 +88,42 @@ describe("createNotificationSVG", () => {
     );
   });
 });
-describe("selectorMatches", () => {
-  it("returns true when the selector matches an element", () => {
-    const div = document.createElement("div");
-    const span = document.createElement("span");
-    span.classList.add("test-class");
-    div.appendChild(span);
-
-    expect(selectorMatches(div, ".test-class")).toBeTrue();
+describe.only("getElementsMatchingSelectors", () => {
+  it("returns elements that match any of the selectors", () => {
+    document.body.innerHTML = `
+      <div class="test1"></div>
+      <div class="test2"></div>
+      <div class="test3"></div>
+    `;
+    const elements = document.querySelectorAll("div");
+    const selectors = [".test1", ".test3"];
+    const matchingElements = getElementsMatchingSelectors(elements, selectors);
+    expect(matchingElements.length).toBe(2);
+    expect(matchingElements[0].classList.contains("test1")).toBeTrue();
+    expect(matchingElements[1].classList.contains("test3")).toBeTrue();
   });
 
-  it("returns false when the selector does not match any element", () => {
-    const div = document.createElement("div");
-    const span = document.createElement("span");
-    span.classList.add("test-class");
-    div.appendChild(span);
-
-    expect(selectorMatches(div, ".non-existent-class")).toBeFalse();
+  it("returns an empty array if no elements match the selectors", () => {
+    document.body.innerHTML = `
+      <div class="test1"></div>
+      <div class="test2"></div>
+      <div class="test3"></div>
+    `;
+    const elements = document.querySelectorAll("div");
+    const selectors = [".test4", ".test5"];
+    const matchingElements = getElementsMatchingSelectors(elements, selectors);
+    expect(matchingElements.length).toBe(0);
   });
 
-  it("returns false when the element has no children", () => {
-    const div = document.createElement("div");
-
-    expect(selectorMatches(div, ".test-class")).toBeFalse();
-  });
-
-  it("returns true when the selector matches a nested element", () => {
-    const div = document.createElement("div");
-    const span = document.createElement("span");
-    const nestedSpan = document.createElement("span");
-    nestedSpan.classList.add("nested-class");
-    span.appendChild(nestedSpan);
-    div.appendChild(span);
-
-    expect(selectorMatches(div, ".nested-class")).toBeTrue();
+  it("returns all elements if all elements match the selectors", () => {
+    document.body.innerHTML = `
+      <div class="test1"></div>
+      <div class="test2"></div>
+      <div class="test3"></div>
+    `;
+    const elements = document.querySelectorAll("div");
+    const selectors = [".test1", ".test2", ".test3"];
+    const matchingElements = getElementsMatchingSelectors(elements, selectors);
+    expect(matchingElements.length).toBe(3);
   });
 });

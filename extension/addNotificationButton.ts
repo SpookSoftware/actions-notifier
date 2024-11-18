@@ -12,8 +12,7 @@ import {
 } from "./selectors";
 import {
   shouldAddActionNotificationButton,
-  selectorMatches,
-  getCurrentlyRunningOrQueuedDivs as getCurrentlyRunningOrQueuedWorkflowElements,
+  getElementsMatchingSelectors,
   createNotificationButton,
   createNotificationSVG,
 } from "./helpers";
@@ -161,15 +160,13 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-// This is the one I am going to test I think
-function getElementsMatchingSelectors(elements: NodeListOf<Element>, selectors: string[]) {
-  return Array.from(elements).filter(element => {
-    return selectors.some(selector => element.querySelector(selector) !== null);
-  });
-} 
-
-function getCurrentlyRunningOrQueuedWorkflowElements(divs: NodeListOf<Element>) {
-  return getElementsMatchingSelectors(divs, [CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR, QUEUED_ATTRIBUTE_SELECTOR]);
+function getCurrentlyRunningOrQueuedWorkflowElements(
+  divs: NodeListOf<Element>
+) {
+  return getElementsMatchingSelectors(divs, [
+    CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
+    QUEUED_ATTRIBUTE_SELECTOR,
+  ]);
 }
 
 // is this my "doer" script? It should just call other things, I think.

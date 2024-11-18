@@ -164,6 +164,11 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-export function selectorMatches(element: Element, selector: string) {
-  return element.querySelector(selector) !== null;
+export function getElementsMatchingSelectors(
+  elements: NodeListOf<Element>,
+  selectors: string[]
+) {
+  return Array.from(elements).filter((element) => {
+    return selectors.some((selector) => element.matches(selector));
+  });
 }
