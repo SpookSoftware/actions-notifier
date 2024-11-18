@@ -4,6 +4,7 @@ import {
   shouldAddActionNotificationButton,
   createNotificationSVG,
   getElementsMatchingSelectors,
+  extractActionDataFromURL,
   getElementsWhoseChildrenMatchSelectors,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
@@ -129,6 +130,30 @@ describe("getElementsMatchingSelectors", () => {
   });
 });
 
+describe("extractActionDataFromURL", () => {
+  it("extracts owner, repository, and runId from a valid URL", () => {
+    const url =
+      "https://github.com/SpookSoftware/sandbox/actions/runs/11883722967";
+    const result = extractActionDataFromURL(url);
+    expect(result).toEqual({
+      owner: "SpookSoftware",
+      repository: "sandbox",
+      runId: "11883722967",
+    });
+  });
+
+  it("throws an error if the URL is invalid", () => {
+    const url = "invalid-url";
+    expect(() => extractActionDataFromURL(url)).toThrowError(
+      "Invalid URL: invalid-url"
+    );
+  });
+
+  it("throws an error if any part is missing", () => {
+    const url = "https://github.com/SpookSoftware/sandbox/actions/runs/";
+    expect(() => extractActionDataFromURL(url)).toThrowError("Missing runId");
+  });
+});
 describe("getElementsWhoseChildrenMatchSelectors", () => {
   it("returns elements whose children match any of the selectors", () => {
     document.body.innerHTML = `

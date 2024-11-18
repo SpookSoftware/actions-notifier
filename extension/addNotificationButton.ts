@@ -15,6 +15,7 @@ import {
   getElementsMatchingSelectors,
   createNotificationButton,
   createNotificationSVG,
+  extractActionDataFromURL,
   getElementsWhoseChildrenMatchSelectors,
 } from "./helpers";
 
@@ -192,9 +193,7 @@ function processElementsForAction(url: string) {
         continue;
       }
 
-      // Make this a function? Probably...
-      const [_, _2, _3, owner, repository, _4, _5, runId] =
-        link.href.split("/");
+      const { owner, repository, runId } = extractActionDataFromURL(link.href);
 
       const button = createNotificationButton({ runId, owner, repository });
       const svg = createNotificationSVG();

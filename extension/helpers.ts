@@ -181,3 +181,37 @@ export function getElementsWhoseChildrenMatchSelectors(
     return selectors.some((selector) => element.querySelector(selector));
   });
 }
+
+/**
+ * Extracts action data from a given GitHub Actions URL.
+ *
+ * @param url - The URL string to extract data from.
+ * @returns An object containing the owner, repository, and runId extracted from the URL.
+ * @throws Will throw an error if the URL is invalid or if any of the expected parts (owner, repository, runId) are missing.
+ * 
+ * @example
+const exampleURL = "https://github.com/SpookSoftware/sandbox/actions/runs/11883722967";
+try {
+  const actionData = extractActionDataFromURL(exampleURL);
+  console.log(actionData) // -> { owner: 'SpookSoftware', repository: 'sandbox', runId: '11883722967' }
+} catch (error) {
+  console.error(error.message);
+}
+ */
+export function extractActionDataFromURL(url: string) {
+  const isValidURL = URL.canParse(url);
+  if (isValidURL) {
+    const [_, _2, _3, owner, repository, _4, _5, runId] = url.split("/");
+    [
+      { property: owner, key: "owner" },
+      { property: repository, key: "repository" },
+      { property: runId, key: "runId" },
+    ].forEach(({ property, key }) => {
+      if (!property) {
+        throw Error(`Missing ${key}`);
+      }
+    });
+    return { owner, repository, runId };
+  }
+  throw Error("Invalid URL: " + url);
+}
