@@ -172,3 +172,12 @@ export function getElementsMatchingSelectors(
     return selectors.some((selector) => element.matches(selector));
   });
 }
+
+export function getElementsWhoseChildrenMatchSelectors(
+  elements: NodeListOf<Element>,
+  selectors: string[]
+) {
+  return Array.from(elements).filter((element) => {
+    return selectors.some((selector) => element.querySelector(selector));
+  });
+}

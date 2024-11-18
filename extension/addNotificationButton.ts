@@ -15,6 +15,7 @@ import {
   getElementsMatchingSelectors,
   createNotificationButton,
   createNotificationSVG,
+  getElementsWhoseChildrenMatchSelectors,
 } from "./helpers";
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
@@ -163,7 +164,7 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
 function getCurrentlyRunningOrQueuedWorkflowElements(
   divs: NodeListOf<Element>
 ) {
-  return getElementsMatchingSelectors(divs, [
+  return getElementsWhoseChildrenMatchSelectors(divs, [
     CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
     QUEUED_ATTRIBUTE_SELECTOR,
   ]);

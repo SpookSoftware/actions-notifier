@@ -4,6 +4,7 @@ import {
   shouldAddActionNotificationButton,
   createNotificationSVG,
   getElementsMatchingSelectors,
+  getElementsWhoseChildrenMatchSelectors,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -124,6 +125,55 @@ describe("getElementsMatchingSelectors", () => {
     const elements = document.querySelectorAll("div");
     const selectors = [".test1", ".test2", ".test3"];
     const matchingElements = getElementsMatchingSelectors(elements, selectors);
+    expect(matchingElements.length).toBe(3);
+  });
+});
+
+describe("getElementsWhoseChildrenMatchSelectors", () => {
+  it("returns elements whose children match any of the selectors", () => {
+    document.body.innerHTML = `
+      <div class="parent1"><span class="child1"></span></div>
+      <div class="parent2"><span class="child2"></span></div>
+      <div class="parent3"><span class="child3"></span></div>
+    `;
+    const elements = document.querySelectorAll("div");
+    const selectors = [".child1", ".child3"];
+    const matchingElements = getElementsWhoseChildrenMatchSelectors(
+      elements,
+      selectors
+    );
+    expect(matchingElements.length).toBe(2);
+    expect(matchingElements[0].classList.contains("parent1")).toBeTrue();
+    expect(matchingElements[1].classList.contains("parent3")).toBeTrue();
+  });
+
+  it("returns an empty array if no children match the selectors", () => {
+    document.body.innerHTML = `
+      <div class="parent1"><span class="child1"></span></div>
+      <div class="parent2"><span class="child2"></span></div>
+      <div class="parent3"><span class="child3"></span></div>
+    `;
+    const elements = document.querySelectorAll("div");
+    const selectors = [".child4", ".child5"];
+    const matchingElements = getElementsWhoseChildrenMatchSelectors(
+      elements,
+      selectors
+    );
+    expect(matchingElements.length).toBe(0);
+  });
+
+  it("returns all elements if all children match the selectors", () => {
+    document.body.innerHTML = `
+      <div class="parent1"><span class="child1"></span></div>
+      <div class="parent2"><span class="child2"></span></div>
+      <div class="parent3"><span class="child3"></span></div>
+    `;
+    const elements = document.querySelectorAll("div");
+    const selectors = [".child1", ".child2", ".child3"];
+    const matchingElements = getElementsWhoseChildrenMatchSelectors(
+      elements,
+      selectors
+    );
     expect(matchingElements.length).toBe(3);
   });
 });
