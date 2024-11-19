@@ -11,11 +11,10 @@ import {
 } from "./selectors";
 import {
   shouldAddActionNotificationButton,
-  getElementsMatchingSelectors,
   createNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
-  getElementsWhoseChildrenMatchSelectors,
+  getElementsWhoseChildrenMatchAtLeastOneSelector,
 } from "./helpers";
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
@@ -164,7 +163,7 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
 function getCurrentlyRunningOrQueuedWorkflowElements(
   divs: NodeListOf<Element>
 ) {
-  return getElementsWhoseChildrenMatchSelectors(divs, [
+  return getElementsWhoseChildrenMatchAtLeastOneSelector(divs, [
     CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
     QUEUED_ATTRIBUTE_SELECTOR,
   ]);

@@ -164,7 +164,7 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-export function getElementsMatchingSelectors(
+export function getElementsMatchingAtLeastOneSelector(
   elements: NodeListOf<Element>,
   selectors: string[]
 ) {
@@ -173,7 +173,7 @@ export function getElementsMatchingSelectors(
   });
 }
 
-export function getElementsWhoseChildrenMatchSelectors(
+export function getElementsWhoseChildrenMatchAtLeastOneSelector(
   elements: NodeListOf<Element>,
   selectors: string[]
 ) {
