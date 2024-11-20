@@ -198,8 +198,36 @@ function processElementsForAction(url: string) {
 
       button.appendChild(svg);
 
+      // Maybe we can select the nth child instead of doing this?
+      // Or maybe this is a function too? Again, this is logic, not glue.
       const childDiv = element.children[0];
       const betweenBranchAndTime = childDiv.children[2];
+
+      // I think this is much too much logic and that this should be its own thing.
+      // I also don't know if it behaves properly on response failure
+      button.onclick = (_event) => {
+        chrome.runtime.sendMessage(
+          {
+            action: "startMonitoring",
+            runId,
+            owner,
+            repository,
+            type: "action",
+          },
+          (response) => {
+            const { status } = response;
+            if (status === "ok") {
+              svg.style.color = "yellow";
+              svg.classList.remove("color-fg-muted")
+              console.debug("successfully set svg color to yellow")
+            } else {
+              svg.style.color = "red";
+              svg.classList.remove("color-fg-muted")
+              console.debug("successfully set svg color to red")
+            }
+          }
+        );
+      };
 
       console.assert(
         betweenBranchAndTime,

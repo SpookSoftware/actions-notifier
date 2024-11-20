@@ -6,7 +6,8 @@ self.addEventListener("activate", (event) => {
   });
 });
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+// ASYNC AWAIT NOT SUPPORTED
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === "action" && request.action === "startMonitoring") {
     console.debug(
       `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
@@ -16,30 +17,17 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 
     // Let's be fancy so we don't have to use any storage
     const encoded = `${runId}|${owner}|${repository}`;
-    try {
-      console.debug(`Creating alarm with name ${encoded}`);
+    console.debug(`Creating alarm with name ${encoded}`);
 
-      await chrome.alarms.create(encoded, {
-        periodInMinutes: 0.1,
-      });
-
-      console.debug(`Registering notification click handler for ${encoded}`);
-      chrome.notifications.onClicked.addListener((notificationId) => {
-        const [runId, owner, repository] = notificationId.split("|");
-        const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}`;
-        chrome.tabs.create({
-          active: true,
-          url: resultsURL,
-        });
-        chrome.notifications.clear(encoded);
-      });
-      console.debug(`Notification click handler registered for ${encoded}`);
-
+    chrome.alarms.create(encoded, {
+      periodInMinutes: 1,
+    }).then(res => {
       console.debug(`Alarm ${encoded} created`);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+      sendResponse({ status: "ok" });
+    }).catch(err => {
+      sendResponse({ status: "error", error: err });
+    });
+
   } else if (request.type === "job" && request.action === "startMonitoring") {
     console.debug(
       `Received request to monitor job ${request.jobId} in action action ${request.runId} for ${request.owner}/${request.repository}`
@@ -48,81 +36,69 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     const { runId, jobId, owner, repository } = request;
 
     const encoded = `${runId}|${jobId}|${owner}|${repository}`;
-    try {
-      console.debug(`Creating alarm with name ${encoded}`);
+    console.debug(`Creating alarm with name ${encoded}`);
 
-      await chrome.alarms.create(encoded, {
-        periodInMinutes: 0.1,
-      });
-
-      console.debug(`Registering notification click handler for ${encoded}`);
-      chrome.notifications.onClicked.addListener((notificationId) => {
-        const [runId, jobId, owner, repository] = notificationId.split("|");
-        const resultsURL = `https://github.com/${owner}/${repository}/actions/runs/${runId}/job/${jobId}`;
-        chrome.tabs.create({
-          active: true,
-          url: resultsURL,
-        });
-        chrome.notifications.clear(encoded);
-      });
-      console.debug(`Notification click handler registered for ${encoded}`);
-
+    chrome.alarms.create(encoded, {
+      periodInMinutes: 1,
+    }).then(res => {
       console.debug(`Alarm ${encoded} created`);
-    } catch (error) {
-      console.error(error);
-      throw error;
-    }
+      sendResponse({ status: "ok" });
+    }).catch(err => {
+      sendResponse({ status: "error", error: err });
+    });
   }
+  // This signals to chrome that the connection will remain open until sendResponse is called.
+  return true;
 });
 
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  const isActionRun = alarm.name.split("|").length === 3;
-  if (isActionRun) {
-    const [runId, owner, repository] = alarm.name.split("|");
+// chrome.alarms.onAlarm.addListener(async (alarm) => {
+//   const isActionRun = alarm.name.split("|").length === 3;
+//   if (isActionRun) {
+//     const [runId, owner, repository] = alarm.name.split("|");
 
-    const { status, name } = await checkActionStatus(runId, owner, repository);
+//     const { status, name } = await checkActionStatus(runId, owner, repository);
 
-    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+//     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
-    if (status === "completed") {
-      chrome.notifications.create(alarm.name, {
-        type: "basic",
-        title: "Action Completed",
-        message: `Action ${name} has completed. Click the notification to view the results.`,
-        iconUrl: "images/notification-24.png",
-        requireInteraction: true,
-      });
+//     if (status === "completed") {
+//       chrome.notifications.create(alarm.name, {
+//         type: "basic",
+//         title: "Action Completed",
+//         message: `Action ${name} has completed. Click the notification to view the results.`,
+//         iconUrl: "images/notification-24.png",
+//         requireInteraction: true,
+//       });
 
-      console.debug(`Clearing alarm ${alarm.name}`);
+//       console.debug(`Clearing alarm ${alarm.name}`);
 
-      await chrome.alarms.clear(alarm.name);
+//       await chrome.alarms.clear(alarm.name);
 
-      console.debug(`Alarm ${alarm.name} cleared`);
-    }
-  } else {
-    const [runId, jobId, owner, repository] = alarm.name.split("|");
+//       console.debug(`Alarm ${alarm.name} cleared`);
+//     }
+//   } else {
+//     const [runId, jobId, owner, repository] = alarm.name.split("|");
 
-    const { status, name } = await checkJobStatus(jobId, owner, repository);
+//     const { status, name } = await checkJobStatus(jobId, owner, repository);
 
-    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+//     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
-    if (status === "completed") {
-      chrome.notifications.create(alarm.name, {
-        type: "basic",
-        title: "Job completed",
-        message: `Job ${name} has completed. Click the notification to view the results.`,
-        iconUrl: "images/notification-24.png",
-        requireInteraction: true,
-      });
+//     if (status === "completed") {
+//       chrome.notifications.create(alarm.name, {
+//         type: "basic",
+//         title: "Job completed",
+//         message: `Job ${name} has completed. Click the notification to view the results.`,
+//         iconUrl: "images/notification-24.png",
+//         requireInteraction: true,
+//       });
 
-      console.debug(`Clearing alarm ${alarm.name}`);
+//       console.debug(`Clearing alarm ${alarm.name}`);
 
-      await chrome.alarms.clear(alarm.name);
+//       await chrome.alarms.clear(alarm.name);
 
-      console.debug(`Alarm ${alarm.name} cleared`);
-    }
-  }
-});
+//       console.debug(`Alarm ${alarm.name} cleared`);
+//     }
+//   }
+// });
 
 async function checkActionStatus(runId, owner, repository) {
   const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
