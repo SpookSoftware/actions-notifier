@@ -1,8 +1,8 @@
 {
   "scripts": {
     "test": "bun test",
-    "build": "bun build extension/addNotificationButton.ts --outdir ./extension/dist --target browser --sourcemap",
-    "build:production": "bun build extension/addNotificationButton.ts --outdir ./extension/dist --target browser --minify --drop=console",
+    "build": "bun run build.ts",
+    "build:production": "bun run build.ts --production",
     "dev": "bun ./watcher.js"
   },
   "devDependencies": {
