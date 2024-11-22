@@ -3,7 +3,7 @@
     "test": "bun test",
     "build": "bun ./build.ts",
     "build:production": "bun ./build.ts --production",
-    "dev": "bun ./watcher.js"
+    "dev": "bun ./watcher.ts"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^15.11.6",
