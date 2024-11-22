@@ -14,7 +14,7 @@
     "service_worker": "./dist/background.js",
     "type": "module"
   },
-  "permissions": ["notifications", "tabs", "alarms"],
+  "permissions": ["notifications", "tabs", "alarms", "storage"],
   "action": {
     "default_popup": "popup.html"
   }
