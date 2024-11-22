@@ -19,15 +19,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const encoded = `${runId}|${owner}|${repository}`;
     console.debug(`Creating alarm with name ${encoded}`);
 
-    chrome.alarms.create(encoded, {
-      periodInMinutes: 1,
-    }).then(res => {
-      console.debug(`Alarm ${encoded} created`);
-      sendResponse({ status: "ok" });
-    }).catch(err => {
-      sendResponse({ status: "error", error: err });
-    });
-
+    chrome.alarms
+      .create(encoded, {
+        periodInMinutes: 1,
+      })
+      .then((_res) => {
+        console.debug(`Alarm ${encoded} created`);
+        sendResponse({ status: "ok" });
+      })
+      .catch((err) => {
+        sendResponse({ status: "error", error: err });
+      });
   } else if (request.type === "job" && request.action === "startMonitoring") {
     console.debug(
       `Received request to monitor job ${request.jobId} in action action ${request.runId} for ${request.owner}/${request.repository}`
@@ -38,14 +40,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const encoded = `${runId}|${jobId}|${owner}|${repository}`;
     console.debug(`Creating alarm with name ${encoded}`);
 
-    chrome.alarms.create(encoded, {
-      periodInMinutes: 1,
-    }).then(res => {
-      console.debug(`Alarm ${encoded} created`);
-      sendResponse({ status: "ok" });
-    }).catch(err => {
-      sendResponse({ status: "error", error: err });
-    });
+    chrome.alarms
+      .create(encoded, {
+        periodInMinutes: 1,
+      })
+      .then((_res) => {
+        console.debug(`Alarm ${encoded} created`);
+        sendResponse({ status: "ok" });
+      })
+      .catch((err) => {
+        sendResponse({ status: "error", error: err });
+      });
   }
   // This signals to chrome that the connection will remain open until sendResponse is called.
   return true;
