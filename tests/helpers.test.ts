@@ -3,9 +3,9 @@ import {
   createNotificationButton,
   shouldAddActionNotificationButton,
   createNotificationSVG,
-  getElementsMatchingSelectors,
   extractActionDataFromURL,
-  getElementsWhoseChildrenMatchSelectors,
+  selectorMatches,
+  selectorHasChildren,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -90,46 +90,6 @@ describe("createNotificationSVG", () => {
     );
   });
 });
-describe("getElementsMatchingSelectors", () => {
-  it("returns elements that match any of the selectors", () => {
-    document.body.innerHTML = `
-      <div class="test1"></div>
-      <div class="test2"></div>
-      <div class="test3"></div>
-    `;
-    const elements = document.querySelectorAll("div");
-    const selectors = [".test1", ".test3"];
-    const matchingElements = getElementsMatchingSelectors(elements, selectors);
-    expect(matchingElements.length).toBe(2);
-    expect(matchingElements[0].classList.contains("test1")).toBeTrue();
-    expect(matchingElements[1].classList.contains("test3")).toBeTrue();
-  });
-
-  it("returns an empty array if no elements match the selectors", () => {
-    document.body.innerHTML = `
-      <div class="test1"></div>
-      <div class="test2"></div>
-      <div class="test3"></div>
-    `;
-    const elements = document.querySelectorAll("div");
-    const selectors = [".test4", ".test5"];
-    const matchingElements = getElementsMatchingSelectors(elements, selectors);
-    expect(matchingElements.length).toBe(0);
-  });
-
-  it("returns all elements if all elements match the selectors", () => {
-    document.body.innerHTML = `
-      <div class="test1"></div>
-      <div class="test2"></div>
-      <div class="test3"></div>
-    `;
-    const elements = document.querySelectorAll("div");
-    const selectors = [".test1", ".test2", ".test3"];
-    const matchingElements = getElementsMatchingSelectors(elements, selectors);
-    expect(matchingElements.length).toBe(3);
-  });
-});
-
 describe("extractActionDataFromURL", () => {
   it("extracts owner, repository, and runId from a valid URL", () => {
     const url =
@@ -154,51 +114,37 @@ describe("extractActionDataFromURL", () => {
     expect(() => extractActionDataFromURL(url)).toThrowError("Missing runId");
   });
 });
-describe("getElementsWhoseChildrenMatchSelectors", () => {
-  it("returns elements whose children match any of the selectors", () => {
-    document.body.innerHTML = `
-      <div class="parent1"><span class="child1"></span></div>
-      <div class="parent2"><span class="child2"></span></div>
-      <div class="parent3"><span class="child3"></span></div>
-    `;
-    const elements = document.querySelectorAll("div");
-    const selectors = [".child1", ".child3"];
-    const matchingElements = getElementsWhoseChildrenMatchSelectors(
-      elements,
-      selectors
-    );
-    expect(matchingElements.length).toBe(2);
-    expect(matchingElements[0].classList.contains("parent1")).toBeTrue();
-    expect(matchingElements[1].classList.contains("parent3")).toBeTrue();
+describe("selectorMatches", () => {
+  it("returns true if the item matches the selector", () => {
+    document.body.innerHTML = `<div class="test"></div>`;
+    const item = document.querySelector(".test");
+    if (item) {
+      expect(selectorMatches(".test", item)).toBeTrue();
+    }
   });
 
-  it("returns an empty array if no children match the selectors", () => {
-    document.body.innerHTML = `
-      <div class="parent1"><span class="child1"></span></div>
-      <div class="parent2"><span class="child2"></span></div>
-      <div class="parent3"><span class="child3"></span></div>
-    `;
-    const elements = document.querySelectorAll("div");
-    const selectors = [".child4", ".child5"];
-    const matchingElements = getElementsWhoseChildrenMatchSelectors(
-      elements,
-      selectors
-    );
-    expect(matchingElements.length).toBe(0);
+  it("returns false if the item does not match the selector", () => {
+    document.body.innerHTML = `<div class="test"></div>`;
+    const item = document.querySelector(".test");
+    if (item) {
+      expect(selectorMatches(".nonexistent", item)).toBeFalse();
+    }
+  });
+});
+describe("selectorHasChildren", () => {
+  it("returns true if the item has a child matching the selector", () => {
+    document.body.innerHTML = `<div class="parent"><div class="child"></div></div>`;
+    const item = document.querySelector(".parent");
+    if (item) {
+      expect(selectorHasChildren(".child", item)).toBeTrue();
+    }
   });
 
-  it("returns all elements if all children match the selectors", () => {
-    document.body.innerHTML = `
-      <div class="parent1"><span class="child1"></span></div>
-      <div class="parent2"><span class="child2"></span></div>
-      <div class="parent3"><span class="child3"></span></div>
-    `;
-    const elements = document.querySelectorAll("div");
-    const selectors = [".child1", ".child2", ".child3"];
-    const matchingElements = getElementsWhoseChildrenMatchSelectors(
-      elements,
-      selectors
-    );
-    expect(matchingElements.length).toBe(3);
+  it("returns false if the item does not have a child matching the selector", () => {
+    document.body.innerHTML = `<div class="parent"><div class="child"></div></div>`;
+    const item = document.querySelector(".parent");
+    if (item) {
+      expect(selectorHasChildren(".nonexistent", item)).toBeFalse();
+    }
   });
 });

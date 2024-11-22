@@ -14,7 +14,7 @@ import {
   createNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
-  getElementsWhoseChildrenMatchAtLeastOneSelector,
+  getCurrentlyRunningOrQueuedWorkflowElements,
 } from "./helpers";
 
 // ------------------------- Specific-workflow page tools ----------------------------------------
@@ -160,15 +160,6 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-function getCurrentlyRunningOrQueuedWorkflowElements(
-  divs: NodeListOf<Element>
-) {
-  return getElementsWhoseChildrenMatchAtLeastOneSelector(divs, [
-    CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
-    QUEUED_ATTRIBUTE_SELECTOR,
-  ]);
-}
-
 // is this my "doer" script? It should just call other things, I think.
 function processElementsForAction(url: string) {
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
@@ -218,12 +209,12 @@ function processElementsForAction(url: string) {
             const { status } = response;
             if (status === "ok") {
               svg.style.color = "yellow";
-              svg.classList.remove("color-fg-muted")
-              console.debug("successfully set svg color to yellow")
+              svg.classList.remove("color-fg-muted");
+              console.debug("successfully set svg color to yellow");
             } else {
               svg.style.color = "red";
-              svg.classList.remove("color-fg-muted")
-              console.debug("successfully set svg color to red")
+              svg.classList.remove("color-fg-muted");
+              console.debug("successfully set svg color to red");
             }
           }
         );

@@ -1,3 +1,9 @@
+import partial from "lodash/partial";
+import {
+  CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
+  QUEUED_ATTRIBUTE_SELECTOR,
+} from "./selectors";
+
 export function shouldAddActionNotificationButton(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions
@@ -164,22 +170,25 @@ function addNotificationButton(element, { runId, jobId, owner, repository }) {
   }
 }
 
-export function getElementsMatchingAtLeastOneSelector(
-  elements: NodeListOf<Element>,
-  selectors: string[]
-) {
-  return Array.from(elements).filter((element) => {
-    return selectors.some((selector) => element.matches(selector));
-  });
+export function selectorMatches(selector: string, item: Element) {
+  return item.matches(selector);
 }
 
-export function getElementsWhoseChildrenMatchAtLeastOneSelector(
-  elements: NodeListOf<Element>,
-  selectors: string[]
+export function selectorHasChildren(selector: string, item: Element) {
+  return item.querySelector(selector) !== null;
+}
+
+const isQueued = partial(selectorHasChildren, QUEUED_ATTRIBUTE_SELECTOR);
+const isRunning = partial(
+  selectorHasChildren,
+  CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
+);
+const isQueuedOrRunning = (x: Element): Boolean => isQueued(x) || isRunning(x);
+
+export function getCurrentlyRunningOrQueuedWorkflowElements(
+  divs: NodeListOf<Element>
 ) {
-  return Array.from(elements).filter((element) => {
-    return selectors.some((selector) => element.querySelector(selector));
-  });
+  return [...divs].filter(isQueuedOrRunning);
 }
 
 /**
