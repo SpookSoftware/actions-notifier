@@ -1,4 +1,4 @@
-import { expect, describe, it } from "bun:test";
+import { expect, describe, it, jest } from "bun:test";
 import {
   createNotificationButton,
   shouldAddActionNotificationButton,
@@ -6,6 +6,7 @@ import {
   extractActionDataFromURL,
   selectorMatches,
   selectorHasChildren,
+  createMonitoringHandler,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -146,5 +147,82 @@ describe("selectorHasChildren", () => {
     if (item) {
       expect(selectorHasChildren(".nonexistent", item)).toBeFalse();
     }
+  });
+});
+describe("createMonitoringHandler", () => {
+  it("sends a message to the background script to start monitoring the run", () => {
+    const runId = "123";
+    const owner = "SpookSoftware";
+    const repository = "github-actions-browser-notifications";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    const callback = createMonitoringHandler({ runId, owner, repository, svg });
+
+    const sendMessageMock = jest.fn();
+    global.chrome = {
+      // @ts-ignore
+      runtime: {
+        sendMessage: sendMessageMock,
+      },
+    };
+
+    callback(new MouseEvent("click"));
+
+    expect(sendMessageMock).toHaveBeenCalledWith(
+      {
+        action: "startMonitoring",
+        runId,
+        owner,
+        repository,
+        type: "action",
+      },
+      expect.any(Function)
+    );
+  });
+
+  it("updates the SVG color to yellow if the response status is 'ok'", () => {
+    const runId = "123";
+    const owner = "SpookSoftware";
+    const repository = "github-actions-browser-notifications";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    const callback = createMonitoringHandler({ runId, owner, repository, svg });
+
+    global.chrome = {
+      runtime: {
+        // @ts-ignore
+        sendMessage: (_message, callback) => {
+          callback({ status: "ok" });
+        },
+      },
+    };
+
+    callback(new MouseEvent("click"));
+
+    expect(svg.style.color).toBe("yellow");
+    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
+  });
+
+  it("updates the SVG color to red if the response status is not 'ok'", () => {
+    const runId = "123";
+    const owner = "SpookSoftware";
+    const repository = "github-actions-browser-notifications";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    const callback = createMonitoringHandler({ runId, owner, repository, svg });
+
+    global.chrome = {
+      runtime: {
+        // @ts-ignore
+        sendMessage: (_message, callback) => {
+          callback({ status: "error" });
+        },
+      },
+    };
+
+    callback(new MouseEvent("click"));
+
+    expect(svg.style.color).toBe("red");
+    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
   });
 });

@@ -115,3 +115,48 @@ export function extractActionDataFromURL(url: string) {
   }
   throw Error("Invalid URL: " + url);
 }
+
+/**
+ * Creates a callback function that sends a message to the background script to start monitoring a given run.
+ *
+ * @param runId - The runId of the run to start monitoring.
+ * @param owner - The owner of the repository where the run is located.
+ * @param repository - The repository where the run is located.
+ * @param svg - The SVG element to update the color of based on the response from the background script.
+ * @returns A function that sends a message to the background script to start monitoring the given run.
+ */
+export function createMonitoringHandler({
+  runId,
+  owner,
+  repository,
+  svg,
+}: {
+  runId: string;
+  owner: string;
+  repository: string;
+  svg: SVGElement;
+}) {
+  return (_event: MouseEvent) => {
+    chrome.runtime.sendMessage(
+      {
+        action: "startMonitoring",
+        runId,
+        owner,
+        repository,
+        type: "action",
+      },
+      (response) => {
+        const status = response?.status;
+        if (status) {
+          if (status === "ok") {
+            svg.style.color = "yellow";
+            svg.classList.remove("color-fg-muted");
+          } else {
+            svg.style.color = "red";
+            svg.classList.remove("color-fg-muted");
+          }
+        }
+      }
+    );
+  };
+}
