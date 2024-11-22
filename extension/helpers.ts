@@ -160,3 +160,47 @@ export function createMonitoringHandler({
     );
   };
 }
+
+async function getGithubToken() {
+  const token = await chrome.storage.sync.get("githubToken");
+  return token.githubToken;
+}
+
+export async function checkActionStatus(runId, owner, repository) {
+  const token = await getGithubToken();
+  const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: "application/vnd.github.v3+json",
+    },
+  });
+
+  const data = await response.json();
+
+  console.log(`Queried ${url} and got response ${JSON.stringify(data)}`);
+  return {
+    status: data.status,
+    name: data.name,
+  };
+}
+
+export async function checkJobStatus(jobId, owner, repository) {
+  const token = await getGithubToken();
+  const response = await fetch(
+    `https://api.github.com/repos/${owner}/${repository}/actions/jobs/${jobId}`,
+    {
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  return {
+    status: data.status,
+    name: data.name,
+  };
+}
