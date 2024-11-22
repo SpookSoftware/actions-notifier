@@ -1,8 +1,8 @@
 {
   "scripts": {
     "test": "bun test",
-    "build": "bun run build.ts",
-    "build:production": "bun run build.ts --production",
+    "build": "bun ./build.ts",
+    "build:production": "bun ./build.ts --production",
     "dev": "bun ./watcher.js"
   },
   "devDependencies": {
