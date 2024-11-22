@@ -2,7 +2,10 @@ import type { BuildConfig } from "bun";
 
 (async () => {
   const options: BuildConfig = {
-    entrypoints: ["./extension/addNotificationButton.ts"],
+    entrypoints: [
+      "./extension/addNotificationButton.ts",
+      "./extension/background.ts",
+    ],
     outdir: "./extension/dist",
     target: "browser",
   };

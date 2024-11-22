@@ -1,4 +1,4 @@
-self.addEventListener("activate", (event) => {
+self.addEventListener("activate", (_event) => {
   console.log("I'm active! Whee!");
 
   chrome.alarms.clearAll(() => {
@@ -6,8 +6,25 @@ self.addEventListener("activate", (event) => {
   });
 });
 
+chrome.notifications.onClicked.addListener((notificationId) => {
+  console.log(`Notification ${notificationId} clicked.`);
+  // open a new tab with url notificationId
+  chrome.tabs.create({
+    url: `https://github.com/SpookSoftware/sandbox/actions/runs/${notificationId}`,
+  });
+});
+
 // ASYNC AWAIT NOT SUPPORTED
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "testNotification") {
+    const { runId, owner, repository } = request;
+    chrome.notifications.create(runId, {
+      type: "basic",
+      title: `This is a notification for run ${runId}`,
+      message: "Click this icon to learn more about the run",
+      iconUrl: "images/notification-24.png",
+    });
+  }
   if (request.type === "action" && request.action === "startMonitoring") {
     console.debug(
       `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
@@ -104,40 +121,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 //     }
 //   }
 // });
-
-async function checkActionStatus(runId, owner, repository) {
-  const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `token ${githubToken}`,
-      Accept: "application/vnd.github.v3+json",
-    },
-  });
-
-  const data = await response.json();
-
-  console.log(`Queried ${url} and got response ${JSON.stringify(data)}`);
-  return {
-    status: data.status,
-    name: data.name,
-  };
-}
-
-async function checkJobStatus(jobId, owner, repository) {
-  const response = await fetch(
-    `https://api.github.com/repos/${owner}/${repository}/actions/jobs/${jobId}`,
-    {
-      headers: {
-        Authorization: `token ${githubToken}`,
-        Accept: "application/vnd.github.v3+json",
-      },
-    }
-  );
-
-  const data = await response.json();
-
-  return {
-    status: data.status,
-    name: data.name,
-  };
-}
