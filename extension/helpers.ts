@@ -74,7 +74,7 @@ const isRunning = partial(
   selectorHasChildren,
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
 );
-const isQueuedOrRunning = (x: Element): Boolean => isQueued(x) || isRunning(x);
+export const isQueuedOrRunning = (x: Element): Boolean => isQueued(x) || isRunning(x);
 
 export function getCurrentlyRunningOrQueuedWorkflowElements(
   divs: NodeListOf<Element>

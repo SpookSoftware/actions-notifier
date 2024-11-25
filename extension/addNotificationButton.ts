@@ -6,6 +6,7 @@ import {
   prChecksPageRegex,
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
+  WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
 } from "./selectors";
 import {
   shouldAddActionNotificationButton,
@@ -14,39 +15,8 @@ import {
   extractActionDataFromURL,
   getCurrentlyRunningOrQueuedWorkflowElements,
   createMonitoringHandler,
+  isQueuedOrRunning,
 } from "./helpers";
-
-// ------------------------- Specific-workflow page tools ----------------------------------------
-// -----------------------------------------------------------------------------------------------
-// https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
-
-function isWorkflowRunDOMNode(node) {
-  return (
-    node.id &&
-    node.id.startsWith("check_suite") &&
-    node.querySelector(SUCCESSFUL_ATTRIBUTE_SELECTOR) === null
-  );
-}
-
-// function processSpecificWorkflowPageNodes(mutationsList) {
-//   mutationsList.forEach((mutation) => {
-//     if (mutation.type === "childList" && mutation.addedNodes.length > 0) {
-//       for (const addedNode of mutation.addedNodes) {
-//         if (isWorkflowRunDOMNode(addedNode)) {
-//           console.debug("Added node is workflow run: ", addedNode);
-
-//           console.debug(
-//             "Processing elements because a relevant change was detected in the page"
-//           );
-
-//           processElementsForAction(window.location.href);
-//         }
-//       }
-//     }
-//   });
-// }
-// -----------------------------------------------------------------------------------------------
-// -----------------------------------------------------------------------------------------------
 
 // is this my "doer" script? It should just call other things, I think.
 function processElementsForAction(url: string) {
@@ -165,9 +135,46 @@ const PR_PAGE_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/[^/]+\/?$/;
 //   }
 // });
 
+// if (window) {
+//   switch(window.location.href) {
+
+//   }
+// }
 if (shouldAddActionNotificationButton(window.location.href)) {
   console.debug("Determined we should process elements for action");
   processElementsForAction(window.location.href);
+
+  // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function
+  // Would simply process the element for the action on the one element instead of everything.
+  const workflowRunsContainer = document.querySelector(
+    WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+  )!;
+
+  const observerConfig = { childList: true, subtree: true };
+
+  const watchForNewWorkflowRuns = function (mutationsList) {
+    for (const mutation of mutationsList) {
+      if (mutation.type === "childList") {
+        for (const addedNode of mutation.addedNodes) {
+          if (addedNode.nodeType === Node.ELEMENT_NODE) {
+            console.group();
+            console.debug("A new element was added:", addedNode);
+            if (isQueuedOrRunning(addedNode as Element)) {
+              console.debug("It's a workflow run dom node");
+              processElementsForAction(window.location.href);
+            } else {
+              console.debug("It's not a workflow run dom node");
+            }
+            console.groupEnd();
+          }
+        }
+      }
+    }
+  };
+
+  const workflowObserver = new MutationObserver(watchForNewWorkflowRuns);
+  workflowObserver.observe(workflowRunsContainer, observerConfig);
+  // processAllElements();
   // const workflowObserver = new MutationObserver(processNewNodes);
   // workflowObserver.observe(workflowRunsContainer, config);
 }
