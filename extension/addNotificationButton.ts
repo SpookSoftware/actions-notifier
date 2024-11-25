@@ -15,7 +15,7 @@ import {
   extractActionDataFromURL,
   getCurrentlyRunningOrQueuedWorkflowElements,
   createMonitoringHandler,
-  isQueuedOrRunning,
+  createWorkflowRunCallback,
 } from "./helpers";
 
 // is this my "doer" script? It should just call other things, I think.
@@ -140,8 +140,8 @@ const PR_PAGE_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/[^/]+\/?$/;
 
 //   }
 // }
+const observerConfig = { childList: true, subtree: true };
 if (shouldAddActionNotificationButton(window.location.href)) {
-  console.debug("Determined we should process elements for action");
   processElementsForAction(window.location.href);
 
   // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function
@@ -150,33 +150,10 @@ if (shouldAddActionNotificationButton(window.location.href)) {
     WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
   )!;
 
-  const observerConfig = { childList: true, subtree: true };
-
-  const watchForNewWorkflowRuns = function (mutationsList) {
-    for (const mutation of mutationsList) {
-      if (mutation.type === "childList") {
-        for (const addedNode of mutation.addedNodes) {
-          if (addedNode.nodeType === Node.ELEMENT_NODE) {
-            console.group();
-            console.debug("A new element was added:", addedNode);
-            if (isQueuedOrRunning(addedNode as Element)) {
-              console.debug("It's a workflow run dom node");
-              processElementsForAction(window.location.href);
-            } else {
-              console.debug("It's not a workflow run dom node");
-            }
-            console.groupEnd();
-          }
-        }
-      }
-    }
-  };
-
-  const workflowObserver = new MutationObserver(watchForNewWorkflowRuns);
+  // Is there a way to group this into its own function or whatever?
+  const workflowRunCallback = createWorkflowRunCallback(() => processElementsForAction(window.location.href))
+  const workflowObserver = new MutationObserver(workflowRunCallback);
   workflowObserver.observe(workflowRunsContainer, observerConfig);
-  // processAllElements();
-  // const workflowObserver = new MutationObserver(processNewNodes);
-  // workflowObserver.observe(workflowRunsContainer, config);
 }
 // if (shouldAddJobNotificationButton(window.location.href)) {
 //   console.debug("Determined we should process elements for job");

@@ -204,3 +204,25 @@ export async function checkJobStatus(jobId, owner, repository) {
     name: data.name,
   };
 }
+
+export const createWorkflowRunCallback = (callback: Function) => {
+  return function (mutationsList: MutationRecord[]) {
+    for (const mutation of mutationsList) {
+      if (mutation.type === "childList") {
+        for (const addedNode of mutation.addedNodes) {
+          if (addedNode.nodeType === Node.ELEMENT_NODE) {
+            console.group();
+            console.debug("A new element was added:", addedNode);
+            if (isQueuedOrRunning(addedNode as Element)) {
+              console.debug("It's a workflow run dom node");
+              callback();
+            } else {
+              console.debug("It's not a workflow run dom node");
+            }
+            console.groupEnd();
+          }
+        }
+      }
+    }
+  }
+}
