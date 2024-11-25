@@ -20,6 +20,7 @@ import {
 
 // is this my "doer" script? It should just call other things, I think.
 function processElementsForAction(url: string) {
+  // todo: move these checks outside the function!
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
   const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
   console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`);
@@ -81,10 +82,6 @@ function processElementsForAction(url: string) {
   if (isPrChecksPage) {
   }
 }
-
-const PR_PAGE_CONTAINER_SELECTOR = "div.branch-action-body";
-const PR_PAGE_JOB_SELECTOR = "div.merge-status-item";
-const PR_PAGE_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/[^/]+\/?$/;
 
 // function processElementsForJob(url) {
 //   const isPrPage = PR_PAGE_REGEX.test(url);

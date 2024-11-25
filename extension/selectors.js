@@ -7,7 +7,7 @@ export const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
 export const SUCCESSFUL_ATTRIBUTE_SELECTOR =
   "svg[aria-label*='completed successfully']";
 
-// This is ripped from the DOM "copy selector" option and will surely need to be refactored
+// This is ripped from the DOM "copy selector" option
 export const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
 
@@ -24,3 +24,8 @@ export const prChecksPageRegex =
 
 export const PR_CHECKS_CONTAINER_SELECTOR = "aside";
 export const PR_CHECKS_ACTION_LINK_SELECTOR = ".checks-list-item-name a";
+
+// Untested
+export const PR_PAGE_CONTAINER_SELECTOR = "div.branch-action-body";
+export const PR_PAGE_JOB_SELECTOR = "div.merge-status-item";
+export const PR_PAGE_REGEX = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/[^/]+\/?$/;
