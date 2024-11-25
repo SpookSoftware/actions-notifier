@@ -8,64 +8,81 @@ self.addEventListener("activate", (_event) => {
   });
 });
 
-// ASYNC AWAIT NOT SUPPORTED
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "testNotification") {
-    const { runId, owner, repository } = request;
-    chrome.notifications.create(runId, {
-      type: "basic",
-      title: `This is a notification for run ${runId}`,
-      message: "Click this icon to learn more about the run",
-      iconUrl: "images/notification-24.png",
-    });
-  }
-  if (request.type === "action" && request.action === "startMonitoring") {
-    console.debug(
-      `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
-    );
+function createNotificationForId(id: string) {
+  chrome.notifications.create(id, {
+    type: "basic",
+    title: `This is a notification for run ${id}`,
+    message: "Click this icon to learn more about the run",
+    iconUrl: "images/notification-24.png",
+  });
+}
 
-    const { runId, owner, repository } = request;
+function createAlarmForId(id: string, lengthInMinutes: number) {
+  return chrome.alarms.create(id, {
+    periodInMinutes: lengthInMinutes,
+  });
+}
 
-    // Let's be fancy so we don't have to use any storage
-    const encoded = `${runId}|${owner}|${repository}`;
-    console.debug(`Creating alarm with name ${encoded}`);
+function createOnMessageCallback({
+  alarmCreatorFn,
+}: {
+  alarmCreatorFn: (id: string, lengthInMinutes: number) => Promise<void>;
+}) {
+  return (
+    request: any,
+    _sender: chrome.runtime.MessageSender,
+    sendResponse: (response?: any) => void
+  ) => {
+    if (request.type === "action" && request.action === "startMonitoring") {
+      console.debug(
+        `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
+      );
 
-    chrome.alarms
-      .create(encoded, {
-        periodInMinutes: 1,
-      })
-      .then((_res) => {
-        console.debug(`Alarm ${encoded} created`);
-        sendResponse({ status: "ok" });
-      })
-      .catch((err) => {
-        sendResponse({ status: "error", error: err });
-      });
-  } else if (request.type === "job" && request.action === "startMonitoring") {
-    console.debug(
-      `Received request to monitor job ${request.jobId} in action action ${request.runId} for ${request.owner}/${request.repository}`
-    );
+      // This will be a function
+      const { runId, owner, repository } = request;
 
-    const { runId, jobId, owner, repository } = request;
+      // Let's be fancy so we don't have to use any storage
+      // This will be a function too
+      const encoded = `${runId}|${owner}|${repository}`;
 
-    const encoded = `${runId}|${jobId}|${owner}|${repository}`;
-    console.debug(`Creating alarm with name ${encoded}`);
+      alarmCreatorFn(encoded, 1)
+        .then((_res) => {
+          console.debug(`Alarm ${encoded} created`);
+          sendResponse({ status: "ok" });
+        })
+        .catch((err) => {
+          sendResponse({ status: "error", error: err });
+        });
+    } else if (request.type === "job" && request.action === "startMonitoring") {
+      console.debug(
+        `Received request to monitor job ${request.jobId} in action action ${request.runId} for ${request.owner}/${request.repository}`
+      );
 
-    chrome.alarms
-      .create(encoded, {
-        periodInMinutes: 1,
-      })
-      .then((_res) => {
-        console.debug(`Alarm ${encoded} created`);
-        sendResponse({ status: "ok" });
-      })
-      .catch((err) => {
-        sendResponse({ status: "error", error: err });
-      });
-  }
-  // This signals to chrome that the connection will remain open until sendResponse is called.
-  return true;
+      const { runId, jobId, owner, repository } = request;
+
+      const encoded = `${runId}|${jobId}|${owner}|${repository}`;
+      console.debug(`Creating alarm with name ${encoded}`);
+
+      alarmCreatorFn(encoded, 1)
+        .then((_res) => {
+          console.debug(`Alarm ${encoded} created`);
+          sendResponse({ status: "ok" });
+        })
+        .catch((err) => {
+          sendResponse({ status: "error", error: err });
+        });
+    }
+    // This signals to chrome that the connection will remain open until sendResponse is called.
+    return true;
+  };
+}
+
+const onMessageCallback = createOnMessageCallback({
+  alarmCreatorFn: createAlarmForId,
 });
+
+// ASYNC AWAIT NOT SUPPORTED
+chrome.runtime.onMessage.addListener(onMessageCallback);
 
 // I think this is allowed to be async?
 chrome.alarms.onAlarm.addListener(async (alarm) => {
