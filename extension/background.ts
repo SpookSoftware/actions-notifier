@@ -1,16 +1,10 @@
+import { checkActionStatus, checkJobStatus } from "./helpers";
+
 self.addEventListener("activate", (_event) => {
   console.log("I'm active! Whee!");
 
   chrome.alarms.clearAll(() => {
     console.log("Cleared all old alarms.");
-  });
-});
-
-chrome.notifications.onClicked.addListener((notificationId) => {
-  console.log(`Notification ${notificationId} clicked.`);
-  // open a new tab with url notificationId
-  chrome.tabs.create({
-    url: `https://github.com/SpookSoftware/sandbox/actions/runs/${notificationId}`,
   });
 });
 
@@ -73,51 +67,61 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
-// chrome.alarms.onAlarm.addListener(async (alarm) => {
-//   const isActionRun = alarm.name.split("|").length === 3;
-//   if (isActionRun) {
-//     const [runId, owner, repository] = alarm.name.split("|");
+// I think this is allowed to be async?
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+  const isActionRun = alarm.name.split("|").length === 3;
+  if (isActionRun) {
+    const [runId, owner, repository] = alarm.name.split("|");
 
-//     const { status, name } = await checkActionStatus(runId, owner, repository);
+    const { status, name } = await checkActionStatus(runId, owner, repository);
 
-//     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
-//     if (status === "completed") {
-//       chrome.notifications.create(alarm.name, {
-//         type: "basic",
-//         title: "Action Completed",
-//         message: `Action ${name} has completed. Click the notification to view the results.`,
-//         iconUrl: "images/notification-24.png",
-//         requireInteraction: true,
-//       });
+    if (status === "completed") {
+      chrome.notifications.create(alarm.name, {
+        type: "basic",
+        title: "Action Completed",
+        message: `Action ${name} has completed. Click the notification to view the results.`,
+        iconUrl: "images/notification-24.png",
+        requireInteraction: true,
+      });
 
-//       console.debug(`Clearing alarm ${alarm.name}`);
+      console.debug(`Clearing alarm ${alarm.name}`);
 
-//       await chrome.alarms.clear(alarm.name);
+      await chrome.alarms.clear(alarm.name);
 
-//       console.debug(`Alarm ${alarm.name} cleared`);
-//     }
-//   } else {
-//     const [runId, jobId, owner, repository] = alarm.name.split("|");
+      console.debug(`Alarm ${alarm.name} cleared`);
+    }
+  } else {
+    const [runId, jobId, owner, repository] = alarm.name.split("|");
 
-//     const { status, name } = await checkJobStatus(jobId, owner, repository);
+    const { status, name } = await checkJobStatus(jobId, owner, repository);
 
-//     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
-//     if (status === "completed") {
-//       chrome.notifications.create(alarm.name, {
-//         type: "basic",
-//         title: "Job completed",
-//         message: `Job ${name} has completed. Click the notification to view the results.`,
-//         iconUrl: "images/notification-24.png",
-//         requireInteraction: true,
-//       });
+    if (status === "completed") {
+      chrome.notifications.create(alarm.name, {
+        type: "basic",
+        title: "Job completed",
+        message: `Job ${name} has completed. Click the notification to view the results.`,
+        iconUrl: "images/notification-24.png",
+        requireInteraction: true,
+      });
 
-//       console.debug(`Clearing alarm ${alarm.name}`);
+      console.debug(`Clearing alarm ${alarm.name}`);
 
-//       await chrome.alarms.clear(alarm.name);
+      await chrome.alarms.clear(alarm.name);
 
-//       console.debug(`Alarm ${alarm.name} cleared`);
-//     }
-//   }
-// });
+      console.debug(`Alarm ${alarm.name} cleared`);
+    }
+  }
+});
+
+// for testing
+chrome.notifications.onClicked.addListener((notificationId) => {
+  console.log(`Notification ${notificationId} clicked.`);
+  // open a new tab with url notificationId
+  chrome.tabs.create({
+    url: `https://github.com/SpookSoftware/sandbox/actions/runs/${notificationId}`,
+  });
+});
