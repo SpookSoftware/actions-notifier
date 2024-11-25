@@ -161,13 +161,18 @@ export function createMonitoringHandler({
   };
 }
 
-async function getGithubToken() {
+async function assertGithubToken() {
   const token = await chrome.storage.sync.get("githubToken");
-  return token.githubToken;
+
+  if (!token) {
+    throw Error("Expected Github token to be available")
+  }
+
+  return token.githubToken
 }
 
 export async function checkActionStatus(runId, owner, repository) {
-  const token = await getGithubToken();
+  const token = await assertGithubToken();
   const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
   const response = await fetch(url, {
     headers: {
@@ -186,7 +191,7 @@ export async function checkActionStatus(runId, owner, repository) {
 }
 
 export async function checkJobStatus(jobId, owner, repository) {
-  const token = await getGithubToken();
+  const token = await assertGithubToken();
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repository}/actions/jobs/${jobId}`,
     {
