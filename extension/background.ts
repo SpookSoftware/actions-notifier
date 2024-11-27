@@ -1,5 +1,7 @@
 import { checkActionStatus, checkJobStatus } from "./helpers";
 
+import type { MonitorRequest } from "../types";
+
 self.addEventListener("activate", (_event) => {
   console.log("I'm active! Whee!");
 
@@ -29,11 +31,11 @@ function createOnMessageCallback({
   alarmCreatorFn: (id: string, lengthInMinutes: number) => Promise<void>;
 }) {
   return (
-    request: any,
+    request: MonitorRequest,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
   ) => {
-    if (request.type === "action" && request.action === "startMonitoring") {
+    if (request.type === "action") {
       console.debug(
         `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
       );
@@ -53,7 +55,7 @@ function createOnMessageCallback({
         .catch((err) => {
           sendResponse({ status: "error", error: err });
         });
-    } else if (request.type === "job" && request.action === "startMonitoring") {
+    } else if (request.type === "job") {
       console.debug(
         `Received request to monitor job ${request.jobId} in action action ${request.runId} for ${request.owner}/${request.repository}`
       );

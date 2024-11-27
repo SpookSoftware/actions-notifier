@@ -148,7 +148,9 @@ if (shouldAddActionNotificationButton(window.location.href)) {
   )!;
 
   // Is there a way to group this into its own function or whatever?
-  const workflowRunCallback = createWorkflowRunCallback(() => processElementsForAction(window.location.href))
+  const workflowRunCallback = createWorkflowRunCallback(() =>
+    processElementsForAction(window.location.href)
+  );
   const workflowObserver = new MutationObserver(workflowRunCallback);
   workflowObserver.observe(workflowRunsContainer, observerConfig);
 }

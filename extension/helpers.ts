@@ -3,6 +3,7 @@ import {
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
 } from "./selectors";
+import { MonitorRequest } from "../types";
 
 export function shouldAddActionNotificationButton(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
@@ -74,7 +75,8 @@ const isRunning = partial(
   selectorHasChildren,
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
 );
-export const isQueuedOrRunning = (x: Element): Boolean => isQueued(x) || isRunning(x);
+export const isQueuedOrRunning = (x: Element): Boolean =>
+  isQueued(x) || isRunning(x);
 
 export function getCurrentlyRunningOrQueuedWorkflowElements(
   divs: NodeListOf<Element>
@@ -118,11 +120,6 @@ export function extractActionDataFromURL(url: string) {
 
 /**
  * Creates a callback function that sends a message to the background script to start monitoring a given run.
- *
- * @param runId - The runId of the run to start monitoring.
- * @param owner - The owner of the repository where the run is located.
- * @param repository - The repository where the run is located.
- * @param svg - The SVG element to update the color of based on the response from the background script.
  * @returns A function that sends a message to the background script to start monitoring the given run.
  */
 export function createMonitoringHandler({
@@ -137,27 +134,24 @@ export function createMonitoringHandler({
   svg: SVGElement;
 }) {
   return (_event: MouseEvent) => {
-    chrome.runtime.sendMessage(
-      {
-        action: "startMonitoring",
-        runId,
-        owner,
-        repository,
-        type: "action",
-      },
-      (response) => {
-        const status = response?.status;
-        if (status) {
-          if (status === "ok") {
-            svg.style.color = "yellow";
-            svg.classList.remove("color-fg-muted");
-          } else {
-            svg.style.color = "red";
-            svg.classList.remove("color-fg-muted");
-          }
+    const message: MonitorRequest = {
+      runId,
+      owner,
+      repository,
+      type: "action",
+    };
+    chrome.runtime.sendMessage(message, (response) => {
+      const status = response?.status;
+      if (status) {
+        if (status === "ok") {
+          svg.style.color = "yellow";
+          svg.classList.remove("color-fg-muted");
+        } else {
+          svg.style.color = "red";
+          svg.classList.remove("color-fg-muted");
         }
       }
-    );
+    });
   };
 }
 
@@ -165,10 +159,10 @@ async function assertGithubToken() {
   const token = await chrome.storage.sync.get("githubToken");
 
   if (!token) {
-    throw Error("Expected Github token to be available")
+    throw Error("Expected Github token to be available");
   }
 
-  return token.githubToken
+  return token.githubToken;
 }
 
 export async function checkActionStatus(runId, owner, repository) {
@@ -183,7 +177,6 @@ export async function checkActionStatus(runId, owner, repository) {
 
   const data = await response.json();
 
-  console.log(`Queried ${url} and got response ${JSON.stringify(data)}`);
   return {
     status: data.status,
     name: data.name,
@@ -229,5 +222,5 @@ export const createWorkflowRunCallback = (callback: Function) => {
         }
       }
     }
-  }
-}
+  };
+};
