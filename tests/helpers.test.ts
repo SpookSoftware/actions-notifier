@@ -7,8 +7,12 @@ import {
   selectorMatches,
   selectorHasChildren,
   createMonitoringHandler,
+  encodeRequest,
+  parseRequest,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
+
+import type { MonitorActionRequest, MonitorJobRequest } from "../types";
 
 // Without this, the tests will fail because the extension uses the DOM API
 GlobalRegistrator.register();
@@ -224,5 +228,85 @@ describe("createMonitoringHandler", () => {
 
     expect(svg.style.color).toBe("red");
     expect(svg.classList.contains("color-fg-muted")).toBeFalse();
+  });
+});
+describe("parseRequest", () => {
+  it("parses an action request correctly", () => {
+    const request: MonitorActionRequest = {
+      type: "action",
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    };
+    const result = parseRequest(request);
+    expect(result).toEqual({
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    });
+  });
+
+  it("parses a job request correctly", () => {
+    const request: MonitorJobRequest = {
+      type: "job",
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    };
+    const result = parseRequest(request);
+    expect(result).toEqual({
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    });
+  });
+
+  it("throws an error if the request format is not recognized", () => {
+    const request = {
+      type: "unknown",
+    };
+    expect(() => parseRequest(request as any)).toThrow(
+      "Request was in a format not recognized"
+    );
+  });
+});
+
+describe("encodeRequest", () => {
+  it("encodes an action request correctly", () => {
+    const request: MonitorActionRequest = {
+      type: "action",
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    };
+    const result = encodeRequest(request);
+    expect(result).toEqual(
+      "123|SpookSoftware|github-actions-browser-notifications"
+    );
+  });
+
+  it("encodes a job request correctly", () => {
+    const request: MonitorJobRequest = {
+      type: "job",
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    };
+    const result = encodeRequest(request);
+    expect(result).toEqual(
+      "123|456|SpookSoftware|github-actions-browser-notifications"
+    );
+  });
+
+  it("throws an error if the request format is not recognized", () => {
+    const request = {
+      type: "unknown",
+    };
+    expect(() => encodeRequest(request as any)).toThrow(
+      "Request was in a format not recognized"
+    );
   });
 });

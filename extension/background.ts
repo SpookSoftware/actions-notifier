@@ -1,4 +1,4 @@
-import { checkActionStatus, checkJobStatus } from "./helpers";
+import { checkActionStatus, checkJobStatus, encodeRequest } from "./helpers";
 
 import type { MonitorRequest } from "../types";
 
@@ -35,45 +35,18 @@ function createOnMessageCallback({
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
   ) => {
-    if (request.type === "action") {
-      console.debug(
-        `Received request to monitor action ${request.runId} for ${request.owner}/${request.repository}`
-      );
+    const encoded = encodeRequest(request);
 
-      // This will be a function
-      const { runId, owner, repository } = request;
+    console.debug(`Received request to monitor ${encoded}`);
 
-      // Let's be fancy so we don't have to use any storage
-      // This will be a function too
-      const encoded = `${runId}|${owner}|${repository}`;
-
-      alarmCreatorFn(encoded, 1)
-        .then((_res) => {
-          console.debug(`Alarm ${encoded} created`);
-          sendResponse({ status: "ok" });
-        })
-        .catch((err) => {
-          sendResponse({ status: "error", error: err });
-        });
-    } else if (request.type === "job") {
-      console.debug(
-        `Received request to monitor job ${request.jobId} in action action ${request.runId} for ${request.owner}/${request.repository}`
-      );
-
-      const { runId, jobId, owner, repository } = request;
-
-      const encoded = `${runId}|${jobId}|${owner}|${repository}`;
-      console.debug(`Creating alarm with name ${encoded}`);
-
-      alarmCreatorFn(encoded, 1)
-        .then((_res) => {
-          console.debug(`Alarm ${encoded} created`);
-          sendResponse({ status: "ok" });
-        })
-        .catch((err) => {
-          sendResponse({ status: "error", error: err });
-        });
-    }
+    alarmCreatorFn(encoded, 1)
+      .then((_res) => {
+        console.debug(`Alarm ${encoded} created`);
+        sendResponse({ status: "ok" });
+      })
+      .catch((err) => {
+        sendResponse({ status: "error", error: err });
+      });
     // This signals to chrome that the connection will remain open until sendResponse is called.
     return true;
   };

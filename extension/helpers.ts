@@ -224,3 +224,46 @@ export const createWorkflowRunCallback = (callback: Function) => {
     }
   };
 };
+
+export function parseRequest(request: MonitorRequest) {
+  try {
+    if (request.type === "action") {
+      const { runId, owner, repository } = request;
+      return {
+        runId,
+        owner,
+        repository,
+      };
+    } else if (request.type === "job") {
+      const { runId, jobId, owner, repository } = request;
+      return {
+        runId,
+        jobId,
+        owner,
+        repository,
+      };
+    }
+  } catch (error) {
+    throw Error(
+      `Error parsing request: ${error.message}. It's likely that one of runId, jobId, owner, or repository is missing.`
+    );
+  }
+  throw Error(
+    `Request was in a format not recognized: ${JSON.stringify(request)}`
+  );
+}
+
+export function encodeRequest(
+  request: MonitorRequest
+): `${string}|${string}|${string}` | `${string}|${string}|${string}|${string}` {
+  if (request.type === "action") {
+    const { runId, owner, repository } = parseRequest(request);
+    return `${runId}|${owner}|${repository}`;
+  } else if (request.type === "job") {
+    const { runId, jobId, owner, repository } = parseRequest(request);
+    return `${runId}|${jobId}|${owner}|${repository}`;
+  }
+  throw Error(
+    `Request was in a format not recognized: ${JSON.stringify(request)}`
+  );
+}
