@@ -1,4 +1,4 @@
-import { checkActionStatus, checkJobStatus, encodeRequest } from "./helpers";
+import { createOnAlarmCallback, encodeRequest } from "./helpers";
 
 import type { MonitorRequest } from "../types";
 
@@ -9,15 +9,6 @@ self.addEventListener("activate", (_event) => {
     console.log("Cleared all old alarms.");
   });
 });
-
-function createNotificationForId(id: string) {
-  chrome.notifications.create(id, {
-    type: "basic",
-    title: `This is a notification for run ${id}`,
-    message: "Click this icon to learn more about the run",
-    iconUrl: "images/notification-24.png",
-  });
-}
 
 function createAlarmForId(id: string, lengthInMinutes: number) {
   return chrome.alarms.create(id, {
@@ -39,7 +30,7 @@ function createOnMessageCallback({
 
     console.debug(`Received request to monitor ${encoded}`);
 
-    alarmCreatorFn(encoded, 1)
+    alarmCreatorFn(encoded, 0.1)
       .then((_res) => {
         console.debug(`Alarm ${encoded} created`);
         sendResponse({ status: "ok" });
@@ -59,55 +50,24 @@ const onMessageCallback = createOnMessageCallback({
 // ASYNC AWAIT NOT SUPPORTED
 chrome.runtime.onMessage.addListener(onMessageCallback);
 
-// I think this is allowed to be async?
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  const isActionRun = alarm.name.split("|").length === 3;
-  if (isActionRun) {
-    const [runId, owner, repository] = alarm.name.split("|");
+const onAlarmCallback = createOnAlarmCallback(
+  async (alarm: chrome.alarms.Alarm, taskName: string) => {
+    chrome.notifications.create(alarm.name, {
+      type: "basic",
+      title: "Job completed",
+      message: `Item ${taskName} has completed. Click the notification to view the results.`,
+      iconUrl:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
+    });
+    console.debug(`Clearing alarm ${alarm.name}`);
 
-    const { status, name } = await checkActionStatus(runId, owner, repository);
+    await chrome.alarms.clear(alarm.name);
 
-    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
-
-    if (status === "completed") {
-      chrome.notifications.create(alarm.name, {
-        type: "basic",
-        title: "Action Completed",
-        message: `Action ${name} has completed. Click the notification to view the results.`,
-        iconUrl: "images/notification-24.png",
-        requireInteraction: true,
-      });
-
-      console.debug(`Clearing alarm ${alarm.name}`);
-
-      await chrome.alarms.clear(alarm.name);
-
-      console.debug(`Alarm ${alarm.name} cleared`);
-    }
-  } else {
-    const [runId, jobId, owner, repository] = alarm.name.split("|");
-
-    const { status, name } = await checkJobStatus(jobId, owner, repository);
-
-    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
-
-    if (status === "completed") {
-      chrome.notifications.create(alarm.name, {
-        type: "basic",
-        title: "Job completed",
-        message: `Job ${name} has completed. Click the notification to view the results.`,
-        iconUrl: "images/notification-24.png",
-        requireInteraction: true,
-      });
-
-      console.debug(`Clearing alarm ${alarm.name}`);
-
-      await chrome.alarms.clear(alarm.name);
-
-      console.debug(`Alarm ${alarm.name} cleared`);
-    }
+    console.debug(`Alarm ${alarm.name} cleared`);
   }
-});
+);
+
+chrome.alarms.onAlarm.addListener(onAlarmCallback);
 
 // for testing
 chrome.notifications.onClicked.addListener((notificationId) => {

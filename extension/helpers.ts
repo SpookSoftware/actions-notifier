@@ -165,7 +165,15 @@ async function assertGithubToken() {
   return token.githubToken;
 }
 
-export async function checkActionStatus(runId, owner, repository) {
+export async function checkStatus({ runId, owner, repository, jobId }) {
+  if (jobId) {
+    return await checkJobStatus({ jobId, owner, repository });
+  } else {
+    return await checkActionStatus({ runId, owner, repository });
+  }
+}
+
+export async function checkActionStatus({ runId, owner, repository }) {
   const token = await assertGithubToken();
   const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
   const response = await fetch(url, {
@@ -183,7 +191,7 @@ export async function checkActionStatus(runId, owner, repository) {
   };
 }
 
-export async function checkJobStatus(jobId, owner, repository) {
+export async function checkJobStatus({ jobId, owner, repository }) {
   const token = await assertGithubToken();
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repository}/actions/jobs/${jobId}`,
@@ -203,19 +211,19 @@ export async function checkJobStatus(jobId, owner, repository) {
   };
 }
 
-export const createWorkflowRunCallback = (callback: Function) => {
+export const createWorkflowRunCallback = (onObservationChange: Function) => {
   return function (mutationsList: MutationRecord[]) {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
         for (const addedNode of mutation.addedNodes) {
           if (addedNode.nodeType === Node.ELEMENT_NODE) {
-            console.group();
+            console.group("workflowRun");
             console.debug("A new element was added:", addedNode);
             if (isQueuedOrRunning(addedNode as Element)) {
-              console.debug("It's a workflow run dom node");
-              callback();
+              console.debug("It's a workflow run DOM node");
+              onObservationChange();
             } else {
-              console.debug("It's not a workflow run dom node");
+              console.debug("It's not a workflow run DOM node");
             }
             console.groupEnd();
           }
@@ -266,4 +274,51 @@ export function encodeRequest(
   throw Error(
     `Request was in a format not recognized: ${JSON.stringify(request)}`
   );
+}
+
+type EncodedName = ReturnType<typeof encodeRequest>;
+
+export function decode(name: EncodedName) {
+  if (name.split("|").length === 3) {
+    const [runId, owner, repository] = name.split("|");
+    return { runId, owner, repository };
+  } else {
+    const [runId, jobId, owner, repository] = name.split("|");
+    return { runId, jobId, owner, repository };
+  }
+}
+
+const GENERATE_TOKEN_URL =
+  "https://github.com/settings/tokens/new?description=Github%20Browser%20Notifications&scopes=repo";
+
+// Must be dispatcher because it is an action! Logicless!
+export function createOnAlarmCallback(
+  whenStatusIsCompleteCallback: (
+    alarm: chrome.alarms.Alarm,
+    taskName: string
+  ) => Promise<void>
+) {
+  return async (alarm: chrome.alarms.Alarm) => {
+    if (alarm.name.split("|").length === 0) {
+      throw Error("Unexpected alarm name format: " + alarm.name);
+    }
+    const decoded = decode(alarm.name as EncodedName);
+    const runId = decoded.runId;
+    const owner = decoded.owner;
+    const repository = decoded.repository;
+    const jobId = decoded.jobId;
+
+    const { status, name: taskName } = await checkStatus({
+      runId,
+      owner,
+      repository,
+      jobId,
+    });
+
+    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+
+    if (status === "completed") {
+      whenStatusIsCompleteCallback(alarm, taskName);
+    }
+  };
 }
