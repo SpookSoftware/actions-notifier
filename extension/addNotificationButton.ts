@@ -19,57 +19,44 @@ import {
   magicallyInsertButtonInRightPlace,
 } from "./helpers";
 
-function processElementsForAction(url: string) {
-  // todo: move these checks outside the function!
-  const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
-  const isAllWorkflowsPage = allWorkflowsPageRegex.test(url);
-  console.debug(`isSpecificWorkflowPage: ${isSpecificWorkflowPage}`);
-  console.debug(`isAllWorkflowsPage: ${isAllWorkflowsPage}`);
+function processElementsForWorkflowRunPages() {
+  const workflowRunElements = document.querySelectorAll(
+    WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+  );
 
-  if (isSpecificWorkflowPage || isAllWorkflowsPage) {
-    const workflowRunElements = document.querySelectorAll(
-      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+  const currentlyRunningOrQueuedElements =
+    getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
+
+  for (const element of currentlyRunningOrQueuedElements) {
+    const link = element.querySelector("a");
+
+    console.assert(
+      link,
+      "Expected link to exist on currently running or queued element"
     );
-
-    const currentlyRunningOrQueuedElements =
-      getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
-
-    for (const element of currentlyRunningOrQueuedElements) {
-      const link = element.querySelector("a");
-
-      console.assert(
-        link,
-        "Expected link to exist on currently running or queued element"
-      );
-      if (!link) {
-        continue;
-      }
-
-      const { owner, repository, runId } = extractActionDataFromURL(link.href);
-
-      const button = createNotificationButton({ runId, owner, repository });
-      const svg = createNotificationSVG();
-
-      button.appendChild(svg);
-
-      const startMonitoring = createMonitoringHandler({
-        runId,
-        owner,
-        repository,
-        svg,
-      });
-      button.onclick = startMonitoring;
-
-      magicallyInsertButtonInRightPlace({
-        button,
-        workflowRunElement: element,
-      });
+    if (!link) {
+      continue;
     }
-  }
 
-  const isPrChecksPage = prChecksPageRegex.test(url);
-  console.debug(`isPrChecksPage: ${isPrChecksPage}`);
-  if (isPrChecksPage) {
+    const { owner, repository, runId } = extractActionDataFromURL(link.href);
+
+    const button = createNotificationButton({ runId, owner, repository });
+    const svg = createNotificationSVG();
+
+    button.appendChild(svg);
+
+    const startMonitoring = createMonitoringHandler({
+      runId,
+      owner,
+      repository,
+      svg,
+    });
+    button.onclick = startMonitoring;
+
+    magicallyInsertButtonInRightPlace({
+      button,
+      workflowRunElement: element,
+    });
   }
 }
 
@@ -129,7 +116,7 @@ function processElementsForAction(url: string) {
 // }
 const observerConfig = { childList: true, subtree: true };
 if (shouldAddActionNotificationButton(window.location.href)) {
-  processElementsForAction(window.location.href);
+  processElementsForWorkflowRunPages();
 
   // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function
   // Would simply process the element for the action on the one element instead of everything.
@@ -139,7 +126,7 @@ if (shouldAddActionNotificationButton(window.location.href)) {
 
   // Is there a way to group this into its own function or whatever?
   const workflowRunCallback = createWorkflowRunCallback(() =>
-    processElementsForAction(window.location.href)
+    processElementsForWorkflowRunPages()
   );
   const workflowObserver = new MutationObserver(workflowRunCallback);
   workflowObserver.observe(workflowRunsContainer, observerConfig);
