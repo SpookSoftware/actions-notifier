@@ -335,6 +335,35 @@ export function createOnAlarmCallback(
   };
 }
 
+export function createOnMessageCallback(
+  setupMonitoring: (id: string, lengthInMinutes: number) => Promise<void[]>
+) {
+  return (
+    request: MonitorRequest,
+    _sender: chrome.runtime.MessageSender,
+    sendResponse: (response?: any) => void
+  ) => {
+    const encoded = encodeRequest(request);
+
+    console.debug(`Received request to monitor ${encoded}`);
+
+    setupMonitoring(encoded, 0.1)
+      .then((_res) => {
+        console.debug(`Started monitoring for id ${encoded}`);
+        sendResponse({ status: "ok" });
+      })
+      .catch((err) => {
+        console.error(`Monitoring setup failed for id ${encoded}`);
+        sendResponse({ status: "error", error: err });
+      });
+    // This signals to chrome that the connection will remain open until sendResponse is called.
+    return true;
+  };
+}
+
+/**
+ * Given a workflow run div, grabs the div that's between the branch name and the "this was last run on" icons.
+ */
 export function getElementToInsertNotificationButtonInto(
   workflowRunElement: Element
 ) {
@@ -351,6 +380,10 @@ export function getElementToInsertNotificationButtonInto(
   return betweenBranchAndTime;
 }
 
+/**
+ * On workflow run pages, like https://github.com/SpookSoftware/sandbox/actions/workflows/waitXMinutes.yml, inserts the supplied button
+ * between the branch name and the "this was last run on" icons.
+ */
 export function magicallyInsertButtonInRightPlace({
   button,
   workflowRunElement,
