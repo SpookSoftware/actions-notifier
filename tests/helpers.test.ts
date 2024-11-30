@@ -1,6 +1,7 @@
 import { expect, describe, it, jest, spyOn } from "bun:test";
 import {
   createNotificationButton,
+  createOnMessageCallback,
   shouldAddActionNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
@@ -19,7 +20,11 @@ import {
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
-import type { MonitorActionRequest, MonitorJobRequest } from "../types";
+import type {
+  MonitorActionRequest,
+  MonitorJobRequest,
+  MonitorRequest,
+} from "../types";
 
 // Without this, the tests will fail because the extension uses the DOM API
 GlobalRegistrator.register();
@@ -473,5 +478,58 @@ describe("getElementToInsertNotificationButtonInto", () => {
         "Element does not have the expected structure of a workflow run element"
       );
     }
+  });
+});
+
+describe("createOnMessageCallback", () => {
+  it("calls setupMonitoring with the correct parameters and sends a success response", async () => {
+    const setupMonitoring = jest.fn().mockResolvedValue([]);
+    const sendResponse = jest.fn();
+    const request: MonitorRequest = {
+      type: "action",
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    };
+
+    const callback = createOnMessageCallback(setupMonitoring);
+    const result = callback(
+      request,
+      {} as chrome.runtime.MessageSender,
+      sendResponse
+    );
+
+    expect(result).toBeTrue();
+    expect(setupMonitoring).toHaveBeenCalledWith(
+      "123|SpookSoftware|github-actions-browser-notifications",
+      0.1
+    );
+    await setupMonitoring();
+    expect(sendResponse).toHaveBeenCalledWith({ status: "ok" });
+  });
+
+  it("calls setupMonitoring and sends an error response if it fails", async () => {
+    const setupMonitoring = jest.fn().mockRejectedValue(new Error("Failed"));
+    const sendResponse = jest.fn();
+    const request: MonitorRequest = {
+      type: "action",
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    };
+
+    const callback = createOnMessageCallback(setupMonitoring);
+    const result = callback(
+      request,
+      {} as chrome.runtime.MessageSender,
+      sendResponse
+    );
+
+    expect(result).toBeTrue();
+    await setupMonitoring().catch(() => {});
+    expect(sendResponse).toHaveBeenCalledWith({
+      status: "error",
+      error: new Error("Failed"),
+    });
   });
 });
