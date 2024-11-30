@@ -16,9 +16,9 @@ import {
   getCurrentlyRunningOrQueuedWorkflowElements,
   createMonitoringHandler,
   createWorkflowRunCallback,
+  magicallyInsertButtonInRightPlace,
 } from "./helpers";
 
-// is this my "doer" script? It should just call other things, I think.
 function processElementsForAction(url: string) {
   // todo: move these checks outside the function!
   const isSpecificWorkflowPage = specificWorkflowPageRegex.test(url);
@@ -52,11 +52,6 @@ function processElementsForAction(url: string) {
 
       button.appendChild(svg);
 
-      // Maybe we can select the nth child instead of doing this?
-      // Or maybe this is a function too? Again, this is logic, not glue.
-      const childDiv = element.children[0];
-      const betweenBranchAndTime = childDiv.children[2];
-
       const startMonitoring = createMonitoringHandler({
         runId,
         owner,
@@ -65,15 +60,10 @@ function processElementsForAction(url: string) {
       });
       button.onclick = startMonitoring;
 
-      console.assert(
-        betweenBranchAndTime,
-        "Couldn't find proper place to insert notification button"
-      );
-      if (!betweenBranchAndTime) {
-        continue;
-      }
-
-      childDiv.insertBefore(button, betweenBranchAndTime);
+      magicallyInsertButtonInRightPlace({
+        button,
+        workflowRunElement: element,
+      });
     }
   }
 

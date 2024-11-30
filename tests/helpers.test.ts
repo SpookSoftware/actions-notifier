@@ -15,6 +15,7 @@ import {
   checkActionStatus,
   checkJobStatus,
   assertGithubToken,
+  getElementToInsertNotificationButtonInto,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -422,5 +423,55 @@ describe("createOnAlarmCallback", () => {
     const onAlarmCallback = createOnAlarmCallback(whenStatusIsCompleteCallback);
 
     expect(onAlarmCallback(mockAlarm)).rejects.toThrow();
+  });
+});
+
+describe("getElementToInsertNotificationButtonInto", () => {
+  it("returns the correct element to insert the notification button into", () => {
+    document.body.innerHTML = `
+      <div class="workflow-run">
+        <div>
+          <div></div>
+          <div></div>
+          <div class="between-branch-and-time"></div>
+        </div>
+      </div>
+    `;
+    const workflowRunElement = document.querySelector(".workflow-run");
+    if (workflowRunElement) {
+      const result =
+        getElementToInsertNotificationButtonInto(workflowRunElement);
+      expect(result).toBeInstanceOf(Element);
+      expect(result.classList.contains("between-branch-and-time")).toBeTrue();
+    }
+  });
+
+  it("throws an error if the childDiv is not present", () => {
+    document.body.innerHTML = `<div class="workflow-run"></div>`;
+    const workflowRunElement = document.querySelector(".workflow-run");
+    if (workflowRunElement) {
+      expect(() =>
+        getElementToInsertNotificationButtonInto(workflowRunElement)
+      ).toThrowError("Expected children to be present");
+    }
+  });
+
+  it("throws an error if the betweenBranchAndTime element is not present", () => {
+    document.body.innerHTML = `
+      <div class="workflow-run">
+        <div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    `;
+    const workflowRunElement = document.querySelector(".workflow-run");
+    if (workflowRunElement) {
+      expect(() =>
+        getElementToInsertNotificationButtonInto(workflowRunElement)
+      ).toThrowError(
+        "Element does not have the expected structure of a workflow run element"
+      );
+    }
   });
 });

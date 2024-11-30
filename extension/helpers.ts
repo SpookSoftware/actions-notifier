@@ -334,3 +334,32 @@ export function createOnAlarmCallback(
     }
   };
 }
+
+export function getElementToInsertNotificationButtonInto(
+  workflowRunElement: Element
+) {
+  const childDiv = workflowRunElement.children[0];
+  if (!childDiv) {
+    throw Error("Expected children to be present");
+  }
+  const betweenBranchAndTime = childDiv.children[2];
+  if (!betweenBranchAndTime) {
+    throw Error(
+      "Element does not have the expected structure of a workflow run element"
+    );
+  }
+  return betweenBranchAndTime;
+}
+
+export function magicallyInsertButtonInRightPlace({
+  button,
+  workflowRunElement,
+}: {
+  button: HTMLButtonElement;
+  workflowRunElement: Element;
+}) {
+  const betweenBranchAndTime =
+    getElementToInsertNotificationButtonInto(workflowRunElement);
+  const childDiv = workflowRunElement.children[0];
+  childDiv.insertBefore(button, betweenBranchAndTime);
+}
