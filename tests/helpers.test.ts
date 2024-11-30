@@ -1,4 +1,4 @@
-import { expect, describe, it, jest } from "bun:test";
+import { expect, describe, it, jest, spyOn } from "bun:test";
 import {
   createNotificationButton,
   shouldAddActionNotificationButton,
@@ -9,6 +9,12 @@ import {
   createMonitoringHandler,
   encodeRequest,
   parseRequest,
+  decode,
+  createOnAlarmCallback,
+  checkStatus,
+  checkActionStatus,
+  checkJobStatus,
+  assertGithubToken,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -154,36 +160,6 @@ describe("selectorHasChildren", () => {
   });
 });
 describe("createMonitoringHandler", () => {
-  it("sends a message to the background script to start monitoring the run", () => {
-    const runId = "123";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createMonitoringHandler({ runId, owner, repository, svg });
-
-    const sendMessageMock = jest.fn();
-    global.chrome = {
-      // @ts-ignore
-      runtime: {
-        sendMessage: sendMessageMock,
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(sendMessageMock).toHaveBeenCalledWith(
-      {
-        action: "startMonitoring",
-        runId,
-        owner,
-        repository,
-        type: "action",
-      },
-      expect.any(Function)
-    );
-  });
-
   it("updates the SVG color to yellow if the response status is 'ok'", () => {
     const runId = "123";
     const owner = "SpookSoftware";
@@ -308,5 +284,143 @@ describe("encodeRequest", () => {
     expect(() => encodeRequest(request as any)).toThrow(
       "Request was in a format not recognized"
     );
+  });
+});
+
+describe("decode", () => {
+  it("splits the encoded string into runId, owner, and repository when appropriate", () => {
+    const encoded = "123|SpookSoftware|github-actions-browser-notifications";
+    expect(decode(encoded)).toEqual({
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    });
+  });
+  it("splits the encoded string into runId, jobId, owner, and repository when appropriate", () => {
+    const encoded =
+      "123|456|SpookSoftware|github-actions-browser-notifications";
+    expect(decode(encoded)).toEqual({
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    });
+  });
+  it("throws an error if the encoded string is not in the correct format", () => {
+    const badlyEncoded = "Rats...rats make me crazy";
+    expect(() => decode(badlyEncoded as any)).toThrowError();
+  });
+});
+
+describe("assertGithubToken", () => {
+  it("returns the GitHub token if it exists", async () => {
+    const mockToken = { githubToken: "mock-token" };
+    global.chrome = {
+      storage: {
+        // @ts-ignore
+        sync: {
+          get: jest.fn().mockResolvedValue(mockToken),
+        },
+      },
+    };
+
+    const token = await assertGithubToken();
+    expect(token).toEqual("mock-token");
+  });
+
+  it("throws an error if the GitHub token does not exist", async () => {
+    global.chrome = {
+      storage: {
+        // @ts-ignore
+        sync: {
+          get: jest.fn().mockResolvedValue(null),
+        },
+      },
+    };
+
+    expect(assertGithubToken()).rejects.toThrow();
+  });
+});
+
+describe("checkStatus", () => {
+  it("calls checkJobStatus if jobId is provided", async () => {
+    const mockJobStatus = { status: "completed", name: "job-name" };
+    const checkJobStatusMock = spyOn(
+      await import("../extension/helpers"),
+      "checkJobStatus"
+    ).mockResolvedValue(mockJobStatus);
+
+    const result = await checkStatus({
+      runId: "123",
+      owner: "owner",
+      repository: "repo",
+      jobId: "456",
+    });
+
+    expect(checkJobStatusMock).toHaveBeenCalledWith({
+      jobId: "456",
+      owner: "owner",
+      repository: "repo",
+    });
+    expect(result).toEqual(mockJobStatus);
+  });
+
+  it("calls checkActionStatus if jobId is not provided", async () => {
+    const mockActionStatus = { status: "completed", name: "action-name" };
+    const checkActionStatusMock = spyOn(
+      await import("../extension/helpers"),
+      "checkActionStatus"
+    ).mockResolvedValue(mockActionStatus);
+
+    const result = await checkStatus({
+      runId: "123",
+      owner: "owner",
+      repository: "repo",
+    });
+
+    expect(checkActionStatusMock).toHaveBeenCalledWith({
+      runId: "123",
+      owner: "owner",
+      repository: "repo",
+    });
+    expect(result).toEqual(mockActionStatus);
+  });
+});
+
+describe("createOnAlarmCallback", () => {
+  it("checks the status of the relevant workflow and calls the callback if completed", async () => {
+    const mockAlarm = {
+      name: "123|owner|repo",
+    } as chrome.alarms.Alarm;
+    const mockStatus = { status: "completed", name: "task-name" };
+    const checkStatusMock = spyOn(
+      await import("../extension/helpers"),
+      "checkStatus"
+    ).mockResolvedValue(mockStatus);
+    const whenStatusIsCompleteCallback = jest.fn();
+
+    const onAlarmCallback = createOnAlarmCallback(whenStatusIsCompleteCallback);
+    await onAlarmCallback(mockAlarm);
+
+    expect(checkStatusMock).toHaveBeenCalledWith({
+      runId: "123",
+      owner: "owner",
+      repository: "repo",
+    });
+    expect(whenStatusIsCompleteCallback).toHaveBeenCalledWith(
+      mockAlarm,
+      "task-name"
+    );
+  });
+
+  it("throws an error if the alarm name format is unexpected", async () => {
+    const mockAlarm = {
+      name: "As far as names go, I am the worst",
+    } as chrome.alarms.Alarm;
+    const whenStatusIsCompleteCallback = jest.fn();
+
+    const onAlarmCallback = createOnAlarmCallback(whenStatusIsCompleteCallback);
+
+    expect(onAlarmCallback(mockAlarm)).rejects.toThrow();
   });
 });

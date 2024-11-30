@@ -155,7 +155,7 @@ export function createMonitoringHandler({
   };
 }
 
-async function assertGithubToken() {
+export async function assertGithubToken() {
   const token = await chrome.storage.sync.get("githubToken");
 
   if (!token) {
@@ -165,7 +165,17 @@ async function assertGithubToken() {
   return token.githubToken;
 }
 
-export async function checkStatus({ runId, owner, repository, jobId }) {
+export async function checkStatus({
+  runId,
+  owner,
+  repository,
+  jobId,
+}: {
+  runId: string;
+  owner: string;
+  repository: string;
+  jobId?: string;
+}) {
   if (jobId) {
     return await checkJobStatus({ jobId, owner, repository });
   } else {
@@ -279,13 +289,15 @@ export function encodeRequest(
 type EncodedName = ReturnType<typeof encodeRequest>;
 
 export function decode(name: EncodedName) {
-  if (name.split("|").length === 3) {
-    const [runId, owner, repository] = name.split("|");
+  const split = name.split("|");
+  if (split.length === 3) {
+    const [runId, owner, repository] = split;
     return { runId, owner, repository };
-  } else {
-    const [runId, jobId, owner, repository] = name.split("|");
+  } else if (split.length === 4) {
+    const [runId, jobId, owner, repository] = split;
     return { runId, jobId, owner, repository };
   }
+  throw Error("Unexpected name format: " + name);
 }
 
 const GENERATE_TOKEN_URL =
