@@ -18,3 +18,7 @@ export type MonitorJobRequest = {
 };
 
 export type MonitorRequest = MonitorActionRequest | MonitorJobRequest;
+
+export type Encoded =
+  | `${string}|${string}|${string}|${string}`
+  | `${string}|${string}|${string}`;

@@ -3,7 +3,7 @@ import {
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
 } from "./selectors";
-import { MonitorRequest } from "../types";
+import { Encoded, MonitorRequest } from "../types";
 
 export function shouldAddActionNotificationButton(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
@@ -271,24 +271,40 @@ export function parseRequest(request: MonitorRequest) {
   );
 }
 
+export function encode({
+  runId,
+  jobId,
+  owner,
+  repository,
+}: {
+  runId: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+}): Encoded {
+  if (jobId) {
+    return `${runId}|${jobId}|${owner}|${repository}`;
+  } else {
+    return `${runId}|${owner}|${repository}`;
+  }
+}
+
 export function encodeRequest(
   request: MonitorRequest
 ): `${string}|${string}|${string}` | `${string}|${string}|${string}|${string}` {
   if (request.type === "action") {
     const { runId, owner, repository } = parseRequest(request);
-    return `${runId}|${owner}|${repository}`;
+    return encode({ runId, owner, repository });
   } else if (request.type === "job") {
     const { runId, jobId, owner, repository } = parseRequest(request);
-    return `${runId}|${jobId}|${owner}|${repository}`;
+    return encode({ runId, jobId, owner, repository });
   }
   throw Error(
     `Request was in a format not recognized: ${JSON.stringify(request)}`
   );
 }
 
-type EncodedName = ReturnType<typeof encodeRequest>;
-
-export function decode(name: EncodedName) {
+export function decode(name: Encoded) {
   const split = name.split("|");
   if (split.length === 3) {
     const [runId, owner, repository] = split;
@@ -314,7 +330,7 @@ export function createOnAlarmCallback(
     if (alarm.name.split("|").length === 0) {
       throw Error("Unexpected alarm name format: " + alarm.name);
     }
-    const decoded = decode(alarm.name as EncodedName);
+    const decoded = decode(alarm.name as Encoded);
     const runId = decoded.runId;
     const owner = decoded.owner;
     const repository = decoded.repository;

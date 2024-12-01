@@ -1,11 +1,5 @@
 import {
   WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
-  SUCCESSFUL_ATTRIBUTE_SELECTOR,
-  specificWorkflowPageRegex,
-  allWorkflowsPageRegex,
-  prChecksPageRegex,
-  PR_CHECKS_CONTAINER_SELECTOR,
-  PR_CHECKS_ACTION_LINK_SELECTOR,
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
 } from "./selectors";
 import {
@@ -17,9 +11,27 @@ import {
   createMonitoringHandler,
   createWorkflowRunCallback,
   magicallyInsertButtonInRightPlace,
+  encode,
 } from "./helpers";
 
-function processElementsForWorkflowRunPages() {
+import type { Encoded } from "../types";
+
+function isIdAlreadyMonitored(id: Encoded) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(id, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          "Error occurred while checking if id was already monitored",
+          chrome.runtime.lastError
+        );
+        resolve(false);
+      }
+      resolve(Object.keys(result).length > 0);
+    });
+  });
+}
+
+async function processElementsForWorkflowRunPages() {
   const workflowRunElements = document.querySelectorAll(
     WORKFLOW_RUN_ATTRIBUTE_SELECTOR
   );
@@ -52,6 +64,15 @@ function processElementsForWorkflowRunPages() {
       svg,
     });
     button.onclick = startMonitoring;
+
+    const encoded = encode({ runId, owner, repository });
+
+    // Maybe we make this a function that is like await turnSVGYellowIfAlreadyMonitored(encoded, svg) that's more clearly side-effecty
+    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+
+    if (isAlreadyMonitored) {
+      svg.style.fill = "yellow";
+    }
 
     magicallyInsertButtonInRightPlace({
       button,
@@ -114,24 +135,27 @@ function processElementsForWorkflowRunPages() {
 
 //   }
 // }
-const observerConfig = { childList: true, subtree: true };
-if (shouldAddActionNotificationButton(window.location.href)) {
-  processElementsForWorkflowRunPages();
 
-  // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function
-  // Would simply process the element for the action on the one element instead of everything.
-  const workflowRunsContainer = document.querySelector(
-    WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
-  )!;
+(async () => {
+  const observerConfig = { childList: true, subtree: true };
+  if (shouldAddActionNotificationButton(window.location.href)) {
+    processElementsForWorkflowRunPages();
 
-  // Is there a way to group this into its own function or whatever?
-  const workflowRunCallback = createWorkflowRunCallback(() =>
-    processElementsForWorkflowRunPages()
-  );
-  const workflowObserver = new MutationObserver(workflowRunCallback);
-  workflowObserver.observe(workflowRunsContainer, observerConfig);
-}
-// if (shouldAddJobNotificationButton(window.location.href)) {
-//   console.debug("Determined we should process elements for job");
-//   processElementsForJob(window.location.href);
-// }
+    // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function
+    // Would simply process the element for the action on the one element instead of everything.
+    const workflowRunsContainer = document.querySelector(
+      WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+    )!;
+
+    // Is there a way to group this into its own function or whatever?
+    const workflowRunCallback = createWorkflowRunCallback(() =>
+      processElementsForWorkflowRunPages()
+    );
+    const workflowObserver = new MutationObserver(workflowRunCallback);
+    workflowObserver.observe(workflowRunsContainer, observerConfig);
+  }
+  // if (shouldAddJobNotificationButton(window.location.href)) {
+  //   console.debug("Determined we should process elements for job");
+  //   processElementsForJob(window.location.href);
+  // }
+})();
