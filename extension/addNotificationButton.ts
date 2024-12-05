@@ -67,9 +67,8 @@ async function processElementsForWorkflowRunPages() {
 
     const encoded = encode({ runId, owner, repository });
 
-    // Maybe we make this a function that is like await turnSVGYellowIfAlreadyMonitored(encoded, svg) that's more clearly side-effecty
+    // Maybe we make this a function that is like await turnSVGYellowIfAlreadyMonitored(encoded, svg) that's more clearly side-effect-y
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-
     if (isAlreadyMonitored) {
       svg.style.fill = "yellow";
     }
