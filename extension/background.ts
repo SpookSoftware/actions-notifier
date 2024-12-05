@@ -35,6 +35,8 @@ const onAlarmCallback = createOnAlarmCallback(
       message: `Item ${taskName} has completed. Click the notification to view the results.`,
       iconUrl:
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
+    }, (id) => {
+      console.debug(`Successfully created notification with id ${id}`)
     });
     console.debug(`Clearing alarm ${alarm.name}`);
 
