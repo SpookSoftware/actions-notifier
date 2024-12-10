@@ -70,6 +70,10 @@ export function selectorHasChildren(selector: string, item: Element) {
   return item.querySelector(selector) !== null;
 }
 
+// Later, refactor this to:
+// const isQueued = (el) => {
+//   return selectorHasChildren(QUEUED_ATTRIBUTE_SELECTOR, el)
+// }
 const isQueued = partial(selectorHasChildren, QUEUED_ATTRIBUTE_SELECTOR);
 const isRunning = partial(
   selectorHasChildren,
