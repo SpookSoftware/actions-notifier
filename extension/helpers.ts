@@ -62,11 +62,19 @@ export function createNotificationSVG() {
   return svgElement;
 }
 
-export function selectorMatches(selector: string, item: Element) {
+export function selectorMatches<
+  HasMatches extends {
+    matches: Function
+  }
+>(selector: string, item: HasMatches) {
   return item.matches(selector);
 }
 
-export function selectorHasChildren(selector: string, item: Element) {
+export function selectorHasChildren<
+  HasQuerySelector extends {
+    querySelector: Function;
+  }
+>(selector: string, item: HasQuerySelector) {
   return item.querySelector(selector) !== null;
 }
 
@@ -79,8 +87,13 @@ const isRunning = partial(
   selectorHasChildren,
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
 );
-export const isQueuedOrRunning = (x: Element): Boolean =>
-  isQueued(x) || isRunning(x);
+export function isQueuedOrRunning<
+  HasQuerySelector extends {
+    querySelector: Function;
+  }
+>(x: HasQuerySelector) {
+  return isQueued(x) || isRunning(x);
+}
 
 export function getCurrentlyRunningOrQueuedWorkflowElements(
   divs: NodeListOf<Element>
@@ -230,11 +243,10 @@ export const createWorkflowRunCallback = (onObservationChange: Function) => {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
         for (const addedNode of mutation.addedNodes) {
-          if (addedNode.nodeType === Node.ELEMENT_NODE) {
-            console.group("workflowRun");
+          if (addedNode instanceof Element) {
             console.debug("A new element was added:", addedNode);
-            if (isQueuedOrRunning(addedNode as Element)) {
-              console.debug("It's a workflow run DOM node");
+            if (isQueuedOrRunning(addedNode)) {
+              console.debug("It is a queued or running workflow run DOM node");
               onObservationChange();
             } else {
               console.debug("It's not a workflow run DOM node");
