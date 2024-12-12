@@ -384,6 +384,7 @@ export function createOnMessageCallback(
 /**
  * Given a workflow run div, grabs the div that's between the branch name and the "this was last run on" icons.
  */
+// Todo: maybe we test this with actual selectors?
 export function getElementToInsertNotificationButtonInto(
   workflowRunElement: Element
 ) {
