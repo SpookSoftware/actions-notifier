@@ -8,6 +8,9 @@ import {
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
+  JOB_RUN_ATTRIBUTE_SELECTOR,
+  SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR,
+  FAILED_JOB_RUN_ATTRIBUTE_SELECTOR,
 } from "../extension/selectors";
 
 async function dispatchWorkflow({ token, body, workflowURL }) {
@@ -45,85 +48,120 @@ async function getMatchesFor(url: string, selector: string) {
   return document.querySelectorAll(selector);
 }
 
-describe("WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
-  it("selects the workflow container", async () => {
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/actions",
-      WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
-    );
-    expect(matches).toHaveLength(1);
-  });
-});
-
-describe("WORKFLOW_RUN_ATTRIBUTE_SELECTOR", () => {
-  it("selects the workflow runs", async () => {
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/actions",
-      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
-    );
-    expect(matches).toHaveLength(25);
-  });
-  it("does not select the parent element of the workflow runs", async () => {
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/actions",
-      WORKFLOW_RUN_ATTRIBUTE_SELECTOR
-    );
-    expect(
-      Array.from(matches).some(
-        (match) => match.id === "partial-actions-workflow-runs"
-      )
-    ).toBeFalse();
-  });
-});
-
-describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
-  it("selects successful workflow runs", async () => {
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/actions?query=is%3Asuccess",
-      SUCCESSFUL_ATTRIBUTE_SELECTOR
-    );
-    expect(matches).toHaveLength(25);
-  });
-});
-
-describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
-  it("selects currently running workflows", async () => {
-    if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
-      throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");
-    }
-    // Start a workflow and give it a little time to start up.
-    await dispatchWorkflow({
-      token: process.env.SANDBOX_REPO_GITHUB_TOKEN,
-      workflowURL:
-        "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
-      body: JSON.stringify({ event_type: "wait-for-five-minutes" }),
+describe("Actions selectors", () => {
+  describe("WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
+    it("selects the workflow container", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions",
+        WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+      );
+      expect(matches).toHaveLength(1);
     });
-    await Bun.sleep(60_000);
+  });
 
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/actions?query=is%3Ain_progress",
-      CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
-    );
-    expect(matches.length).toBeGreaterThanOrEqual(1);
-  }, 80_000);
-});
+  describe("WORKFLOW_RUN_ATTRIBUTE_SELECTOR", () => {
+    it("selects the workflow runs", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions",
+        WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+      );
+      expect(matches).toHaveLength(25);
+    });
+    it("does not select the parent element of the workflow runs", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions",
+        WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+      );
+      expect(
+        Array.from(matches).some(
+          (match) => match.id === "partial-actions-workflow-runs"
+        )
+      ).toBeFalse();
+    });
+  });
 
-describe("PR_CHECKS_CONTAINER_SELECTOR", () => {
-  it("selects the PR checks container", async () => {
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/pull/1/checks",
-      PR_CHECKS_CONTAINER_SELECTOR
-    );
-    expect(matches).toHaveLength(1);
+  describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
+    it("selects successful workflow runs", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions?query=is%3Asuccess",
+        SUCCESSFUL_ATTRIBUTE_SELECTOR
+      );
+      expect(matches).toHaveLength(25);
+    });
+  });
+
+  describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
+    it("selects currently running workflows", async () => {
+      if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
+        throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");
+      }
+      // Start a workflow and give it a little time to start up.
+      await dispatchWorkflow({
+        token: process.env.SANDBOX_REPO_GITHUB_TOKEN,
+        workflowURL:
+          "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
+        body: JSON.stringify({ event_type: "wait-for-five-minutes" }),
+      });
+
+      await Bun.sleep(60_000);
+
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions?query=is%3Ain_progress",
+        CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
+      );
+      expect(matches.length).toBeGreaterThanOrEqual(1);
+    }, 80_000);
+  });
+
+  describe("PR_CHECKS_CONTAINER_SELECTOR", () => {
+    it("selects the PR checks container", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/pull/1/checks",
+        PR_CHECKS_CONTAINER_SELECTOR
+      );
+      expect(matches).toHaveLength(1);
+    });
+  });
+
+  describe("PR_CHECKS_ACTION_LINK_SELECTOR", () => {
+    it("selects all the action links", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/pull/1/checks",
+        PR_CHECKS_ACTION_LINK_SELECTOR
+      );
+      expect(matches).toHaveLength(6);
+    });
   });
 });
 
-describe("PR_CHECKS_ACTION_LINK_SELECTOR", () => {
-  it("selects all the action links", async () => {
-    const matches = await getMatchesFor(
-      "https://github.com/SpookSoftware/sandbox/pull/1/checks",
-      PR_CHECKS_ACTION_LINK_SELECTOR
-    );
-    expect(matches).toHaveLength(6);
+describe("Job selectors", () => {
+  describe("JOB_RUN_ATTRIBUTE_SELECTOR", () => {
+    it("selects all the job runs in a runs page", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions/runs/12384934580",
+        JOB_RUN_ATTRIBUTE_SELECTOR
+      );
+      expect(matches).toHaveLength(9);
+    });
+  });
+
+  describe("SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR", () => {
+    it("selects the successful job runs in a runs page", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions/runs/12384934580",
+        SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR
+      );
+      expect(matches).toHaveLength(8);
+    });
+  });
+
+  describe("FAILED_JOB_RUN_ATTRIBUTE_SELECTOR", () => {
+    it("selects the failed job runs in a runs page", async () => {
+      const matches = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions/runs/12384934580",
+        FAILED_JOB_RUN_ATTRIBUTE_SELECTOR
+      );
+      expect(matches).toHaveLength(1);
+    });
   });
 });
