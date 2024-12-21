@@ -12,7 +12,7 @@ import {
   createNotificationSVG,
   extractActionDataFromURL,
   getCurrentlyRunningOrQueuedWorkflowElements,
-  createMonitoringHandler,
+  createActionMonitoringHandler,
   createWorkflowRunCallback,
   magicallyInsertButtonInRightPlace,
   encode,
@@ -62,7 +62,7 @@ async function processElementsForWorkflowRunPages() {
 
     button.appendChild(svg);
 
-    const startMonitoring = createMonitoringHandler({
+    const startMonitoring = createActionMonitoringHandler({
       runId,
       owner,
       repository,
@@ -120,7 +120,7 @@ async function processElementsForJobPages() {
 
     button.appendChild(svg);
 
-    const startMonitoring = createMonitoringHandler({
+    const startMonitoring = createActionMonitoringHandler({
       runId,
       jobId,
       owner,

@@ -7,7 +7,7 @@ import {
   extractActionDataFromURL,
   selectorMatches,
   selectorHasChildren,
-  createMonitoringHandler,
+  createActionMonitoringHandler,
   encodeRequest,
   parseRequest,
   decode,
@@ -203,14 +203,19 @@ describe("selectorHasChildren", () => {
     }
   });
 });
-describe("createMonitoringHandler", () => {
+describe("createActionMonitoringHandler", () => {
   it("updates the SVG color to yellow if the response status is 'ok'", () => {
     const runId = "123";
     const owner = "SpookSoftware";
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createMonitoringHandler({ runId, owner, repository, svg });
+    const callback = createActionMonitoringHandler({
+      runId,
+      owner,
+      repository,
+      svg,
+    });
 
     global.chrome = {
       runtime: {
@@ -233,7 +238,12 @@ describe("createMonitoringHandler", () => {
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createMonitoringHandler({ runId, owner, repository, svg });
+    const callback = createActionMonitoringHandler({
+      runId,
+      owner,
+      repository,
+      svg,
+    });
 
     global.chrome = {
       runtime: {

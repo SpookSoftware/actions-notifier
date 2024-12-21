@@ -168,7 +168,7 @@ export function extractJobDataFromURL(url: string) {
  * Creates a callback function that sends a message to the background script to start monitoring a given run.
  * @returns A function that sends a message to the background script to start monitoring the given run.
  */
-export function createMonitoringHandler({
+export function createActionMonitoringHandler({
   runId,
   owner,
   repository,
