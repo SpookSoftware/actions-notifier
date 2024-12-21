@@ -17,6 +17,8 @@ import {
   checkJobStatus,
   assertGithubToken,
   getElementToInsertNotificationButtonInto,
+  shouldAddJobNotificationButton,
+  extractJobDataFromURL,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -59,6 +61,16 @@ describe("shouldAddActionNotificationButton", () => {
     ];
     const results = urls.map((url) => shouldAddActionNotificationButton(url));
     expect(results.every((result) => result === false)).toBeTrue();
+  });
+});
+
+describe("shouldAddJobNotificationButton", () => {
+  it("returns true for job run URLs", () => {
+    expect(
+      shouldAddJobNotificationButton(
+        "https://github.com/SpookSoftware/sandbox/actions/runs/12447719676"
+      )
+    ).toBeTrue();
   });
 });
 
@@ -129,6 +141,32 @@ describe("extractActionDataFromURL", () => {
   it("throws an error if any part is missing", () => {
     const url = "https://github.com/SpookSoftware/sandbox/actions/runs/";
     expect(() => extractActionDataFromURL(url)).toThrowError("Missing runId");
+  });
+});
+
+describe("extractJobDataFromURL", () => {
+  it("extracts owner, repository, runId, and jobId from a valid URL", () => {
+    const url =
+      "https://github.com/SpookSoftware/sandbox/actions/runs/12447719676/job/34751516975";
+    const result = extractJobDataFromURL(url);
+    expect(result).toEqual({
+      owner: "SpookSoftware",
+      repository: "sandbox",
+      runId: "12447719676",
+      jobId: "34751516975",
+    });
+  });
+
+  it("throws an error if the URL is invalid", () => {
+    const url = "invalid-url";
+    expect(() => extractJobDataFromURL(url)).toThrowError(
+      "Invalid URL: invalid-url"
+    );
+  });
+
+  it("throws an error if any part is missing", () => {
+    const url = "https://github.com/SpookSoftware/sandbox/actions/runs/12345";
+    expect(() => extractJobDataFromURL(url)).toThrowError("Missing jobId");
   });
 });
 describe("selectorMatches", () => {

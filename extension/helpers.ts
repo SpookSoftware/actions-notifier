@@ -15,6 +15,11 @@ export function shouldAddActionNotificationButton(url: string) {
   return pattern.test(url);
 }
 
+export function shouldAddJobNotificationButton(url: string) {
+  const pattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+$/;
+  return pattern.test(url);
+}
+
 export function createNotificationButton({
   runId,
   jobId,
@@ -64,7 +69,7 @@ export function createNotificationSVG() {
 
 export function selectorMatches<
   HasMatches extends {
-    matches: Function
+    matches: Function;
   }
 >(selector: string, item: HasMatches) {
   return item.matches(selector);
@@ -121,6 +126,8 @@ export function extractActionDataFromURL(url: string) {
   const isValidURL = URL.canParse(url);
   if (isValidURL) {
     const [_, _2, _3, owner, repository, _4, _5, runId] = url.split("/");
+    //  https://github.com/SpookSoftware/sandbox/actions/runs/12447719676
+    //                         owner      repo                 runId
     [
       { property: owner, key: "owner" },
       { property: repository, key: "repository" },
@@ -131,6 +138,28 @@ export function extractActionDataFromURL(url: string) {
       }
     });
     return { owner, repository, runId };
+  }
+  throw Error("Invalid URL: " + url);
+}
+
+export function extractJobDataFromURL(url: string) {
+  const isValidURL = URL.canParse(url);
+  if (isValidURL) {
+    const [_, _2, _3, owner, repository, _4, _5, runId, _6, jobId] =
+      url.split("/");
+    //  https://github.com/SpookSoftware/sandbox/actions/runs/12447719676/job/34751516975
+    //                         owner      repo                 runId            jobId
+    [
+      { property: owner, key: "owner" },
+      { property: repository, key: "repository" },
+      { property: runId, key: "runId" },
+      { property: jobId, key: "jobId" },
+    ].forEach(({ property, key }) => {
+      if (!property) {
+        throw Error(`Missing ${key}`);
+      }
+    });
+    return { owner, repository, runId, jobId };
   }
   throw Error("Invalid URL: " + url);
 }
