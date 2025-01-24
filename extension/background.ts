@@ -63,7 +63,9 @@ chrome.alarms.onAlarm.addListener(onAlarmCallback);
 chrome.notifications.onClicked.addListener((notificationId) => {
   console.debug(`Notification ${notificationId} clicked.`);
   if (!isProperlyEncoded(notificationId)) {
-    throw new Error(`Unexpected id format:  ${notificationId}`);
+    throw new Error(
+      `Unexpected id format:  ${notificationId}. Should be in the format string|string|string or string|string|string|string`
+    );
   }
   const decoded = decode(notificationId);
   chrome.tabs.create({
