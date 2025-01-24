@@ -7,7 +7,7 @@ import {
   extractActionDataFromURL,
   selectorMatches,
   selectorHasChildren,
-  createActionMonitoringHandler,
+  createMonitoringHandler,
   encodeRequest,
   parseRequest,
   decode,
@@ -203,14 +203,14 @@ describe("selectorHasChildren", () => {
     }
   });
 });
-describe("createActionMonitoringHandler", () => {
+describe("createMonitoringHandler", () => {
   it("updates the SVG color to yellow if the response status is 'ok'", () => {
     const runId = "123";
     const owner = "SpookSoftware";
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createActionMonitoringHandler({
+    const callback = createMonitoringHandler({
       runId,
       owner,
       repository,
@@ -238,7 +238,7 @@ describe("createActionMonitoringHandler", () => {
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createActionMonitoringHandler({
+    const callback = createMonitoringHandler({
       runId,
       owner,
       repository,
@@ -257,6 +257,36 @@ describe("createActionMonitoringHandler", () => {
     callback(new MouseEvent("click"));
 
     expect(svg.style.color).toBe("red");
+    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
+  });
+
+  it("handles when there's a job id as well", () => {
+    const runId = "123";
+    const jobId = "456";
+    const owner = "SpookSoftware";
+    const repository = "github-actions-browser-notifications";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+    const callback = createMonitoringHandler({
+      runId,
+      jobId,
+      owner,
+      repository,
+      svg,
+    });
+
+    global.chrome = {
+      runtime: {
+        // @ts-ignore
+        sendMessage: (_message, callback) => {
+          callback({ status: "ok" });
+        },
+      },
+    };
+
+    callback(new MouseEvent("click"));
+
+    expect(svg.style.color).toBe("yellow");
     expect(svg.classList.contains("color-fg-muted")).toBeFalse();
   });
 });

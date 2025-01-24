@@ -12,11 +12,12 @@ import {
   createNotificationSVG,
   extractActionDataFromURL,
   getCurrentlyRunningOrQueuedWorkflowElements,
-  createActionMonitoringHandler,
   createWorkflowRunCallback,
   magicallyInsertButtonInRightPlace,
   encode,
   extractJobDataFromURL,
+  insertButtonIntoJob,
+  createMonitoringHandler,
 } from "./helpers";
 
 import type { Encoded } from "../types";
@@ -62,7 +63,7 @@ async function processElementsForWorkflowRunPages() {
 
     button.appendChild(svg);
 
-    const startMonitoring = createActionMonitoringHandler({
+    const startMonitoring = createMonitoringHandler({
       runId,
       owner,
       repository,
@@ -116,11 +117,12 @@ async function processElementsForJobPages() {
       repository,
       jobId,
     });
+
     const svg = createNotificationSVG();
 
     button.appendChild(svg);
 
-    const startMonitoring = createActionMonitoringHandler({
+    const startMonitoring = createMonitoringHandler({
       runId,
       jobId,
       owner,
@@ -129,7 +131,7 @@ async function processElementsForJobPages() {
     });
     button.onclick = startMonitoring;
 
-    const encoded = encode({ runId, owner, repository });
+    const encoded = encode({ runId, jobId, owner, repository });
 
     // Maybe we make this a function that is like await turnSVGYellowIfAlreadyMonitored(encoded, svg) that's more clearly side-effect-y
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
@@ -137,28 +139,13 @@ async function processElementsForJobPages() {
       svg.style.fill = "yellow";
     }
 
-    magicallyInsertButtonInRightPlace({
-      button,
-      workflowRunElement: element,
-    });
+    // addDisplayFlex(element);
+    // // start
+    element.style.display = "flex";
+    // // end
+
+    insertButtonIntoJob(button, element);
   }
-
-  const container = document?.querySelector(PR_PAGE_CONTAINER_SELECTOR);
-  const jobs = container?.querySelectorAll(PR_PAGE_JOB_SELECTOR);
-  const inProgressJobs =
-    jobs.length > 0 &&
-    jobs.filter((job) => job.querySelector("svg.anim-rotate"));
-
-  inProgressJobs.length > 0 &&
-    inProgressJobs.forEach((job) => {
-      const link = job.querySelector("a.status-actions");
-      const [_, _2, _3, owner, repository, _4, _5, runId, _6, pollutedJobId] =
-        link.href.split("/");
-      const jobId = pollutedJobId.split("?")[0];
-      console.log({ owner, repository, runId, jobId });
-
-      addNotificationButton(job, { runId, jobId, owner, repository });
-    });
 }
 
 //   const isPrPage = PR_PAGE_REGEX.test(url);
@@ -207,6 +194,7 @@ async function processElementsForJobPages() {
     const workflowRunCallback = createWorkflowRunCallback(() =>
       processElementsForWorkflowRunPages()
     );
+    // I need to be careful to disconnect this when appropriate
     const workflowObserver = new MutationObserver(workflowRunCallback);
     workflowObserver.observe(workflowRunsContainer, observerConfig);
   } else if (shouldAddJobNotificationButton(window.location.href)) {

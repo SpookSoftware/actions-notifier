@@ -168,37 +168,63 @@ export function extractJobDataFromURL(url: string) {
  * Creates a callback function that sends a message to the background script to start monitoring a given run.
  * @returns A function that sends a message to the background script to start monitoring the given run.
  */
-export function createActionMonitoringHandler({
+export function createMonitoringHandler({
   runId,
+  jobId,
   owner,
   repository,
   svg,
 }: {
   runId: string;
+  jobId?: string;
   owner: string;
   repository: string;
   svg: SVGElement;
 }) {
-  return (_event: MouseEvent) => {
-    const message: MonitorRequest = {
-      runId,
-      owner,
-      repository,
-      type: "action",
-    };
-    chrome.runtime.sendMessage(message, (response) => {
-      const status = response?.status;
-      if (status) {
-        if (status === "ok") {
-          svg.style.color = "yellow";
-          svg.classList.remove("color-fg-muted");
-        } else {
-          svg.style.color = "red";
-          svg.classList.remove("color-fg-muted");
+  if (jobId) {
+    return (_event: MouseEvent) => {
+      const message: MonitorRequest = {
+        runId,
+        jobId,
+        owner,
+        repository,
+        type: "job",
+      };
+      chrome.runtime.sendMessage(message, (response) => {
+        const status = response?.status;
+        if (status) {
+          if (status === "ok") {
+            svg.style.color = "yellow";
+            svg.classList.remove("color-fg-muted");
+          } else {
+            svg.style.color = "red";
+            svg.classList.remove("color-fg-muted");
+          }
         }
-      }
-    });
-  };
+      });
+    };
+  } else {
+    return (_event: MouseEvent) => {
+      const message: MonitorRequest = {
+        runId,
+        owner,
+        repository,
+        type: "action",
+      };
+      chrome.runtime.sendMessage(message, (response) => {
+        const status = response?.status;
+        if (status) {
+          if (status === "ok") {
+            svg.style.color = "yellow";
+            svg.classList.remove("color-fg-muted");
+          } else {
+            svg.style.color = "red";
+            svg.classList.remove("color-fg-muted");
+          }
+        }
+      });
+    };
+  }
 }
 
 export async function assertGithubToken() {
@@ -457,4 +483,8 @@ export function magicallyInsertButtonInRightPlace({
     getElementToInsertNotificationButtonInto(workflowRunElement);
   const childDiv = workflowRunElement.children[0];
   childDiv.insertBefore(button, betweenBranchAndTime);
+}
+
+export function insertButtonIntoJob(button, jobLi: Element) {
+  jobLi.insertAdjacentElement("beforeend", button);
 }
