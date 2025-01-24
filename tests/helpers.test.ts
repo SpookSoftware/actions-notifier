@@ -19,6 +19,10 @@ import {
   getElementToInsertNotificationButtonInto,
   shouldAddJobNotificationButton,
   extractJobDataFromURL,
+  isProperlyEncoded,
+  createActionURL,
+  createJobURL,
+  createURL,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -609,5 +613,71 @@ describe("createOnMessageCallback", () => {
       status: "error",
       error: new Error("Failed"),
     });
+  });
+});
+
+describe("isProperlyEncoded", () => {
+  it("returns true if the string is encoded as an action", () => {
+    const encoded = "123|owner|repo";
+    expect(isProperlyEncoded(encoded)).toBeTrue();
+  });
+  it("returns true if the string is encoded as a job", () => {
+    const encoded = "123|456|owner|repo";
+    expect(isProperlyEncoded(encoded)).toBeTrue();
+  });
+  it("returns false if the string is not properly encoded", () => {
+    const encoded = "123|owner";
+    expect(isProperlyEncoded(encoded)).toBeFalse();
+  });
+});
+
+describe("createActionURL", () => {
+  it("creates a URL for an action", () => {
+    const decoded = {
+      runId: "69",
+      owner: "whoever",
+      repository: "rocks-and-other-things",
+    };
+    expect(createActionURL(decoded)).toEqual(
+      "https://github.com/whoever/rocks-and-other-things/actions/runs/69"
+    );
+  });
+});
+
+describe("createJobURL", () => {
+  it("creates a URL for a job", () => {
+    const decoded = {
+      runId: "69",
+      jobId: "420",
+      owner: "whoever",
+      repository: "rocks-and-other-things",
+    };
+    expect(createJobURL(decoded)).toEqual(
+      "https://github.com/whoever/rocks-and-other-things/actions/runs/69/jobs/420"
+    );
+  });
+});
+
+describe.only("createURL", () => {
+  it("creates a URL for an action when there is no jobId", () => {
+    const decoded = {
+      runId: "69",
+      owner: "whoever",
+      repository: "rocks-and-other-things",
+    };
+    expect(createURL(decoded)).toEqual(
+      "https://github.com/whoever/rocks-and-other-things/actions/runs/69"
+    );
+  });
+  it("creates a URL for a job when there is a jobId", () => {
+    const decoded = {
+      runId: "69",
+      jobId: "420",
+      owner: "whoever",
+      repository: "rocks-and-other-things",
+    };
+    expect(createURL(decoded)).toEqual(
+      "https://github.com/whoever/rocks-and-other-things/actions/runs/69/jobs/420"
+    );
   });
 });
