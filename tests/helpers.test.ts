@@ -658,7 +658,7 @@ describe("createJobURL", () => {
   });
 });
 
-describe.only("createURL", () => {
+describe("createURL", () => {
   it("creates a URL for an action when there is no jobId", () => {
     const decoded = {
       runId: "69",
