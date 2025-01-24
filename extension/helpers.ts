@@ -533,6 +533,6 @@ export function magicallyInsertButtonInRightPlace({
   childDiv.insertBefore(button, betweenBranchAndTime);
 }
 
-export function insertButtonIntoJob(button, jobLi: Element) {
+export function insertButtonIntoJob(button: Element, jobLi: Element) {
   jobLi.insertAdjacentElement("beforeend", button);
 }
