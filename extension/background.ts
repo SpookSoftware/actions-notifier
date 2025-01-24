@@ -1,4 +1,18 @@
+import {
+  createOnAlarmCallback,
+  createOnMessageCallback,
+  decode,
+  isProperlyEncoded,
+  createURL,
+} from "./helpers";
 import { createOnAlarmCallback, createOnMessageCallback } from "./helpers";
+import {
+  createOnAlarmCallback,
+  createOnMessageCallback,
+  decode,
+  isProperlyEncoded,
+  createURL,
+} from "./helpers";
 
 self.addEventListener("activate", (_event) => {
   console.log("I'm active! Whee!");
@@ -50,11 +64,13 @@ const onAlarmCallback = createOnAlarmCallback(
 
 chrome.alarms.onAlarm.addListener(onAlarmCallback);
 
-// for testing
 chrome.notifications.onClicked.addListener((notificationId) => {
-  console.log(`Notification ${notificationId} clicked.`);
-  // open a new tab with url notificationId
+  console.debug(`Notification ${notificationId} clicked.`);
+  if (!isProperlyEncoded(notificationId)) {
+    throw new Error(`Unexpected id format:  ${notificationId}`);
+  }
+  const decoded = decode(notificationId);
   chrome.tabs.create({
-    url: `https://github.com/SpookSoftware/sandbox/actions/runs/${notificationId}`,
+    url: createURL(decoded),
   });
 });

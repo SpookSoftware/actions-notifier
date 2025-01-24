@@ -342,6 +342,7 @@ export function parseRequest(request: MonitorRequest) {
   );
 }
 
+// todo: turn this into a real type, since I use it everywhere.
 export function encode({
   runId,
   jobId,
@@ -360,9 +361,7 @@ export function encode({
   }
 }
 
-export function encodeRequest(
-  request: MonitorRequest
-): `${string}|${string}|${string}` | `${string}|${string}|${string}|${string}` {
+export function encodeRequest(request: MonitorRequest): Encoded {
   if (request.type === "action") {
     const { runId, owner, repository } = parseRequest(request);
     return encode({ runId, owner, repository });
@@ -387,6 +386,55 @@ export function decode(name: Encoded) {
   throw Error("Unexpected name format: " + name);
 }
 
+export function isProperlyEncoded(string: string): string is Encoded {
+  const parts = string.split("|");
+  return parts.length === 3 || parts.length === 4;
+}
+
+export function createActionURL({
+  runId,
+  owner,
+  repository,
+}: {
+  runId: string;
+  owner: string;
+  repository: string;
+}) {
+  return `https://github.com/${owner}/${repository}/actions/runs/${runId}`;
+}
+
+export function createJobURL({
+  runId,
+  jobId,
+  owner,
+  repository,
+}: {
+  runId: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+}) {
+  return `https://github.com/${owner}/${repository}/actions/runs/${runId}/jobs/${jobId}`;
+}
+
+export function createURL({
+  runId,
+  jobId,
+  owner,
+  repository,
+}: {
+  runId: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+}) {
+  if (jobId) {
+    return createJobURL({ runId, jobId, owner, repository });
+  } else {
+    return createActionURL({ runId, owner, repository });
+  }
+}
+
 const GENERATE_TOKEN_URL =
   "https://github.com/settings/tokens/new?description=Github%20Browser%20Notifications&scopes=repo";
 
@@ -398,10 +446,10 @@ export function createOnAlarmCallback(
   ) => Promise<void>
 ) {
   return async (alarm: chrome.alarms.Alarm) => {
-    if (alarm.name.split("|").length === 0) {
+    if (!isProperlyEncoded(alarm.name)) {
       throw Error("Unexpected alarm name format: " + alarm.name);
     }
-    const decoded = decode(alarm.name as Encoded);
+    const decoded = decode(alarm.name);
     const runId = decoded.runId;
     const owner = decoded.owner;
     const repository = decoded.repository;
