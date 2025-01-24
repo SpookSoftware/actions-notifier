@@ -5,14 +5,6 @@ import {
   isProperlyEncoded,
   createURL,
 } from "./helpers";
-import { createOnAlarmCallback, createOnMessageCallback } from "./helpers";
-import {
-  createOnAlarmCallback,
-  createOnMessageCallback,
-  decode,
-  isProperlyEncoded,
-  createURL,
-} from "./helpers";
 
 self.addEventListener("activate", (_event) => {
   console.log("I'm active! Whee!");
@@ -43,15 +35,19 @@ chrome.runtime.onMessage.addListener(onMessageCallback);
 
 const onAlarmCallback = createOnAlarmCallback(
   async (alarm: chrome.alarms.Alarm, taskName: string) => {
-    chrome.notifications.create(alarm.name, {
-      type: "basic",
-      title: "Action/job completed",
-      message: `Item ${taskName} has completed. Click the notification to view the results.`,
-      iconUrl:
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
-    }, (id) => {
-      console.debug(`Successfully created notification with id ${id}`)
-    });
+    chrome.notifications.create(
+      alarm.name,
+      {
+        type: "basic",
+        title: "Action/job completed",
+        message: `Item ${taskName} has completed. Click the notification to view the results.`,
+        iconUrl:
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
+      },
+      (id) => {
+        console.debug(`Successfully created notification with id ${id}`);
+      }
+    );
     console.debug(`Clearing alarm ${alarm.name}`);
 
     await chrome.alarms.clear(alarm.name);

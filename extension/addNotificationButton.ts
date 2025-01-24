@@ -178,6 +178,7 @@ async function processElementsForJobPages() {
 //   }
 // }
 
+// Reminder to self: This runs on every full page nav, but not every spa nav
 (async () => {
   const observerConfig = { childList: true, subtree: true };
   // todo: rename this to something like "shouldMonitorActions"
