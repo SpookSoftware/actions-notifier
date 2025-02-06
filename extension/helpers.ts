@@ -1,4 +1,3 @@
-import partial from "lodash/partial";
 import {
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
@@ -83,15 +82,12 @@ export function selectorHasChildren<
   return item.querySelector(selector) !== null;
 }
 
-// Later, refactor this to:
-// const isQueued = (el) => {
-//   return selectorHasChildren(QUEUED_ATTRIBUTE_SELECTOR, el)
-// }
-const isQueued = partial(selectorHasChildren, QUEUED_ATTRIBUTE_SELECTOR);
-const isRunning = partial(
-  selectorHasChildren,
-  CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
-);
+const isQueued = (el: any) => {
+  return selectorHasChildren(QUEUED_ATTRIBUTE_SELECTOR, el);
+};
+const isRunning = (el: any) => {
+  return selectorHasChildren(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR, el);
+};
 export function isQueuedOrRunning<
   HasQuerySelector extends {
     querySelector: Function;

@@ -1,15 +1,8 @@
 {
-  "scripts": {
-    "test": "bun test",
-    "build": "bun ./build.ts",
-    "build:production": "bun ./build.ts --production",
-    "dev": "bun ./watcher.ts"
-  },
   "devDependencies": {
     "@happy-dom/global-registrator": "^15.11.6",
     "@types/bun": "latest",
     "@types/chrome": "^0.0.243",
-    "@types/lodash": "^4.17.13",
     "@types/node": "^22.9.0",
     "linkedom": "^0.18.5",
     "p-memoize": "^7.1.1"
@@ -17,7 +10,10 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "dependencies": {
-    "lodash": "^4.17.21"
+  "scripts": {
+    "test": "bun test",
+    "build": "bun ./build.ts",
+    "build:production": "bun ./build.ts --production",
+    "dev": "bun ./watcher.ts"
   }
 }
