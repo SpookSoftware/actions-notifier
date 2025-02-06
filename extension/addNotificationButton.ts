@@ -6,7 +6,7 @@ import {
   WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
 } from "./selectors";
 import {
-  shouldAddActionNotificationButton,
+  shouldMonitorActions,
   shouldAddJobNotificationButton,
   createNotificationButton,
   createNotificationSVG,
@@ -159,7 +159,7 @@ async function processElementsForJobPages() {
 //       "Received request to refresh notification buttons because of a url change. URL: ",
 //       request.url
 //     );
-//     if (shouldAddActionNotificationButton(request.url)) {
+//     if (shouldMonitorActions(request.url)) {
 //       console.debug("Heading down the action path");
 //       processElementsForAction(request.url);
 //       const workflowObserver = new MutationObserver(
@@ -178,11 +178,10 @@ async function processElementsForJobPages() {
 //   }
 // }
 
-// Reminder to self: This runs on every full page nav, but not every spa nav
+// Reminder to self: This runs on every full page nav, but not every spa nav. We might need a global observer?
 (async () => {
   const observerConfig = { childList: true, subtree: true };
-  // todo: rename this to something like "shouldMonitorActions"
-  if (shouldAddActionNotificationButton(window.location.href)) {
+  if (shouldMonitorActions(window.location.href)) {
     await processElementsForWorkflowRunPages();
 
     // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function

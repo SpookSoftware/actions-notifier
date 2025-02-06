@@ -2,7 +2,7 @@ import { expect, describe, it, jest, spyOn } from "bun:test";
 import {
   createNotificationButton,
   createOnMessageCallback,
-  shouldAddActionNotificationButton,
+  shouldMonitorActions,
   createNotificationSVG,
   extractActionDataFromURL,
   selectorMatches,
@@ -35,24 +35,24 @@ import type {
 // Without this, the tests will fail because the extension uses the DOM API
 GlobalRegistrator.register();
 
-describe("shouldAddActionNotificationButton", () => {
+describe("shouldMonitorActions", () => {
   it("returns true for specific workflow run URLs", () => {
     expect(
-      shouldAddActionNotificationButton(
+      shouldMonitorActions(
         "https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml"
       )
     ).toBeTrue();
   });
   it("returns true for all workflows URLs", () => {
     expect(
-      shouldAddActionNotificationButton(
+      shouldMonitorActions(
         "https://github.com/SpookSoftware/github-actions-browser-notifications/actions"
       )
     ).toBeTrue();
   });
   it("returns true for pull request URLs", () => {
     expect(
-      shouldAddActionNotificationButton(
+      shouldMonitorActions(
         "https://github.com/SpookSoftware/github-actions-browser-notifications/pull/22932/checks"
       )
     ).toBeTrue();
@@ -63,7 +63,7 @@ describe("shouldAddActionNotificationButton", () => {
       "https://github.com/orgs/SpookSoftware/repositories?type=source",
       "https://github.com/SpookSoftware",
     ];
-    const results = urls.map((url) => shouldAddActionNotificationButton(url));
+    const results = urls.map((url) => shouldMonitorActions(url));
     expect(results.every((result) => result === false)).toBeTrue();
   });
 });

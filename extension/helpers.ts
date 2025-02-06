@@ -4,7 +4,7 @@ import {
 } from "./selectors";
 import { Encoded, MonitorRequest } from "../types";
 
-export function shouldAddActionNotificationButton(url: string) {
+export function shouldMonitorActions(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/pull/22932/checks
