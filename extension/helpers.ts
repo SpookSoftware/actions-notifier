@@ -15,8 +15,11 @@ export function shouldMonitorActions(url: string) {
 }
 
 export function shouldAddJobNotificationButton(url: string) {
-  const pattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+$/;
-  return pattern.test(url);
+  const runsPattern =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+$/;
+  const specificJobPattern =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+\/job\/\d+$/;
+  return runsPattern.test(url) || specificJobPattern.test(url);
 }
 
 export function createNotificationButton({
