@@ -410,7 +410,7 @@ export function createJobURL({
   owner: string;
   repository: string;
 }) {
-  return `https://github.com/${owner}/${repository}/actions/runs/${runId}/jobs/${jobId}`;
+  return `https://github.com/${owner}/${repository}/actions/runs/${runId}/job/${jobId}`;
 }
 
 export function createURL({

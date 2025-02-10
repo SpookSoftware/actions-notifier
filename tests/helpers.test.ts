@@ -653,7 +653,7 @@ describe("createJobURL", () => {
       repository: "rocks-and-other-things",
     };
     expect(createJobURL(decoded)).toEqual(
-      "https://github.com/whoever/rocks-and-other-things/actions/runs/69/jobs/420"
+      "https://github.com/whoever/rocks-and-other-things/actions/runs/69/job/420"
     );
   });
 });
@@ -677,7 +677,7 @@ describe("createURL", () => {
       repository: "rocks-and-other-things",
     };
     expect(createURL(decoded)).toEqual(
-      "https://github.com/whoever/rocks-and-other-things/actions/runs/69/jobs/420"
+      "https://github.com/whoever/rocks-and-other-things/actions/runs/69/job/420"
     );
   });
 });
