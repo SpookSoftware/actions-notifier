@@ -148,60 +148,54 @@ async function processElementsForJobPages() {
   }
 }
 
-//   const isPrPage = PR_PAGE_REGEX.test(url);
-//   const isJobPage = false;
-//   const isRunsPage = false;
-//   return isPrPage || isJobPage || isRunsPage;
-// }
+let workflowObserver: MutationObserver | null;
+let jobObserver: MutationObserver | null;
 
-//   if (request && request.type === "page-rendered") {
-//     console.debug(
-//       "Received request to refresh notification buttons because of a url change. URL: ",
-//       request.url
-//     );
-//     if (shouldMonitorActions(request.url)) {
-//       console.debug("Heading down the action path");
-//       processElementsForAction(request.url);
-//       const workflowObserver = new MutationObserver(
-//         processSpecificWorkflowPageNodes
-//       );
-//     } else if (shouldAddJobNotificationButton(request.url)) {
-//       console.debug("Heading down the job path");
-//       processElementsForJob(request.url);
-//     }
-//   }
-// });
+async function main() {
+  console.debug("Running main()");
+  cleanupObservers();
 
-// if (window) {
-//   switch(window.location.href) {
-
-//   }
-// }
-
-// Reminder to self: This runs on every full page nav, but not every spa nav. We might need a global observer?
-(async () => {
   const observerConfig = { childList: true, subtree: true };
+
   if (shouldMonitorActions(window.location.href)) {
     await processElementsForWorkflowRunPages();
 
-    // Idea: Instead of reprocessing for everything, we just do the work for a single element at a time! And this function
-    // Would simply process the element for the action on the one element instead of everything.
     const workflowRunsContainer = document.querySelector(
       WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
-    )!;
-
-    // Is there a way to group this into its own function or whatever?
-    const workflowRunCallback = createWorkflowRunCallback(() =>
-      processElementsForWorkflowRunPages()
     );
-    // I need to be careful to disconnect this when appropriate
-    const workflowObserver = new MutationObserver(workflowRunCallback);
-    workflowObserver.observe(workflowRunsContainer, observerConfig);
+
+    if (workflowRunsContainer) {
+      console.debug("Attaching workflow observer");
+
+      const workflowRunCallback = createWorkflowRunCallback(() =>
+        processElementsForWorkflowRunPages()
+      );
+
+      workflowObserver = new MutationObserver(workflowRunCallback);
+      workflowObserver.observe(workflowRunsContainer, observerConfig);
+    }
   } else if (shouldAddJobNotificationButton(window.location.href)) {
     await processElementsForJobPages();
   }
-  // if (shouldAddJobNotificationButton(window.location.href)) {
-  //   console.debug("Determined we should process elements for job");
-  //   processElementsForJob(window.location.href);
-  // }
-})();
+}
+
+function cleanupObservers() {
+  if (workflowObserver) {
+    workflowObserver.disconnect();
+    console.debug("Disconnected workflow observer");
+    workflowObserver = null;
+  }
+  if (jobObserver) {
+    jobObserver.disconnect();
+    console.debug("Disconnected job observer");
+    jobObserver = null;
+  }
+}
+
+document.removeEventListener("turbo:render", main);
+document.addEventListener("turbo:render", async () => {
+  console.debug("turbo:render triggered");
+  await main();
+});
+
+main();
