@@ -1,23 +1,50 @@
-export type MonitorRequestType = {
-  type: "action" | "job";
-};
+export type MonitorRequestType = "action" | "job";
 
-export type MonitorActionRequest = {
-  type: "action";
+export type MonitorRequestTask = "start-monitoring" | "stop-monitoring";
+
+export type MonitorRequest = {
+  type: MonitorRequestType;
   runId: string;
+  jobId?: string;
   owner: string;
   repository: string;
+  task: MonitorRequestTask;
 };
 
-export type MonitorJobRequest = {
+export type StartMonitorRequest = Omit<MonitorRequest, "task"> & {
+  task: "start-monitoring";
+};
+export type StopMonitorRequest = Omit<MonitorRequest, "task"> & {
+  task: "stop-monitoring";
+};
+
+export type StartMonitorJobRequest = Omit<
+  StartMonitorRequest,
+  "type" | "jobId"
+> & {
   type: "job";
-  runId: string;
   jobId: string;
-  owner: string;
-  repository: string;
+};
+export type StopMonitorJobRequest = Omit<
+  StopMonitorRequest,
+  "type" | "jobId"
+> & {
+  type: "job";
+  jobId: string;
 };
 
-export type MonitorRequest = MonitorActionRequest | MonitorJobRequest;
+export type StartMonitorActionRequest = Omit<
+  StartMonitorRequest,
+  "jobId" | "type"
+> & {
+  type: "action";
+};
+export type StopMonitorActionRequest = Omit<
+  StopMonitorRequest,
+  "type" | "jobId"
+> & {
+  type: "Action";
+};
 
 export type Encoded =
   | `${string}|${string}|${string}|${string}`

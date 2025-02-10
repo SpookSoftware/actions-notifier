@@ -17,9 +17,12 @@ import {
   encode,
   extractJobDataFromURL,
   insertButtonIntoJob,
-  createMonitoringHandler,
+  createStartMonitoringHandler,
   assertIsHTMLElement,
   isAlreadyButtoned,
+  createStopMonitoringHandler,
+  setSVGColor,
+  resetSVGColor,
 } from "./helpers";
 
 import type { Encoded } from "../types";
@@ -67,20 +70,28 @@ async function processElementsForWorkflowRunPages() {
 
     button.appendChild(svg);
 
-    const startMonitoring = createMonitoringHandler({
-      runId,
-      owner,
-      repository,
-      svg,
-    });
-    button.onclick = startMonitoring;
-
     const encoded = encode({ runId, owner, repository });
 
-    // Maybe we make this a function that is like await turnSVGYellowIfAlreadyMonitored(encoded, svg) that's more clearly side-effect-y
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-    if (isAlreadyMonitored) {
-      svg.style.fill = "yellow";
+
+    if (!isAlreadyMonitored) {
+      const startMonitoringFn = createStartMonitoringHandler({
+        runId,
+        owner,
+        repository,
+        svg,
+      });
+      button.onclick = startMonitoringFn;
+    } else {
+      const stopMonitoringFn = createStopMonitoringHandler({
+        runId,
+        owner,
+        repository,
+        svg,
+      });
+      button.onclick = stopMonitoringFn;
+      // This is bad and confusing. How to fix?
+      setSVGColor(svg, "yellow");
     }
 
     magicallyInsertButtonInRightPlace({
@@ -128,7 +139,7 @@ async function processElementsForJobPages() {
 
     button.appendChild(svg);
 
-    const startMonitoring = createMonitoringHandler({
+    const startMonitoring = createStartMonitoringHandler({
       runId,
       jobId,
       owner,

@@ -20,16 +20,33 @@ function createAlarmForId(id: string, lengthInMinutes: number) {
   });
 }
 
+function cancelAlarmForId(id: string) {
+  return chrome.alarms.clear(id);
+}
+
 function storeMonitoringStatus(id: string) {
   return chrome.storage.local.set({ [id]: true });
 }
 
-const onMessageCallback = createOnMessageCallback((id, lengthInMinutes) => {
+function performAllStartMonitoringTasks(id: string, lengthInMinutes: number) {
   return Promise.all([
     createAlarmForId(id, lengthInMinutes),
     storeMonitoringStatus(id),
   ]);
-});
+}
+
+function removeMonitoringStatus(id: string) {
+  return chrome.storage.local.remove(id);
+}
+
+function performAllStopMonitoringTasks(id: string) {
+  return Promise.all([cancelAlarmForId(id), removeMonitoringStatus(id)]);
+}
+
+const onMessageCallback = createOnMessageCallback(
+  performAllStartMonitoringTasks,
+  performAllStopMonitoringTasks
+);
 
 chrome.runtime.onMessage.addListener(onMessageCallback);
 

@@ -2,7 +2,12 @@ import {
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
 } from "./selectors";
-import { Encoded, MonitorRequest } from "../types";
+import {
+  Encoded,
+  MonitorRequest,
+  StartMonitorRequest,
+  StopMonitorRequest,
+} from "../types";
 
 export function shouldMonitorActions(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
@@ -168,7 +173,7 @@ export function extractJobDataFromURL(url: string) {
  * Creates a callback function that sends a message to the background script to start monitoring a given run.
  * @returns A function that sends a message to the background script to start monitoring the given run.
  */
-export function createMonitoringHandler({
+export function createStartMonitoringHandler({
   runId,
   jobId,
   owner,
@@ -181,50 +186,85 @@ export function createMonitoringHandler({
   repository: string;
   svg: SVGElement;
 }) {
+  const partialMessage: StartMonitorRequest = {
+    runId,
+    owner,
+    repository,
+    task: "start-monitoring",
+    type: "action",
+  };
+
   if (jobId) {
-    return (_event: MouseEvent) => {
-      const message: MonitorRequest = {
-        runId,
-        jobId,
-        owner,
-        repository,
-        type: "job",
-      };
-      chrome.runtime.sendMessage(message, (response) => {
-        const status = response?.status;
-        if (status) {
-          if (status === "ok") {
-            svg.style.color = "yellow";
-            svg.classList.remove("color-fg-muted");
-          } else {
-            svg.style.color = "red";
-            svg.classList.remove("color-fg-muted");
-          }
-        }
-      });
-    };
-  } else {
-    return (_event: MouseEvent) => {
-      const message: MonitorRequest = {
-        runId,
-        owner,
-        repository,
-        type: "action",
-      };
-      chrome.runtime.sendMessage(message, (response) => {
-        const status = response?.status;
-        if (status) {
-          if (status === "ok") {
-            svg.style.color = "yellow";
-            svg.classList.remove("color-fg-muted");
-          } else {
-            svg.style.color = "red";
-            svg.classList.remove("color-fg-muted");
-          }
-        }
-      });
-    };
+    partialMessage.jobId = jobId;
+    partialMessage.type = "job";
   }
+
+  return (_event: MouseEvent) => {
+    chrome.runtime.sendMessage(partialMessage, (response) => {
+      const status = response?.status;
+      if (status) {
+        if (status === "ok") {
+          setSVGColor(svg, "yellow");
+        } else {
+          setSVGColor(svg, "red");
+        }
+      }
+    });
+  };
+}
+
+/**
+ * Creates a callback function that sends a message to the background script to start monitoring a given run.
+ * @returns A function that sends a message to the background script to start monitoring the given run.
+ */
+export function createStopMonitoringHandler({
+  runId,
+  jobId,
+  owner,
+  repository,
+  svg,
+}: {
+  runId: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+  svg: SVGElement;
+}) {
+  const partialMessage: StopMonitorRequest = {
+    runId,
+    owner,
+    repository,
+    task: "stop-monitoring",
+    type: "action",
+  };
+
+  if (jobId) {
+    partialMessage.jobId = jobId;
+    partialMessage.type = "job";
+  }
+
+  return (_event: MouseEvent) => {
+    chrome.runtime.sendMessage(partialMessage, (response) => {
+      const status = response?.status;
+      if (status) {
+        if (status === "ok") {
+          resetSVGColor(svg);
+        } else {
+          setSVGColor(svg, "red");
+        }
+      }
+    });
+  };
+}
+
+export function setSVGColor(svg: SVGElement, color: string) {
+  svg.style.color = color;
+  svg.classList.remove("color-fg-muted");
+}
+
+export function resetSVGColor(svg: SVGElement) {
+  svg.style.color = "";
+  svg.classList.add("color-fg-muted");
 }
 
 export async function assertGithubToken() {
@@ -314,7 +354,7 @@ export const createWorkflowRunCallback = (onObservationChange: Function) => {
   };
 };
 
-export function parseRequest(request: MonitorRequest) {
+export function parseRequest(request: StartMonitorRequest) {
   try {
     if (request.type === "action") {
       const { runId, owner, repository } = request;
@@ -361,7 +401,7 @@ export function encode({
   }
 }
 
-export function encodeRequest(request: MonitorRequest): Encoded {
+export function encodeRequest(request: StartMonitorRequest): Encoded {
   if (request.type === "action") {
     const { runId, owner, repository } = parseRequest(request);
     return encode({ runId, owner, repository });
@@ -470,27 +510,62 @@ export function createOnAlarmCallback(
   };
 }
 
+function isStartMonitoringRequest(
+  request: MonitorRequest
+): request is StartMonitorRequest {
+  return request.task === "start-monitoring";
+}
+
+function isStopMonitoringRequest(
+  request: MonitorRequest
+): request is StopMonitorRequest {
+  return request.task === "stop-monitoring";
+}
+
 export function createOnMessageCallback(
-  setupMonitoring: (id: string, lengthInMinutes: number) => Promise<void[]>
+  setupMonitoring: (id: string, lengthInMinutes: number) => Promise<void[]>,
+  cancelMonitoring: (id: string) => Promise<[boolean, void]>
 ) {
   return (
     request: MonitorRequest,
     _sender: chrome.runtime.MessageSender,
     sendResponse: (response?: any) => void
   ) => {
-    const encoded = encodeRequest(request);
+    if (isStartMonitoringRequest(request)) {
+      const encoded = encodeRequest(request);
 
-    console.debug(`Received request to monitor ${encoded}`);
+      console.debug(`Received request to monitor ${encoded}`);
 
-    setupMonitoring(encoded, 0.1)
-      .then((_res) => {
-        console.debug(`Started monitoring for id ${encoded}`);
-        sendResponse({ status: "ok" });
-      })
-      .catch((err) => {
-        console.error(`Monitoring setup failed for id ${encoded}`);
-        sendResponse({ status: "error", error: err });
-      });
+      setupMonitoring(encoded, 0.1)
+        .then((_res) => {
+          console.debug(`Started monitoring for id ${encoded}`);
+          sendResponse({ status: "ok" });
+        })
+        .catch((err) => {
+          console.error(`Monitoring setup failed for id ${encoded}`);
+          sendResponse({ status: "error", error: err });
+        });
+    } else if (isStopMonitoringRequest(request)) {
+      const encoded = encodeRequest(request);
+
+      console.debug(`Received request to stop monitoring ${encoded}`);
+
+      cancelMonitoring(encoded)
+        .then((_res) => {
+          console.debug(`Stopped monitoring for id ${encoded}`);
+          sendResponse({ status: "ok" });
+        })
+        .catch((err) => {
+          console.error(`Monitoring cancellation failed for id ${encoded}`);
+          sendResponse({ status: "error", error: err });
+        });
+    } else {
+      throw Error(
+        `Unexpected request task ${
+          request.task
+        }. Full request for debugging: ${JSON.stringify(request)}`
+      );
+    }
     // This signals to chrome that the connection will remain open until sendResponse is called.
     return true;
   };
