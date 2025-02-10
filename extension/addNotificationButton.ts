@@ -18,6 +18,7 @@ import {
   extractJobDataFromURL,
   insertButtonIntoJob,
   createMonitoringHandler,
+  assertIsHTMLElement,
 } from "./helpers";
 
 import type { Encoded } from "../types";
@@ -97,6 +98,8 @@ async function processElementsForJobPages() {
   console.log({ currentlyRunningOrQueued });
 
   for (const element of currentlyRunningOrQueued) {
+    assertIsHTMLElement(element);
+
     const link = element.querySelector("a");
 
     console.assert(

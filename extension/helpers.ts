@@ -535,3 +535,10 @@ export function magicallyInsertButtonInRightPlace({
 export function insertButtonIntoJob(button: Element, jobLi: Element) {
   jobLi.insertAdjacentElement("beforeend", button);
 }
+
+export function assertIsHTMLElement(
+  element: Element
+): asserts element is HTMLElement {
+  const isHTMLElement = element instanceof HTMLElement;
+  console.assert(isHTMLElement, "Expected element to be an HTMLElement");
+}

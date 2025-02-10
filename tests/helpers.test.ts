@@ -23,6 +23,7 @@ import {
   createActionURL,
   createJobURL,
   createURL,
+  assertIsHTMLElement,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -679,5 +680,19 @@ describe("createURL", () => {
     expect(createURL(decoded)).toEqual(
       "https://github.com/whoever/rocks-and-other-things/actions/runs/69/job/420"
     );
+  });
+
+  describe("assertIsHTMLElement", () => {
+    it("does not throw an error if the element is an HTMLElement", () => {
+      const div = document.createElement("div");
+      expect(() => assertIsHTMLElement(div)).not.toThrow();
+    });
+
+    it("throws an error if the element is not an HTMLElement", () => {
+      const textNode = document.createTextNode("I am not an HTMLElement");
+      expect(() => assertIsHTMLElement(textNode as any)).toThrow(
+        "Expected element to be an HTMLElement"
+      );
+    });
   });
 });
