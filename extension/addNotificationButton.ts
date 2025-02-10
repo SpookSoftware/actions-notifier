@@ -23,24 +23,11 @@ import {
   createStopMonitoringHandler,
   setSVGColor,
   resetSVGColor,
+  isIdAlreadyMonitored,
+  createHandler,
 } from "./helpers";
 
 import type { Encoded } from "../types";
-
-function isIdAlreadyMonitored(id: Encoded) {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(id, (result) => {
-      if (chrome.runtime.lastError) {
-        console.error(
-          "Error occurred while checking if id was already monitored",
-          chrome.runtime.lastError
-        );
-        resolve(false);
-      }
-      resolve(Object.keys(result).length > 0);
-    });
-  });
-}
 
 async function processElementsForWorkflowRunPages() {
   const workflowRunElements = document.querySelectorAll(
@@ -74,23 +61,43 @@ async function processElementsForWorkflowRunPages() {
 
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
 
-    if (!isAlreadyMonitored) {
-      const startMonitoringFn = createStartMonitoringHandler({
-        runId,
-        owner,
-        repository,
-        svg,
-      });
-      button.onclick = startMonitoringFn;
-    } else {
-      const stopMonitoringFn = createStopMonitoringHandler({
-        runId,
-        owner,
-        repository,
-        svg,
-      });
-      button.onclick = stopMonitoringFn;
-      // This is bad and confusing. How to fix?
+    // Todo: I am not sure the best way to handle this to reduce complexity. Do I continue to inline?
+    // It's important that the checks happen INSIDE the click handler itself so that the user can toggle on or off
+    // the monitoring by clicking an already-yellow button
+    const handleMonitoringClickFn = async (_event: MouseEvent) => {
+      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+      // Earlier, this got messed up because of type errors. How to prevent that? A factory? like, createPayload(data)?
+      const payload = { runId, owner, repository, type: "action" };
+      if (!isAlreadyMonitored) {
+        payload.task = "start-monitoring";
+        chrome.runtime.sendMessage(payload, (response) => {
+          const status = response?.status;
+          if (status) {
+            if (status === "ok") {
+              setSVGColor(svg, "yellow");
+            } else {
+              setSVGColor(svg, "red");
+            }
+          }
+        });
+      } else {
+        payload.task = "stop-monitoring";
+        chrome.runtime.sendMessage(payload, (response) => {
+          const status = response?.status;
+          if (status) {
+            if (status === "ok") {
+              resetSVGColor(svg);
+            } else {
+              setSVGColor(svg, "red");
+            }
+          }
+        });
+      }
+    };
+
+    button.onclick = handleMonitoringClickFn;
+
+    if (isAlreadyMonitored) {
       setSVGColor(svg, "yellow");
     }
 

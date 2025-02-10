@@ -199,6 +199,7 @@ export function createStartMonitoringHandler({
     partialMessage.type = "job";
   }
 
+  // Note: any ability to toggle the monitoring on or off will have to happen here in the return function callback.
   return (_event: MouseEvent) => {
     chrome.runtime.sendMessage(partialMessage, (response) => {
       const status = response?.status;
@@ -211,6 +212,21 @@ export function createStartMonitoringHandler({
       }
     });
   };
+}
+
+export function isIdAlreadyMonitored(id: Encoded) {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(id, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error(
+          "Error occurred while checking if id was already monitored",
+          chrome.runtime.lastError
+        );
+        resolve(false);
+      }
+      resolve(Object.keys(result).length > 0);
+    });
+  });
 }
 
 /**
