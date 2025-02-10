@@ -35,6 +35,7 @@ export function createNotificationButton({
 }) {
   const button = document.createElement("button");
   button.classList.add("Button");
+  button.classList.add("gh-action-notifier-button");
   button.dataset.runId = runId;
   button.dataset.jobId = jobId;
   button.dataset.owner = owner;
@@ -541,4 +542,8 @@ export function assertIsHTMLElement(
 ): asserts element is HTMLElement {
   const isHTMLElement = element instanceof HTMLElement;
   console.assert(isHTMLElement, "Expected element to be an HTMLElement");
+}
+
+export function isAlreadyButtoned(element: Element) {
+  return element.querySelector(".gh-action-notifier-button");
 }

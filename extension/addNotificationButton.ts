@@ -19,6 +19,7 @@ import {
   insertButtonIntoJob,
   createMonitoringHandler,
   assertIsHTMLElement,
+  isAlreadyButtoned,
 } from "./helpers";
 
 import type { Encoded } from "../types";
@@ -47,6 +48,8 @@ async function processElementsForWorkflowRunPages() {
     getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
 
   for (const element of currentlyRunningOrQueuedElements) {
+    if (!isAlreadyButtoned(element)) {
+    }
     const link = element.querySelector("a");
 
     console.assert(

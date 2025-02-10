@@ -24,6 +24,7 @@ import {
   createJobURL,
   createURL,
   assertIsHTMLElement,
+  isAlreadyButtoned,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -694,5 +695,26 @@ describe("createURL", () => {
         "Expected element to be an HTMLElement"
       );
     });
+  });
+});
+
+describe("isAlreadyButtoned", () => {
+  it("should return the button element if it exists", () => {
+    const element = document.createElement("div");
+    const button = document.createElement("button");
+    button.classList.add("gh-action-notifier-button");
+    element.appendChild(button);
+
+    const result = isAlreadyButtoned(element);
+
+    expect(result).toBe(button);
+  });
+
+  it("should return null if the button element does not exist", () => {
+    const element = document.createElement("div");
+
+    const result = isAlreadyButtoned(element);
+
+    expect(result).toBeNull();
   });
 });
