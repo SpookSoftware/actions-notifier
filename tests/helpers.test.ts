@@ -7,7 +7,7 @@ import {
   extractActionDataFromURL,
   selectorMatches,
   selectorHasChildren,
-  createStartMonitoringHandler,
+  createMonitorToggleHandler,
   encodeRequest,
   parseRequest,
   decode,
@@ -222,14 +222,16 @@ describe("selectorHasChildren", () => {
     }
   });
 });
-describe("createStartMonitoringHandler", () => {
+
+// Todo: Update this function to reflect that the return function is what does the work and that there are closure things happening.
+describe("createMonitorToggleHandler", () => {
   it("updates the SVG color to yellow if the response status is 'ok'", () => {
     const runId = "123";
     const owner = "SpookSoftware";
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createStartMonitoringHandler({
+    const callback = createMonitorToggleHandler({
       runId,
       owner,
       repository,
@@ -257,7 +259,7 @@ describe("createStartMonitoringHandler", () => {
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createStartMonitoringHandler({
+    const callback = createMonitorToggleHandler({
       runId,
       owner,
       repository,
@@ -286,7 +288,7 @@ describe("createStartMonitoringHandler", () => {
     const repository = "github-actions-browser-notifications";
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 
-    const callback = createStartMonitoringHandler({
+    const callback = createMonitorToggleHandler({
       runId,
       jobId,
       owner,

@@ -173,7 +173,7 @@ export function extractJobDataFromURL(url: string) {
  * Creates a callback function that sends a message to the background script to start monitoring a given run.
  * @returns A function that sends a message to the background script to start monitoring the given run.
  */
-export function createStartMonitoringHandler({
+export function createMonitorToggleHandler({
   runId,
   jobId,
   owner,
@@ -186,7 +186,7 @@ export function createStartMonitoringHandler({
   repository: string;
   svg: SVGElement;
 }) {
-  const partialMessage: StartMonitorRequest = {
+  const startMonitorPayload: StartMonitorRequest = {
     runId,
     owner,
     repository,
@@ -194,26 +194,59 @@ export function createStartMonitoringHandler({
     type: "action",
   };
 
+  const stopMonitorPayload: StopMonitorRequest = {
+    ...startMonitorPayload,
+    task: "stop-monitoring",
+  };
+
   if (jobId) {
-    partialMessage.jobId = jobId;
-    partialMessage.type = "job";
+    startMonitorPayload.jobId = jobId;
+    startMonitorPayload.type = "job";
+
+    stopMonitorPayload.jobId = jobId;
+    stopMonitorPayload.type = "job";
   }
 
-  // Note: any ability to toggle the monitoring on or off will have to happen here in the return function callback.
-  return (_event: MouseEvent) => {
-    chrome.runtime.sendMessage(partialMessage, (response) => {
-      const status = response?.status;
-      if (status) {
-        if (status === "ok") {
-          setSVGColor(svg, "yellow");
-        } else {
-          setSVGColor(svg, "red");
-        }
+  // Closure stuff.
+  function colorSVGStartMonitoring(response: { status: string }) {
+    const status = response.status;
+    if (status) {
+      if (status === "ok") {
+        setSVGColor(svg, "yellow");
+      } else {
+        setSVGColor(svg, "red");
       }
-    });
-  };
+    }
+  }
+  function colorSVGStopMonitoring(response: { status: string }) {
+    const status = response.status;
+    if (status) {
+      if (status === "ok") {
+        resetSVGColor(svg);
+      } else {
+        setSVGColor(svg, "red");
+      }
+    }
+  }
+
+  // In case future me forgets, all the dynamic "runtime-y" stuff has to happen here, because this is what's actually getting called when the function gets clicked.
+  async function sendMonitoringMessage(_event: MouseEvent) {
+    // I think the fact that I have to encode here is a sign of a bad structure.
+    const isAlreadyMonitored = await isIdAlreadyMonitored(
+      encode({ runId, jobId, owner, repository })
+    );
+    console.log("Inside callback.", { isAlreadyMonitored });
+    if (!isAlreadyMonitored) {
+      chrome.runtime.sendMessage(startMonitorPayload, colorSVGStartMonitoring);
+    } else {
+      chrome.runtime.sendMessage(stopMonitorPayload, colorSVGStopMonitoring);
+    }
+  }
+
+  return sendMonitoringMessage;
 }
 
+// Todo: make this take either encoded OR decoded.
 export function isIdAlreadyMonitored(id: Encoded) {
   return new Promise((resolve) => {
     chrome.storage.local.get(id, (result) => {

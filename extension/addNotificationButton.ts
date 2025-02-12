@@ -17,14 +17,11 @@ import {
   encode,
   extractJobDataFromURL,
   insertButtonIntoJob,
-  createStartMonitoringHandler,
+  createMonitorToggleHandler,
   assertIsHTMLElement,
   isAlreadyButtoned,
-  createStopMonitoringHandler,
   setSVGColor,
-  resetSVGColor,
   isIdAlreadyMonitored,
-  createHandler,
 } from "./helpers";
 
 import type { Encoded } from "../types";
@@ -61,39 +58,12 @@ async function processElementsForWorkflowRunPages() {
 
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
 
-    // Todo: I am not sure the best way to handle this to reduce complexity. Do I continue to inline?
-    // It's important that the checks happen INSIDE the click handler itself so that the user can toggle on or off
-    // the monitoring by clicking an already-yellow button
-    const handleMonitoringClickFn = async (_event: MouseEvent) => {
-      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-      // Earlier, this got messed up because of type errors. How to prevent that? A factory? like, createPayload(data)?
-      const payload = { runId, owner, repository, type: "action" };
-      if (!isAlreadyMonitored) {
-        payload.task = "start-monitoring";
-        chrome.runtime.sendMessage(payload, (response) => {
-          const status = response?.status;
-          if (status) {
-            if (status === "ok") {
-              setSVGColor(svg, "yellow");
-            } else {
-              setSVGColor(svg, "red");
-            }
-          }
-        });
-      } else {
-        payload.task = "stop-monitoring";
-        chrome.runtime.sendMessage(payload, (response) => {
-          const status = response?.status;
-          if (status) {
-            if (status === "ok") {
-              resetSVGColor(svg);
-            } else {
-              setSVGColor(svg, "red");
-            }
-          }
-        });
-      }
-    };
+    const handleMonitoringClickFn = createMonitorToggleHandler({
+      owner,
+      repository,
+      runId,
+      svg,
+    });
 
     button.onclick = handleMonitoringClickFn;
 
@@ -146,7 +116,8 @@ async function processElementsForJobPages() {
 
     button.appendChild(svg);
 
-    const startMonitoring = createStartMonitoringHandler({
+    // Todo: update names to reflect new monitor handler.
+    const startMonitoring = createMonitorToggleHandler({
       runId,
       jobId,
       owner,
