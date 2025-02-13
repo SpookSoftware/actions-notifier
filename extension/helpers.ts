@@ -33,7 +33,13 @@ export function shouldAddJobNotificationButton(url: string) {
     /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+$/;
   const specificJobPattern =
     /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+\/job\/\d+$/;
-  return runsPattern.test(url) || specificJobPattern.test(url);
+  const specificJobPatternWithOptionalQueryParams =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+\/job\/\d+\?/;
+  return (
+    runsPattern.test(url) ||
+    specificJobPattern.test(url) ||
+    specificJobPatternWithOptionalQueryParams.test(url)
+  );
 }
 
 export function createNotificationButton({
@@ -422,10 +428,10 @@ export function encode({
 
 export function encodeRequest(request: MonitorRequest): Encoded {
   if (request.type === "action") {
-    const { runId, owner, repository } = parseRequest(request);
+    const { runId, owner, repository } = request;
     return encode({ runId, owner, repository });
   } else if (request.type === "job") {
-    const { runId, jobId, owner, repository } = parseRequest(request);
+    const { runId, jobId, owner, repository } = request;
     return encode({ runId, jobId, owner, repository });
   }
   throw Error(
@@ -549,7 +555,7 @@ export function createOnMessageCallback(
   return (
     request: MonitorRequest,
     _sender: chrome.runtime.MessageSender,
-    sendResponse: (response?: any) => void
+    sendResponse: (response: MonitorResponse) => void
   ) => {
     if (isStartMonitoringRequest(request)) {
       const encoded = encodeRequest(request);
@@ -637,6 +643,9 @@ export function assertIsHTMLElement(
 ): asserts element is HTMLElement {
   const isHTMLElement = element instanceof HTMLElement;
   console.assert(isHTMLElement, "Expected element to be an HTMLElement");
+  if (!isHTMLElement) {
+    throw Error("Expected element to be an HTMLElement");
+  }
 }
 
 export function isAlreadyButtoned(element: Element) {

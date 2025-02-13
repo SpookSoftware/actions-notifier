@@ -7,9 +7,7 @@ import {
   extractActionDataFromURL,
   selectorMatches,
   selectorHasChildren,
-  createMonitorToggleHandler,
   encodeRequest,
-  parseRequest,
   decode,
   createOnAlarmCallback,
   checkStatus,
@@ -24,8 +22,6 @@ import {
   assertIsHTMLElement,
   isAlreadyButtoned,
   buildMonitoringPayloads,
-  sendMessageAsync,
-  isIdAlreadyMonitored,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -225,58 +221,15 @@ describe("selectorHasChildren", () => {
   });
 });
 
-describe("parseRequest", () => {
-  it("parses an action request correctly", () => {
-    const request: StartMonitorActionRequest = {
+describe("encodeRequest", () => {
+  it("encodes an action request correctly", () => {
+    const request = {
       type: "action",
       task: "start-monitoring",
       runId: "123",
       owner: "SpookSoftware",
       repository: "github-actions-browser-notifications",
-    };
-    const result = parseRequest(request);
-    expect(result).toEqual({
-      runId: "123",
-      owner: "SpookSoftware",
-      repository: "github-actions-browser-notifications",
-    });
-  });
-
-  it("parses a job request correctly", () => {
-    const request: StartMonitorJobRequest = {
-      type: "job",
-      runId: "123",
-      jobId: "456",
-      owner: "SpookSoftware",
-      repository: "github-actions-browser-notifications",
-    };
-    const result = parseRequest(request);
-    expect(result).toEqual({
-      runId: "123",
-      jobId: "456",
-      owner: "SpookSoftware",
-      repository: "github-actions-browser-notifications",
-    });
-  });
-
-  it("throws an error if the request format is not recognized", () => {
-    const request = {
-      type: "unknown",
-    };
-    expect(() => parseRequest(request as any)).toThrow(
-      "Request was in a format not recognized"
-    );
-  });
-});
-
-describe("encodeRequest", () => {
-  it("encodes an action request correctly", () => {
-    const request: StartMonitorActionRequest = {
-      type: "action",
-      runId: "123",
-      owner: "SpookSoftware",
-      repository: "github-actions-browser-notifications",
-    };
+    } as const;
     const result = encodeRequest(request);
     expect(result).toEqual(
       "123|SpookSoftware|github-actions-browser-notifications"
@@ -284,13 +237,14 @@ describe("encodeRequest", () => {
   });
 
   it("encodes a job request correctly", () => {
-    const request: StartMonitorJobRequest = {
+    const request = {
       type: "job",
+      task: "start-monitoring",
       runId: "123",
       jobId: "456",
       owner: "SpookSoftware",
       repository: "github-actions-browser-notifications",
-    };
+    } as const;
     const result = encodeRequest(request);
     expect(result).toEqual(
       "123|456|SpookSoftware|github-actions-browser-notifications"
@@ -496,54 +450,257 @@ describe("getElementToInsertNotificationButtonInto", () => {
 });
 
 describe("createOnMessageCallback", () => {
-  it("calls setupMonitoring with the correct parameters and sends a success response", async () => {
-    const setupMonitoring = jest.fn().mockResolvedValue([]);
-    const sendResponse = jest.fn();
-    const request: StartMonitorRequest = {
-      type: "action",
-      runId: "123",
-      owner: "SpookSoftware",
-      repository: "github-actions-browser-notifications",
-    };
+  describe("for actions", () => {
+    it("calls setupMonitoring with the correct parameters and sends a success response", async () => {
+      const setupMonitoring = jest.fn().mockResolvedValue([]);
+      const cancelMonitoring = jest.fn();
 
-    const callback = createOnMessageCallback(setupMonitoring);
-    const result = callback(
-      request,
-      {} as chrome.runtime.MessageSender,
-      sendResponse
-    );
+      const sendResponse = jest.fn();
+      const request: StartMonitorRequest = {
+        type: "action",
+        runId: "123",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "start-monitoring",
+      };
 
-    expect(result).toBeTrue();
-    expect(setupMonitoring).toHaveBeenCalledWith(
-      "123|SpookSoftware|github-actions-browser-notifications",
-      0.1
-    );
-    await setupMonitoring();
-    expect(sendResponse).toHaveBeenCalledWith({ status: "ok" });
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      expect(setupMonitoring).toHaveBeenCalledWith(
+        "123|SpookSoftware|github-actions-browser-notifications",
+        0.1
+      );
+      await setupMonitoring();
+      expect(sendResponse).toHaveBeenCalledWith({ status: "ok" });
+    });
+
+    it("calls setupMonitoring and sends an error response if it fails", async () => {
+      const setupMonitoring = jest.fn().mockRejectedValue(new Error("Failed"));
+      const cancelMonitoring = jest.fn();
+      const sendResponse = jest.fn();
+      const request: StartMonitorRequest = {
+        type: "action",
+        runId: "123",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "start-monitoring",
+      };
+
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      await setupMonitoring().catch(() => {});
+      expect(sendResponse).toHaveBeenCalledWith({
+        status: "error",
+        error: new Error("Failed"),
+      });
+    });
+
+    it("calls cancelMonitoring with the correct parameters and sends a success response", async () => {
+      const setupMonitoring = jest.fn();
+      const cancelMonitoring = jest.fn().mockResolvedValue([]);
+
+      const sendResponse = jest.fn();
+      const request = {
+        type: "action",
+        runId: "123",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "stop-monitoring",
+      } as const;
+
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      expect(cancelMonitoring).toHaveBeenCalledWith(
+        "123|SpookSoftware|github-actions-browser-notifications"
+      );
+      await setupMonitoring();
+      expect(sendResponse).toHaveBeenCalledWith({ status: "ok" });
+    });
+
+    it("calls cancelMonitoring and sends an error response if it fails", async () => {
+      const setupMonitoring = jest.fn();
+      const cancelMonitoring = jest.fn().mockRejectedValue(new Error("Failed"));
+      const sendResponse = jest.fn();
+      const request = {
+        type: "action",
+        runId: "123",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "stop-monitoring",
+      } as const;
+
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      await cancelMonitoring().catch(() => {});
+      expect(sendResponse).toHaveBeenCalledWith({
+        status: "error",
+        error: new Error("Failed"),
+      });
+    });
   });
 
-  it("calls setupMonitoring and sends an error response if it fails", async () => {
-    const setupMonitoring = jest.fn().mockRejectedValue(new Error("Failed"));
-    const sendResponse = jest.fn();
-    const request: StartMonitorRequest = {
-      type: "action",
-      runId: "123",
-      owner: "SpookSoftware",
-      repository: "github-actions-browser-notifications",
-    };
+  describe("for jobs", () => {
+    it("calls setupMonitoring with the correct parameters and sends a success response", async () => {
+      const setupMonitoring = jest.fn().mockResolvedValue([]);
+      const cancelMonitoring = jest.fn();
 
-    const callback = createOnMessageCallback(setupMonitoring);
-    const result = callback(
-      request,
-      {} as chrome.runtime.MessageSender,
-      sendResponse
-    );
+      const sendResponse = jest.fn();
+      const request: StartMonitorRequest = {
+        type: "job",
+        runId: "123",
+        jobId: "456",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "start-monitoring",
+      };
 
-    expect(result).toBeTrue();
-    await setupMonitoring().catch(() => {});
-    expect(sendResponse).toHaveBeenCalledWith({
-      status: "error",
-      error: new Error("Failed"),
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      expect(setupMonitoring).toHaveBeenCalledWith(
+        "123|456|SpookSoftware|github-actions-browser-notifications",
+        0.1
+      );
+      await setupMonitoring();
+      expect(sendResponse).toHaveBeenCalledWith({ status: "ok" });
+    });
+
+    it("calls setupMonitoring and sends an error response if it fails", async () => {
+      const setupMonitoring = jest.fn().mockRejectedValue(new Error("Failed"));
+      const cancelMonitoring = jest.fn();
+      const sendResponse = jest.fn();
+      const request: StartMonitorRequest = {
+        type: "job",
+        runId: "123",
+        jobId: "456",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "start-monitoring",
+      };
+
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      await setupMonitoring().catch(() => {});
+      expect(sendResponse).toHaveBeenCalledWith({
+        status: "error",
+        error: new Error("Failed"),
+      });
+    });
+
+    it("calls cancelMonitoring with the correct parameters and sends a success response", async () => {
+      const setupMonitoring = jest.fn();
+      const cancelMonitoring = jest.fn().mockResolvedValue([]);
+
+      const sendResponse = jest.fn();
+      const request = {
+        type: "job",
+        runId: "123",
+        jobId: "456",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "stop-monitoring",
+      } as const;
+
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      expect(cancelMonitoring).toHaveBeenCalledWith(
+        "123|456|SpookSoftware|github-actions-browser-notifications"
+      );
+      await setupMonitoring();
+      expect(sendResponse).toHaveBeenCalledWith({ status: "ok" });
+    });
+
+    it("calls cancelMonitoring and sends an error response if it fails", async () => {
+      const setupMonitoring = jest.fn();
+      const cancelMonitoring = jest.fn().mockRejectedValue(new Error("Failed"));
+      const sendResponse = jest.fn();
+      const request = {
+        type: "job",
+        runId: "123",
+        jobId: "456",
+        owner: "SpookSoftware",
+        repository: "github-actions-browser-notifications",
+        task: "stop-monitoring",
+      } as const;
+
+      const callback = createOnMessageCallback(
+        setupMonitoring,
+        cancelMonitoring
+      );
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
+
+      expect(result).toBeTrue();
+      await cancelMonitoring().catch(() => {});
+      expect(sendResponse).toHaveBeenCalledWith({
+        status: "error",
+        error: new Error("Failed"),
+      });
     });
   });
 });
