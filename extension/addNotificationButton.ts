@@ -35,46 +35,47 @@ async function processElementsForWorkflowRunPages() {
     getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
 
   for (const element of currentlyRunningOrQueuedElements) {
+    // todo: incorporate this into the filter so that we just iterate through currently running && not already buttoned.
     if (!isAlreadyButtoned(element)) {
+      const link = element.querySelector("a");
+
+      console.assert(
+        link,
+        "Expected link to exist on currently running or queued element"
+      );
+      if (!link) {
+        continue;
+      }
+
+      const { owner, repository, runId } = extractActionDataFromURL(link.href);
+
+      const button = createNotificationButton({ runId, owner, repository });
+      const svg = createNotificationSVG();
+
+      button.appendChild(svg);
+
+      const encoded = encode({ runId, owner, repository });
+
+      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+
+      const handleMonitoringClickFn = createMonitorToggleHandler({
+        owner,
+        repository,
+        runId,
+        svg,
+      });
+
+      button.onclick = handleMonitoringClickFn;
+
+      if (isAlreadyMonitored) {
+        setSVGColor(svg, "yellow");
+      }
+
+      magicallyInsertButtonInRightPlace({
+        button,
+        workflowRunElement: element,
+      });
     }
-    const link = element.querySelector("a");
-
-    console.assert(
-      link,
-      "Expected link to exist on currently running or queued element"
-    );
-    if (!link) {
-      continue;
-    }
-
-    const { owner, repository, runId } = extractActionDataFromURL(link.href);
-
-    const button = createNotificationButton({ runId, owner, repository });
-    const svg = createNotificationSVG();
-
-    button.appendChild(svg);
-
-    const encoded = encode({ runId, owner, repository });
-
-    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-
-    const handleMonitoringClickFn = createMonitorToggleHandler({
-      owner,
-      repository,
-      runId,
-      svg,
-    });
-
-    button.onclick = handleMonitoringClickFn;
-
-    if (isAlreadyMonitored) {
-      setSVGColor(svg, "yellow");
-    }
-
-    magicallyInsertButtonInRightPlace({
-      button,
-      workflowRunElement: element,
-    });
   }
 }
 
