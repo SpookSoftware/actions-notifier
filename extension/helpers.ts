@@ -243,9 +243,12 @@ export function createMonitorToggleHandler({
   // In case future me forgets, all the dynamic "runtime-y" stuff has to happen here, because this is what's actually getting called when the function gets clicked.
   async function sendMonitoringMessage(_event: MouseEvent) {
     // I think the fact that I have to encode here is a sign of a bad structure.
-    const isAlreadyMonitored = await isIdAlreadyMonitored(
-      encode({ runId, jobId, owner, repository })
-    );
+    const isAlreadyMonitored = await isIdAlreadyMonitored({
+      runId,
+      jobId,
+      owner,
+      repository,
+    });
     if (!isAlreadyMonitored) {
       const startResponse = await sendMessageAsync(startMonitorPayload);
       if (startResponse.status === "ok") {
@@ -266,20 +269,27 @@ export function createMonitorToggleHandler({
   return sendMonitoringMessage;
 }
 
-// Todo: make this take either encoded OR decoded.
-export function isIdAlreadyMonitored(id: Encoded) {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(id, (result) => {
-      if (chrome.runtime.lastError) {
-        console.error(
-          "Error occurred while checking if id was already monitored",
-          chrome.runtime.lastError
-        );
-        resolve(false);
-      }
-      resolve(Object.keys(result).length > 0);
+export function isIdAlreadyMonitored(
+  id:
+    | Encoded
+    | { runId: string; jobId?: string; owner: string; repository: string }
+) {
+  if (typeof id === "string") {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(id, (result) => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "Error occurred while checking if id was already monitored",
+            chrome.runtime.lastError
+          );
+          resolve(false);
+        }
+        resolve(Object.keys(result).length > 0);
+      });
     });
-  });
+  } else {
+    return isIdAlreadyMonitored(encode(id));
+  }
 }
 
 export function setSVGColor(svg: SVGElement, color: string) {
