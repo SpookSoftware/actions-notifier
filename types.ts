@@ -46,6 +46,15 @@ export type StopMonitorActionRequest = Omit<
   type: "Action";
 };
 
+export type MonitorResponse =
+  | {
+      status: "ok";
+    }
+  | {
+      status: "error";
+      error: Error;
+    };
+
 export type Encoded =
   | `${string}|${string}|${string}|${string}`
   | `${string}|${string}|${string}`;

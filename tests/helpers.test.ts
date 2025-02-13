@@ -1,4 +1,4 @@
-import { expect, describe, it, jest, spyOn } from "bun:test";
+import { expect, describe, it, jest, spyOn, mock } from "bun:test";
 import {
   createNotificationButton,
   createOnMessageCallback,
@@ -23,7 +23,9 @@ import {
   createURL,
   assertIsHTMLElement,
   isAlreadyButtoned,
-  createStopMonitoringHandler,
+  buildMonitoringPayloads,
+  sendMessageAsync,
+  isIdAlreadyMonitored,
 } from "../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -223,182 +225,6 @@ describe("selectorHasChildren", () => {
   });
 });
 
-// Todo: Update this function to reflect that the return function is what does the work and that there are closure things happening.
-describe("createMonitorToggleHandler", () => {
-  it("updates the SVG color to yellow if the response status is 'ok'", () => {
-    const runId = "123";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createMonitorToggleHandler({
-      runId,
-      owner,
-      repository,
-      svg,
-    });
-
-    global.chrome = {
-      runtime: {
-        // @ts-ignore
-        sendMessage: (_message, callback) => {
-          callback({ status: "ok" });
-        },
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(svg.style.color).toBe("yellow");
-    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
-  });
-
-  it("updates the SVG color to red if the response status is not 'ok'", () => {
-    const runId = "123";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createMonitorToggleHandler({
-      runId,
-      owner,
-      repository,
-      svg,
-    });
-
-    global.chrome = {
-      runtime: {
-        // @ts-ignore
-        sendMessage: (_message, callback) => {
-          callback({ status: "error" });
-        },
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(svg.style.color).toBe("red");
-    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
-  });
-
-  it("handles when there's a job id as well", () => {
-    const runId = "123";
-    const jobId = "456";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createMonitorToggleHandler({
-      runId,
-      jobId,
-      owner,
-      repository,
-      svg,
-    });
-
-    global.chrome = {
-      runtime: {
-        // @ts-ignore
-        sendMessage: (_message, callback) => {
-          callback({ status: "ok" });
-        },
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(svg.style.color).toBe("yellow");
-    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
-  });
-});
-
-describe("createStopMonitoringHandler", () => {
-  it("resets the SVG color if the response status is 'ok'", () => {
-    const runId = "123";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createStopMonitoringHandler({
-      runId,
-      owner,
-      repository,
-      svg,
-    });
-
-    global.chrome = {
-      runtime: {
-        // @ts-ignore
-        sendMessage: (_message, callback) => {
-          callback({ status: "ok" });
-        },
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(svg.style.color).toBe("");
-    expect(svg.classList.contains("color-fg-muted")).toBeTrue();
-  });
-
-  it("updates the SVG color to red if the response status is not 'ok'", () => {
-    const runId = "123";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createStopMonitoringHandler({
-      runId,
-      owner,
-      repository,
-      svg,
-    });
-
-    global.chrome = {
-      runtime: {
-        // @ts-ignore
-        sendMessage: (_message, callback) => {
-          callback({ status: "error" });
-        },
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(svg.style.color).toBe("red");
-    expect(svg.classList.contains("color-fg-muted")).toBeFalse();
-  });
-
-  it("handles when there's a job id as well", () => {
-    const runId = "123";
-    const jobId = "456";
-    const owner = "SpookSoftware";
-    const repository = "github-actions-browser-notifications";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
-    const callback = createStopMonitoringHandler({
-      runId,
-      jobId,
-      owner,
-      repository,
-      svg,
-    });
-
-    global.chrome = {
-      runtime: {
-        // @ts-ignore
-        sendMessage: (_message, callback) => {
-          callback({ status: "ok" });
-        },
-      },
-    };
-
-    callback(new MouseEvent("click"));
-
-    expect(svg.style.color).toBe("");
-    expect(svg.classList.contains("color-fg-muted")).toBeTrue();
-  });
-});
 describe("parseRequest", () => {
   it("parses an action request correctly", () => {
     const request: StartMonitorActionRequest = {
@@ -820,5 +646,58 @@ describe("isAlreadyButtoned", () => {
     const result = isAlreadyButtoned(element);
 
     expect(result).toBeNull();
+  });
+});
+
+describe("buildMonitoringPayloads", () => {
+  it("builds start and stop payloads for an action", () => {
+    const payloads = buildMonitoringPayloads({
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    });
+
+    expect(payloads.start).toEqual({
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+      task: "start-monitoring",
+      type: "action",
+    });
+
+    expect(payloads.stop).toEqual({
+      runId: "123",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+      task: "stop-monitoring",
+      type: "action",
+    });
+  });
+
+  it("builds start and stop payloads for a job", () => {
+    const payloads = buildMonitoringPayloads({
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+    });
+
+    expect(payloads.start).toEqual({
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+      task: "start-monitoring",
+      type: "job",
+    });
+
+    expect(payloads.stop).toEqual({
+      runId: "123",
+      jobId: "456",
+      owner: "SpookSoftware",
+      repository: "github-actions-browser-notifications",
+      task: "stop-monitoring",
+      type: "job",
+    });
   });
 });

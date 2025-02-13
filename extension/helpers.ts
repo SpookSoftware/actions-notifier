@@ -2,12 +2,21 @@ import {
   CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
   QUEUED_ATTRIBUTE_SELECTOR,
 } from "./selectors";
-import {
+
+import type {
   Encoded,
   MonitorRequest,
+  MonitorRequestType,
+  MonitorResponse,
   StartMonitorRequest,
   StopMonitorRequest,
 } from "../types";
+
+export function sendMessageAsync(payload: unknown): Promise<MonitorResponse> {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(payload, resolve);
+  });
+}
 
 export function shouldMonitorActions(url: string) {
   // This is black magic. Basically, this regex matches the following kinds of URLs:
@@ -169,9 +178,40 @@ export function extractJobDataFromURL(url: string) {
   throw Error("Invalid URL: " + url);
 }
 
+export function buildMonitoringPayloads({
+  runId,
+  jobId,
+  owner,
+  repository,
+}: {
+  runId: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+}): { start: StartMonitorRequest; stop: StopMonitorRequest } {
+  const base: StartMonitorRequest = {
+    runId,
+    owner,
+    repository,
+    task: "start-monitoring",
+    type: "action",
+  };
+
+  const start = jobId
+    ? { ...base, jobId, type: "job" as MonitorRequestType }
+    : base;
+
+  const stop: StopMonitorRequest = {
+    ...start,
+    task: "stop-monitoring",
+  };
+
+  return { start, stop };
+}
+
 /**
  * Creates a callback function that sends a message to the background script to start monitoring a given run.
- * @returns A function that sends a message to the background script to start monitoring the given run.
+ * @returns A function that sends a message to the background script to start or stop monitoring the given run.
  */
 export function createMonitorToggleHandler({
   runId,
@@ -186,48 +226,13 @@ export function createMonitorToggleHandler({
   repository: string;
   svg: SVGElement;
 }) {
-  const startMonitorPayload: StartMonitorRequest = {
-    runId,
-    owner,
-    repository,
-    task: "start-monitoring",
-    type: "action",
-  };
-
-  const stopMonitorPayload: StopMonitorRequest = {
-    ...startMonitorPayload,
-    task: "stop-monitoring",
-  };
-
-  if (jobId) {
-    startMonitorPayload.jobId = jobId;
-    startMonitorPayload.type = "job";
-
-    stopMonitorPayload.jobId = jobId;
-    stopMonitorPayload.type = "job";
-  }
-
-  // Closure stuff.
-  function colorSVGStartMonitoring(response: { status: string }) {
-    const status = response.status;
-    if (status) {
-      if (status === "ok") {
-        setSVGColor(svg, "yellow");
-      } else {
-        setSVGColor(svg, "red");
-      }
-    }
-  }
-  function colorSVGStopMonitoring(response: { status: string }) {
-    const status = response.status;
-    if (status) {
-      if (status === "ok") {
-        resetSVGColor(svg);
-      } else {
-        setSVGColor(svg, "red");
-      }
-    }
-  }
+  const { start: startMonitorPayload, stop: stopMonitorPayload } =
+    buildMonitoringPayloads({
+      runId,
+      jobId,
+      owner,
+      repository,
+    });
 
   // In case future me forgets, all the dynamic "runtime-y" stuff has to happen here, because this is what's actually getting called when the function gets clicked.
   async function sendMonitoringMessage(_event: MouseEvent) {
@@ -235,11 +240,20 @@ export function createMonitorToggleHandler({
     const isAlreadyMonitored = await isIdAlreadyMonitored(
       encode({ runId, jobId, owner, repository })
     );
-    console.log("Inside callback.", { isAlreadyMonitored });
     if (!isAlreadyMonitored) {
-      chrome.runtime.sendMessage(startMonitorPayload, colorSVGStartMonitoring);
+      const startResponse = await sendMessageAsync(startMonitorPayload);
+      if (startResponse.status === "ok") {
+        setSVGColor(svg, "yellow");
+      } else {
+        setSVGColor(svg, "red");
+      }
     } else {
-      chrome.runtime.sendMessage(stopMonitorPayload, colorSVGStopMonitoring);
+      const stopResponse = await sendMessageAsync(stopMonitorPayload);
+      if (stopResponse.status === "ok") {
+        resetSVGColor(svg);
+      } else {
+        setSVGColor(svg, "red");
+      }
     }
   }
 
@@ -260,50 +274,6 @@ export function isIdAlreadyMonitored(id: Encoded) {
       resolve(Object.keys(result).length > 0);
     });
   });
-}
-
-/**
- * Creates a callback function that sends a message to the background script to start monitoring a given run.
- * @returns A function that sends a message to the background script to start monitoring the given run.
- */
-export function createStopMonitoringHandler({
-  runId,
-  jobId,
-  owner,
-  repository,
-  svg,
-}: {
-  runId: string;
-  jobId?: string;
-  owner: string;
-  repository: string;
-  svg: SVGElement;
-}) {
-  const partialMessage: StopMonitorRequest = {
-    runId,
-    owner,
-    repository,
-    task: "stop-monitoring",
-    type: "action",
-  };
-
-  if (jobId) {
-    partialMessage.jobId = jobId;
-    partialMessage.type = "job";
-  }
-
-  return (_event: MouseEvent) => {
-    chrome.runtime.sendMessage(partialMessage, (response) => {
-      const status = response?.status;
-      if (status) {
-        if (status === "ok") {
-          resetSVGColor(svg);
-        } else {
-          setSVGColor(svg, "red");
-        }
-      }
-    });
-  };
 }
 
 export function setSVGColor(svg: SVGElement, color: string) {
@@ -403,7 +373,7 @@ export const createWorkflowRunCallback = (onObservationChange: Function) => {
   };
 };
 
-export function parseRequest(request: StartMonitorRequest) {
+export function parseRequest(request: MonitorRequest) {
   try {
     if (request.type === "action") {
       const { runId, owner, repository } = request;
@@ -450,7 +420,7 @@ export function encode({
   }
 }
 
-export function encodeRequest(request: StartMonitorRequest): Encoded {
+export function encodeRequest(request: MonitorRequest): Encoded {
   if (request.type === "action") {
     const { runId, owner, repository } = parseRequest(request);
     return encode({ runId, owner, repository });
@@ -571,6 +541,7 @@ function isStopMonitoringRequest(
   return request.task === "stop-monitoring";
 }
 
+// Using promises here is necessary because of the chrome runtime's poor async support.
 export function createOnMessageCallback(
   setupMonitoring: (id: string, lengthInMinutes: number) => Promise<void[]>,
   cancelMonitoring: (id: string) => Promise<[boolean, void]>
