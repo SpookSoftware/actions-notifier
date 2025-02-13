@@ -24,8 +24,6 @@ import {
   isIdAlreadyMonitored,
 } from "./helpers";
 
-import type { Encoded } from "../types";
-
 async function processElementsForWorkflowRunPages() {
   const workflowRunElements = document.querySelectorAll(
     WORKFLOW_RUN_ATTRIBUTE_SELECTOR
@@ -54,10 +52,6 @@ async function processElementsForWorkflowRunPages() {
 
       button.appendChild(svg);
 
-      const encoded = encode({ runId, owner, repository });
-
-      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-
       const handleMonitoringClickFn = createMonitorToggleHandler({
         owner,
         repository,
@@ -67,6 +61,8 @@ async function processElementsForWorkflowRunPages() {
 
       button.onclick = handleMonitoringClickFn;
 
+      const encoded = encode({ runId, owner, repository });
+      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
       if (isAlreadyMonitored) {
         setSVGColor(svg, "yellow");
       }
