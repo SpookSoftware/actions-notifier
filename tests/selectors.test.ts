@@ -1,4 +1,4 @@
-import { expect, describe, it } from "bun:test";
+import { expect, describe, it, beforeAll } from "bun:test";
 import pMemoize from "p-memoize";
 import { parseHTML } from "linkedom";
 import {
@@ -48,6 +48,20 @@ async function getMatchesFor(url: string, selector: string) {
   return document.querySelectorAll(selector);
 }
 
+beforeAll(async () => {
+  if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
+    throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");
+  }
+  await dispatchWorkflow({
+    token: process.env.SANDBOX_REPO_GITHUB_TOKEN,
+    workflowURL:
+      "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
+    body: JSON.stringify({ event_type: "wait-for-five-minutes" }),
+  });
+
+  await Bun.sleep(30_000);
+});
+
 describe("Actions selectors", () => {
   describe("WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
     it("selects the workflow container", async () => {
@@ -92,25 +106,12 @@ describe("Actions selectors", () => {
 
   describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
     it("selects currently running workflows", async () => {
-      if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
-        throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");
-      }
-      // Start a workflow and give it a little time to start up.
-      await dispatchWorkflow({
-        token: process.env.SANDBOX_REPO_GITHUB_TOKEN,
-        workflowURL:
-          "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
-        body: JSON.stringify({ event_type: "wait-for-five-minutes" }),
-      });
-
-      await Bun.sleep(60_000);
-
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions?query=is%3Ain_progress",
         CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
       );
       expect(matches.length).toBeGreaterThanOrEqual(1);
-    }, 80_000);
+    });
   });
 
   describe("PR_CHECKS_CONTAINER_SELECTOR", () => {
