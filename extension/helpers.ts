@@ -660,3 +660,68 @@ export function assertIsHTMLElement(
 export function isAlreadyButtoned(element: Element) {
   return element.querySelector(".gh-action-notifier-button");
 }
+
+export class AutoDisconnectingMutationObserver {
+  private observer: MutationObserver;
+  private activeTarget: Element | null;
+  public mode: "normal" | "debug";
+
+  constructor(callback: MutationCallback, mode: "normal" | "debug" = "normal") {
+    this.observer = new MutationObserver(callback);
+    this.activeTarget = null;
+    this.mode = mode;
+
+    // Handle normal full-page navigations
+    window.addEventListener("pagehide", () => {
+      if (this.mode === "debug") {
+        console.debug(
+          "[ScopedMutationObserver] Disconnecting due to: pagehide event (standard navigation)"
+        );
+      }
+      this.disconnect();
+    });
+
+    // Handle TurboDrive SPA-style navigation (GitHub, Hotwire, etc.)
+    document.addEventListener("turbo:before-render", () => {
+      if (this.mode === "debug") {
+        console.debug(
+          "[ScopedMutationObserver] Disconnecting due to: turbo:before-render (TurboDrive navigation)"
+        );
+      }
+      this.disconnect();
+    });
+    document.addEventListener("turbo:before-cache", () => {
+      if (this.mode === "debug") {
+        console.debug(
+          "[ScopedMutationObserver] Disconnecting due to: turbo:before-cache (TurboDrive caching)"
+        );
+      }
+      this.disconnect();
+    });
+  }
+
+  observe(target: Element) {
+    this.observer.observe(target, {
+      childList: true,
+      subtree: true,
+    });
+
+    this.activeTarget = target;
+    if (this.mode === "debug") {
+      console.log(
+        "[ScopedMutationObserver] MutationObserver attached to:",
+        target
+      );
+    }
+  }
+
+  disconnect() {
+    if (this.activeTarget) {
+      if (this.mode === "debug") {
+        console.debug("[ScopedMutationObserver] MutationObserver disconnected");
+      }
+      this.observer.disconnect();
+      this.activeTarget = null;
+    }
+  }
+}

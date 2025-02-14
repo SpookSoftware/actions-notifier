@@ -22,6 +22,7 @@ import {
   isAlreadyButtoned,
   setSVGColor,
   isIdAlreadyMonitored,
+  AutoDisconnectingMutationObserver,
 } from "./helpers";
 
 async function processElementsForWorkflowRunPages() {
@@ -134,14 +135,8 @@ async function processElementsForJobPages() {
   }
 }
 
-let workflowObserver: MutationObserver | null;
-let jobObserver: MutationObserver | null;
-
 async function main() {
   console.debug("Running main()");
-  cleanupObservers();
-
-  const observerConfig = { childList: true, subtree: true };
 
   if (shouldMonitorActions(window.location.href)) {
     await processElementsForWorkflowRunPages();
@@ -157,24 +152,29 @@ async function main() {
         processElementsForWorkflowRunPages()
       );
 
-      workflowObserver = new MutationObserver(workflowRunCallback);
-      workflowObserver.observe(workflowRunsContainer, observerConfig);
+      new AutoDisconnectingMutationObserver(
+        workflowRunCallback,
+        "debug"
+      ).observe(workflowRunsContainer);
     }
   } else if (shouldAddJobNotificationButton(window.location.href)) {
     await processElementsForJobPages();
-  }
-}
 
-function cleanupObservers() {
-  if (workflowObserver) {
-    workflowObserver.disconnect();
-    console.debug("Disconnected workflow observer");
-    workflowObserver = null;
-  }
-  if (jobObserver) {
-    jobObserver.disconnect();
-    console.debug("Disconnected job observer");
-    jobObserver = null;
+    const jobRunsContainer = document.querySelector(
+      "#repo-content-turbo-frame > div > div > split-page-layout > div > div.PageLayout-columns > div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0"
+    );
+
+    if (jobRunsContainer) {
+      console.debug("Attaching job observer");
+
+      const jobRunCallback = createWorkflowRunCallback(() =>
+        processElementsForJobPages()
+      );
+
+      new AutoDisconnectingMutationObserver(jobRunCallback, "debug").observe(
+        jobRunsContainer
+      );
+    }
   }
 }
 
