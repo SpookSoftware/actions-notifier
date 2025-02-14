@@ -11,6 +11,7 @@ import {
   JOB_RUN_ATTRIBUTE_SELECTOR,
   SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR,
   FAILED_JOB_RUN_ATTRIBUTE_SELECTOR,
+  JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
 } from "../extension/selectors";
 
 async function dispatchWorkflow({ token, body, workflowURL }) {
@@ -136,6 +137,25 @@ describe("Actions selectors", () => {
 });
 
 describe("Job selectors", () => {
+  describe("JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
+    it("selects the container that has all the job elements", async () => {
+      const jobRunsContainer = await getMatchesFor(
+        "https://github.com/SpookSoftware/sandbox/actions/runs/13338664329",
+        JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+      );
+
+      expect(jobRunsContainer).toHaveLength(1);
+
+      // There are 9 simply because that's how many I made.
+      const expectedJobs = 9;
+
+      const actualJobs = jobRunsContainer[0].querySelectorAll(
+        JOB_RUN_ATTRIBUTE_SELECTOR
+      );
+
+      expect(expectedJobs).toEqual(actualJobs.length);
+    });
+  });
   describe("JOB_RUN_ATTRIBUTE_SELECTOR", () => {
     it("selects all the job runs in a runs page", async () => {
       const matches = await getMatchesFor(
