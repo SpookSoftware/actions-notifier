@@ -7,9 +7,11 @@ export const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
 export const SUCCESSFUL_ATTRIBUTE_SELECTOR =
   "svg[aria-label*='completed successfully']";
 
-// This is ripped from the DOM "copy selector" option
+// These are ripped from the DOM "copy selector" option
 export const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
+export const JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
+  "#repo-content-turbo-frame > div > div > split-page-layout > div > div.PageLayout-columns > div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0";
 
 // Job stuff
 export const JOB_RUN_ATTRIBUTE_SELECTOR = "li[data-item-id^='job']";

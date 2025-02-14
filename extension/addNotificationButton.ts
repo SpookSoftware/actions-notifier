@@ -1,5 +1,6 @@
 import {
   JOB_RUN_ATTRIBUTE_SELECTOR,
+  JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
   PR_PAGE_CONTAINER_SELECTOR,
   PR_PAGE_JOB_SELECTOR,
   WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
@@ -161,7 +162,7 @@ async function main() {
     await processElementsForJobPages();
 
     const jobRunsContainer = document.querySelector(
-      "#repo-content-turbo-frame > div > div > split-page-layout > div > div.PageLayout-columns > div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0"
+      JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
     );
 
     if (jobRunsContainer) {
