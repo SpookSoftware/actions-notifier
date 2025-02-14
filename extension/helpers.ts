@@ -242,7 +242,6 @@ export function createMonitorToggleHandler({
 
   // In case future me forgets, all the dynamic "runtime-y" stuff has to happen here, because this is what's actually getting called when the function gets clicked.
   async function sendMonitoringMessage(_event: MouseEvent) {
-    // I think the fact that I have to encode here is a sign of a bad structure.
     const isAlreadyMonitored = await isIdAlreadyMonitored({
       runId,
       jobId,
