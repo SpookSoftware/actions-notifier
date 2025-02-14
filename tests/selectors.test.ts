@@ -39,7 +39,7 @@ const fetchDocument = pMemoize(async (url: string): Promise<string> => {
       Accept: "text/html",
     },
   });
-  return request.text();
+  return await request.text();
 });
 
 async function getMatchesFor(url: string, selector: string) {
