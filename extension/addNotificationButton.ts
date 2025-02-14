@@ -83,60 +83,54 @@ async function processElementsForJobPages() {
   const currentlyRunningOrQueued =
     getCurrentlyRunningOrQueuedWorkflowElements(jobElements);
 
-  console.log({ currentlyRunningOrQueued });
-
   for (const element of currentlyRunningOrQueued) {
-    assertIsHTMLElement(element);
+    if (!isAlreadyButtoned(element)) {
+      assertIsHTMLElement(element);
 
-    const link = element.querySelector("a");
+      const link = element.querySelector("a");
 
-    console.assert(
-      link,
-      "Expected link to exist on currently running or queued element"
-    );
-    if (!link) {
-      continue;
+      console.assert(
+        link,
+        "Expected link to exist on currently running or queued element"
+      );
+      if (!link) {
+        continue;
+      }
+
+      const { owner, repository, runId, jobId } = extractJobDataFromURL(
+        link.href
+      );
+
+      const button = createNotificationButton({
+        runId,
+        owner,
+        repository,
+        jobId,
+      });
+
+      const svg = createNotificationSVG();
+
+      button.appendChild(svg);
+
+      const handleMonitoringClickFn = createMonitorToggleHandler({
+        runId,
+        jobId,
+        owner,
+        repository,
+        svg,
+      });
+      button.onclick = handleMonitoringClickFn;
+
+      const encoded = encode({ runId, jobId, owner, repository });
+      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+      if (isAlreadyMonitored) {
+        svg.style.fill = "yellow";
+      }
+
+      element.style.display = "flex";
+
+      insertButtonIntoJob(button, element);
     }
-
-    const { owner, repository, runId, jobId } = extractJobDataFromURL(
-      link.href
-    );
-
-    const button = createNotificationButton({
-      runId,
-      owner,
-      repository,
-      jobId,
-    });
-
-    const svg = createNotificationSVG();
-
-    button.appendChild(svg);
-
-    // Todo: update names to reflect new monitor handler.
-    const startMonitoring = createMonitorToggleHandler({
-      runId,
-      jobId,
-      owner,
-      repository,
-      svg,
-    });
-    button.onclick = startMonitoring;
-
-    const encoded = encode({ runId, jobId, owner, repository });
-
-    // Maybe we make this a function that is like await turnSVGYellowIfAlreadyMonitored(encoded, svg) that's more clearly side-effect-y
-    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-    if (isAlreadyMonitored) {
-      svg.style.fill = "yellow";
-    }
-
-    // addDisplayFlex(element);
-    // // start
-    element.style.display = "flex";
-    // // end
-
-    insertButtonIntoJob(button, element);
   }
 }
 
