@@ -671,6 +671,9 @@ export class AutoDisconnectingMutationObserver {
     this.activeTarget = null;
     this.mode = mode;
 
+    if (this.mode === "debug") {
+      console.group("[ScopedMutationObserver]");
+    }
     // Handle normal full-page navigations
     window.addEventListener("pagehide", () => {
       if (this.mode === "debug") {
@@ -708,7 +711,7 @@ export class AutoDisconnectingMutationObserver {
 
     this.activeTarget = target;
     if (this.mode === "debug") {
-      console.log(
+      console.debug(
         "[ScopedMutationObserver] MutationObserver attached to:",
         target
       );
@@ -719,6 +722,7 @@ export class AutoDisconnectingMutationObserver {
     if (this.activeTarget) {
       if (this.mode === "debug") {
         console.debug("[ScopedMutationObserver] MutationObserver disconnected");
+        console.groupEnd();
       }
       this.observer.disconnect();
       this.activeTarget = null;
