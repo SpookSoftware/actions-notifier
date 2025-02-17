@@ -1,5 +1,5 @@
 // Action stuff
-export const WORKFLOW_RUN_SELECTOR =
+export const ACTION_RUNS_SELECTOR =
   "#partial-actions-workflow-runs [data-url*='workflow-run']";
 export const CURRENTLY_RUNNING_SELECTOR =
   "svg[aria-label*='currently running']";
@@ -7,7 +7,7 @@ export const QUEUED_SELECTOR = "svg[aria-label*='queued']";
 export const SUCCESSFUL_SELECTOR = "svg[aria-label*='completed successfully']";
 
 // These are ripped from the DOM "copy selector" option
-export const WORKFLOW_RUNS_CONTAINER_SELECTOR =
+export const ACTION_RUNS_CONTAINER_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
 export const JOB_RUNS_CONTAINER_SELECTOR =
   "#repo-content-turbo-frame > div > div > split-page-layout > div > div.PageLayout-columns > div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0";

@@ -117,9 +117,7 @@ export function isQueuedOrRunning<
   return isQueued(x) || isRunning(x);
 }
 
-export function getCurrentlyRunningOrQueuedWorkflowElements(
-  divs: NodeListOf<Element>
-) {
+export function getCurrentlyRunningOrQueuedElements(divs: NodeListOf<Element>) {
   return [...divs].filter(isQueuedOrRunning);
 }
 
@@ -364,7 +362,7 @@ export async function checkJobStatus({ jobId, owner, repository }) {
   };
 }
 
-export const createWorkflowRunCallback = (onObservationChange: Function) => {
+export const createActionRunCallback = (onObservationChange: Function) => {
   return function (mutationsList: MutationRecord[]) {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
@@ -372,10 +370,10 @@ export const createWorkflowRunCallback = (onObservationChange: Function) => {
           if (addedNode instanceof Element) {
             console.debug("A new element was added:", addedNode);
             if (isQueuedOrRunning(addedNode)) {
-              console.debug("It is a queued or running workflow run DOM node");
+              console.debug("It is a queued or running action run DOM node");
               onObservationChange();
             } else {
-              console.debug("It's not a workflow run DOM node");
+              console.debug("It's not a action run DOM node");
             }
             console.groupEnd();
           }
@@ -604,20 +602,20 @@ export function createOnMessageCallback(
 }
 
 /**
- * Given a workflow run div, grabs the div that's between the branch name and the "this was last run on" icons.
+ * Given a action run div, grabs the div that's between the branch name and the "this was last run on" icons.
  */
 // Todo: maybe we test this with actual selectors?
 export function getElementToInsertNotificationButtonInto(
-  workflowRunElement: Element
+  actionRunElement: Element
 ) {
-  const childDiv = workflowRunElement.children[0];
+  const childDiv = actionRunElement.children[0];
   if (!childDiv) {
     throw Error("Expected children to be present");
   }
   const betweenBranchAndTime = childDiv.children[2];
   if (!betweenBranchAndTime) {
     throw Error(
-      "Element does not have the expected structure of a workflow run element"
+      "Element does not have the expected structure of a action run element"
     );
   }
   return betweenBranchAndTime;
@@ -629,14 +627,14 @@ export function getElementToInsertNotificationButtonInto(
  */
 export function magicallyInsertButtonInRightPlace({
   button,
-  workflowRunElement,
+  actionRunElement,
 }: {
   button: HTMLButtonElement;
-  workflowRunElement: Element;
+  actionRunElement: Element;
 }) {
   const betweenBranchAndTime =
-    getElementToInsertNotificationButtonInto(workflowRunElement);
-  const childDiv = workflowRunElement.children[0];
+    getElementToInsertNotificationButtonInto(actionRunElement);
+  const childDiv = actionRunElement.children[0];
   childDiv.insertBefore(button, betweenBranchAndTime);
 }
 

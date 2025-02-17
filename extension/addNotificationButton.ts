@@ -3,8 +3,8 @@ import {
   JOB_RUNS_CONTAINER_SELECTOR,
   PR_PAGE_CONTAINER_SELECTOR,
   PR_PAGE_JOB_SELECTOR,
-  WORKFLOW_RUN_SELECTOR,
-  WORKFLOW_RUNS_CONTAINER_SELECTOR,
+  ACTION_RUNS_SELECTOR,
+  ACTION_RUNS_CONTAINER_SELECTOR,
 } from "./selectors";
 import {
   shouldMonitorActions,
@@ -12,8 +12,8 @@ import {
   createNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
-  getCurrentlyRunningOrQueuedWorkflowElements,
-  createWorkflowRunCallback,
+  getCurrentlyRunningOrQueuedElements,
+  createActionRunCallback,
   magicallyInsertButtonInRightPlace,
   encode,
   extractJobDataFromURL,
@@ -26,11 +26,11 @@ import {
   AutoDisconnectingMutationObserver,
 } from "./helpers";
 
-async function processElementsForWorkflowRunPages() {
-  const workflowRunElements = document.querySelectorAll(WORKFLOW_RUN_SELECTOR);
+async function processElementsForActionRunPages() {
+  const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
 
   const currentlyRunningOrQueuedElements =
-    getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
+    getCurrentlyRunningOrQueuedElements(actionRunElements);
 
   for (const element of currentlyRunningOrQueuedElements) {
     // todo: incorporate this into the filter so that we just iterate through currently running && not already buttoned.
@@ -69,7 +69,7 @@ async function processElementsForWorkflowRunPages() {
 
       magicallyInsertButtonInRightPlace({
         button,
-        workflowRunElement: element,
+        actionRunElement: element,
       });
     }
   }
@@ -81,7 +81,7 @@ async function processElementsForJobPages() {
   console.assert(jobElements.length > 0, "Expected job elements to exist");
 
   const currentlyRunningOrQueued =
-    getCurrentlyRunningOrQueuedWorkflowElements(jobElements);
+    getCurrentlyRunningOrQueuedElements(jobElements);
 
   for (const element of currentlyRunningOrQueued) {
     if (!isAlreadyButtoned(element)) {
@@ -138,23 +138,22 @@ async function main() {
   console.debug("Running main()");
 
   if (shouldMonitorActions(window.location.href)) {
-    await processElementsForWorkflowRunPages();
+    await processElementsForActionRunPages();
 
-    const workflowRunsContainer = document.querySelector(
-      WORKFLOW_RUNS_CONTAINER_SELECTOR
+    const actionRunsContainer = document.querySelector(
+      ACTION_RUNS_CONTAINER_SELECTOR
     );
 
-    if (workflowRunsContainer) {
-      console.debug("Attaching workflow observer");
+    if (actionRunsContainer) {
+      console.debug("Attaching action observer");
 
-      const workflowRunCallback = createWorkflowRunCallback(() =>
-        processElementsForWorkflowRunPages()
+      const actionRunCallback = createActionRunCallback(() =>
+        processElementsForActionRunPages()
       );
 
-      new AutoDisconnectingMutationObserver(
-        workflowRunCallback,
-        "debug"
-      ).observe(workflowRunsContainer);
+      new AutoDisconnectingMutationObserver(actionRunCallback, "debug").observe(
+        actionRunsContainer
+      );
     }
   } else if (shouldAddJobNotificationButton(window.location.href)) {
     await processElementsForJobPages();
@@ -166,7 +165,7 @@ async function main() {
     if (jobRunsContainer) {
       console.debug("Attaching job observer");
 
-      const jobRunCallback = createWorkflowRunCallback(() =>
+      const jobRunCallback = createActionRunCallback(() =>
         processElementsForJobPages()
       );
 

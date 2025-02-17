@@ -44,14 +44,14 @@ import type {
 GlobalRegistrator.register();
 
 describe("shouldMonitorActions", () => {
-  it("returns true for specific workflow run URLs", () => {
+  it("returns true for specific action run URLs", () => {
     expect(
       shouldMonitorActions(
         "https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml"
       )
     ).toBeTrue();
   });
-  it("returns true for all workflows URLs", () => {
+  it("returns true for all actions URLs", () => {
     expect(
       shouldMonitorActions(
         "https://github.com/SpookSoftware/github-actions-browser-notifications/actions"
@@ -419,10 +419,9 @@ describe("getElementToInsertNotificationButtonInto", () => {
         </div>
       </div>
     `;
-    const workflowRunElement = document.querySelector(".workflow-run");
-    if (workflowRunElement) {
-      const result =
-        getElementToInsertNotificationButtonInto(workflowRunElement);
+    const actionRunElement = document.querySelector(".workflow-run");
+    if (actionRunElement) {
+      const result = getElementToInsertNotificationButtonInto(actionRunElement);
       expect(result).toBeInstanceOf(Element);
       expect(result.classList.contains("between-branch-and-time")).toBeTrue();
     }
@@ -430,10 +429,10 @@ describe("getElementToInsertNotificationButtonInto", () => {
 
   it("throws an error if the childDiv is not present", () => {
     document.body.innerHTML = `<div class="workflow-run"></div>`;
-    const workflowRunElement = document.querySelector(".workflow-run");
-    if (workflowRunElement) {
+    const actionRunElement = document.querySelector(".workflow-run");
+    if (actionRunElement) {
       expect(() =>
-        getElementToInsertNotificationButtonInto(workflowRunElement)
+        getElementToInsertNotificationButtonInto(actionRunElement)
       ).toThrowError("Expected children to be present");
     }
   });
@@ -447,12 +446,12 @@ describe("getElementToInsertNotificationButtonInto", () => {
         </div>
       </div>
     `;
-    const workflowRunElement = document.querySelector(".workflow-run");
-    if (workflowRunElement) {
+    const actionRunElement = document.querySelector(".workflow-run");
+    if (actionRunElement) {
       expect(() =>
-        getElementToInsertNotificationButtonInto(workflowRunElement)
+        getElementToInsertNotificationButtonInto(actionRunElement)
       ).toThrowError(
-        "Element does not have the expected structure of a workflow run element"
+        "Element does not have the expected structure of a action run element"
       );
     }
   });

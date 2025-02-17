@@ -2,10 +2,10 @@ import { expect, describe, it, beforeAll } from "bun:test";
 import pMemoize from "p-memoize";
 import { parseHTML } from "linkedom";
 import {
-  WORKFLOW_RUN_SELECTOR,
+  ACTION_RUNS_SELECTOR,
   CURRENTLY_RUNNING_SELECTOR,
   SUCCESSFUL_SELECTOR,
-  WORKFLOW_RUNS_CONTAINER_SELECTOR,
+  ACTION_RUNS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
   JOB_RUN_SELECTOR,
@@ -64,28 +64,28 @@ beforeAll(async () => {
 });
 
 describe("Actions selectors", () => {
-  describe("WORKFLOW_RUNS_CONTAINER_SELECTOR", () => {
-    it("selects the workflow container", async () => {
+  describe("ACTION_RUNS_CONTAINER_SELECTOR", () => {
+    it("selects the action container", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions",
-        WORKFLOW_RUNS_CONTAINER_SELECTOR
+        ACTION_RUNS_CONTAINER_SELECTOR
       );
       expect(matches).toHaveLength(1);
     });
   });
 
-  describe("WORKFLOW_RUN_SELECTOR", () => {
-    it("selects the workflow runs", async () => {
+  describe("ACTION_RUNS_SELECTOR", () => {
+    it("selects the action runs", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions",
-        WORKFLOW_RUN_SELECTOR
+        ACTION_RUNS_SELECTOR
       );
       expect(matches).toHaveLength(25);
     });
-    it("does not select the parent element of the workflow runs", async () => {
+    it("does not select the parent element of the action runs", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions",
-        WORKFLOW_RUN_SELECTOR
+        ACTION_RUNS_SELECTOR
       );
       expect(
         Array.from(matches).some(
@@ -96,7 +96,7 @@ describe("Actions selectors", () => {
   });
 
   describe("SUCCESSFUL_SELECTOR", () => {
-    it("selects successful workflow runs", async () => {
+    it("selects successful action runs", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions?query=is%3Asuccess",
         SUCCESSFUL_SELECTOR
@@ -106,7 +106,7 @@ describe("Actions selectors", () => {
   });
 
   describe("CURRENTLY_RUNNING_SELECTOR", () => {
-    it("selects currently running workflows", async () => {
+    it("selects currently running actions", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions?query=is%3Ain_progress",
         CURRENTLY_RUNNING_SELECTOR
