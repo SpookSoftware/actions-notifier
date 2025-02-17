@@ -1,7 +1,4 @@
-import {
-  CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
-  QUEUED_ATTRIBUTE_SELECTOR,
-} from "./selectors";
+import { CURRENTLY_RUNNING_SELECTOR, QUEUED_SELECTOR } from "./selectors";
 
 import type {
   Encoded,
@@ -107,10 +104,10 @@ export function selectorHasChildren<
 }
 
 const isQueued = (el: any) => {
-  return selectorHasChildren(QUEUED_ATTRIBUTE_SELECTOR, el);
+  return selectorHasChildren(QUEUED_SELECTOR, el);
 };
 const isRunning = (el: any) => {
-  return selectorHasChildren(CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR, el);
+  return selectorHasChildren(CURRENTLY_RUNNING_SELECTOR, el);
 };
 export function isQueuedOrRunning<
   HasQuerySelector extends {

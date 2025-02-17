@@ -1,25 +1,24 @@
 // Action stuff
-export const WORKFLOW_RUN_ATTRIBUTE_SELECTOR =
+export const WORKFLOW_RUN_SELECTOR =
   "#partial-actions-workflow-runs [data-url*='workflow-run']";
-export const CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR =
+export const CURRENTLY_RUNNING_SELECTOR =
   "svg[aria-label*='currently running']";
-export const QUEUED_ATTRIBUTE_SELECTOR = "svg[aria-label*='queued']";
-export const SUCCESSFUL_ATTRIBUTE_SELECTOR =
-  "svg[aria-label*='completed successfully']";
+export const QUEUED_SELECTOR = "svg[aria-label*='queued']";
+export const SUCCESSFUL_SELECTOR = "svg[aria-label*='completed successfully']";
 
 // These are ripped from the DOM "copy selector" option
-export const WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
+export const WORKFLOW_RUNS_CONTAINER_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
-export const JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR =
+export const JOB_RUNS_CONTAINER_SELECTOR =
   "#repo-content-turbo-frame > div > div > split-page-layout > div > div.PageLayout-columns > div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0";
 
 // Job stuff
-export const JOB_RUN_ATTRIBUTE_SELECTOR = "li[data-item-id^='job']";
+export const JOB_RUN_SELECTOR = "li[data-item-id^='job']";
 
-export const SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR = `${JOB_RUN_ATTRIBUTE_SELECTOR} svg[aria-label*='completed successfully']`;
-export const CURRENTLY_RUNNING_JOB_RUN_ATTRIBUTE_SELECTOR = `${JOB_RUN_ATTRIBUTE_SELECTOR} svg[aria-label*='currently running']`;
-export const QUEUED_JOB_RUN_ATTRIBUTE_SELECTOR = `${JOB_RUN_ATTRIBUTE_SELECTOR} svg[aria-label*='queued']`;
-export const FAILED_JOB_RUN_ATTRIBUTE_SELECTOR = `${JOB_RUN_ATTRIBUTE_SELECTOR} svg[aria-label*='failed']`;
+export const SUCCESSFUL_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='completed successfully']`;
+export const CURRENTLY_RUNNING_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='currently running']`;
+export const QUEUED_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='queued']`;
+export const FAILED_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='failed']`;
 
 // Action URLs
 // https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml

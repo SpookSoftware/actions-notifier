@@ -2,16 +2,16 @@ import { expect, describe, it, beforeAll } from "bun:test";
 import pMemoize from "p-memoize";
 import { parseHTML } from "linkedom";
 import {
-  WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
-  CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR,
-  SUCCESSFUL_ATTRIBUTE_SELECTOR,
-  WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
+  WORKFLOW_RUN_SELECTOR,
+  CURRENTLY_RUNNING_SELECTOR,
+  SUCCESSFUL_SELECTOR,
+  WORKFLOW_RUNS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_ACTION_LINK_SELECTOR,
-  JOB_RUN_ATTRIBUTE_SELECTOR,
-  SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR,
-  FAILED_JOB_RUN_ATTRIBUTE_SELECTOR,
-  JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
+  JOB_RUN_SELECTOR,
+  SUCCESSFUL_JOB_RUN_SELECTOR,
+  FAILED_JOB_RUN_SELECTOR,
+  JOB_RUNS_CONTAINER_SELECTOR,
 } from "../extension/selectors";
 
 async function dispatchWorkflow({ token, body, workflowURL }) {
@@ -64,28 +64,28 @@ beforeAll(async () => {
 });
 
 describe("Actions selectors", () => {
-  describe("WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
+  describe("WORKFLOW_RUNS_CONTAINER_SELECTOR", () => {
     it("selects the workflow container", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions",
-        WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+        WORKFLOW_RUNS_CONTAINER_SELECTOR
       );
       expect(matches).toHaveLength(1);
     });
   });
 
-  describe("WORKFLOW_RUN_ATTRIBUTE_SELECTOR", () => {
+  describe("WORKFLOW_RUN_SELECTOR", () => {
     it("selects the workflow runs", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions",
-        WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+        WORKFLOW_RUN_SELECTOR
       );
       expect(matches).toHaveLength(25);
     });
     it("does not select the parent element of the workflow runs", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions",
-        WORKFLOW_RUN_ATTRIBUTE_SELECTOR
+        WORKFLOW_RUN_SELECTOR
       );
       expect(
         Array.from(matches).some(
@@ -95,21 +95,21 @@ describe("Actions selectors", () => {
     });
   });
 
-  describe("SUCCESSFUL_ATTRIBUTE_SELECTOR", () => {
+  describe("SUCCESSFUL_SELECTOR", () => {
     it("selects successful workflow runs", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions?query=is%3Asuccess",
-        SUCCESSFUL_ATTRIBUTE_SELECTOR
+        SUCCESSFUL_SELECTOR
       );
       expect(matches).toHaveLength(25);
     });
   });
 
-  describe("CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR", () => {
+  describe("CURRENTLY_RUNNING_SELECTOR", () => {
     it("selects currently running workflows", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions?query=is%3Ain_progress",
-        CURRENTLY_RUNNING_ATTRIBUTE_SELECTOR
+        CURRENTLY_RUNNING_SELECTOR
       );
       expect(matches.length).toBeGreaterThanOrEqual(1);
     });
@@ -137,11 +137,11 @@ describe("Actions selectors", () => {
 });
 
 describe("Job selectors", () => {
-  describe("JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR", () => {
+  describe("JOB_RUNS_CONTAINER_SELECTOR", () => {
     it("selects the container that has all the job elements", async () => {
       const jobRunsContainer = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions/runs/13338664329",
-        JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+        JOB_RUNS_CONTAINER_SELECTOR
       );
 
       expect(jobRunsContainer).toHaveLength(1);
@@ -149,38 +149,36 @@ describe("Job selectors", () => {
       // There are 9 simply because that's how many I made.
       const expectedJobs = 9;
 
-      const actualJobs = jobRunsContainer[0].querySelectorAll(
-        JOB_RUN_ATTRIBUTE_SELECTOR
-      );
+      const actualJobs = jobRunsContainer[0].querySelectorAll(JOB_RUN_SELECTOR);
 
       expect(expectedJobs).toEqual(actualJobs.length);
     });
   });
-  describe("JOB_RUN_ATTRIBUTE_SELECTOR", () => {
+  describe("JOB_RUN_SELECTOR", () => {
     it("selects all the job runs in a runs page", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions/runs/12384934580",
-        JOB_RUN_ATTRIBUTE_SELECTOR
+        JOB_RUN_SELECTOR
       );
       expect(matches).toHaveLength(9);
     });
   });
 
-  describe("SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR", () => {
+  describe("SUCCESSFUL_JOB_RUN_SELECTOR", () => {
     it("selects the successful job runs in a runs page", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions/runs/12384934580",
-        SUCCESSFUL_JOB_RUN_ATTRIBUTE_SELECTOR
+        SUCCESSFUL_JOB_RUN_SELECTOR
       );
       expect(matches).toHaveLength(8);
     });
   });
 
-  describe("FAILED_JOB_RUN_ATTRIBUTE_SELECTOR", () => {
+  describe("FAILED_JOB_RUN_SELECTOR", () => {
     it("selects the failed job runs in a runs page", async () => {
       const matches = await getMatchesFor(
         "https://github.com/SpookSoftware/sandbox/actions/runs/12384934580",
-        FAILED_JOB_RUN_ATTRIBUTE_SELECTOR
+        FAILED_JOB_RUN_SELECTOR
       );
       expect(matches).toHaveLength(1);
     });

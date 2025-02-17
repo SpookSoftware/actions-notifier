@@ -1,10 +1,10 @@
 import {
-  JOB_RUN_ATTRIBUTE_SELECTOR,
-  JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
+  JOB_RUN_SELECTOR,
+  JOB_RUNS_CONTAINER_SELECTOR,
   PR_PAGE_CONTAINER_SELECTOR,
   PR_PAGE_JOB_SELECTOR,
-  WORKFLOW_RUN_ATTRIBUTE_SELECTOR,
-  WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR,
+  WORKFLOW_RUN_SELECTOR,
+  WORKFLOW_RUNS_CONTAINER_SELECTOR,
 } from "./selectors";
 import {
   shouldMonitorActions,
@@ -27,9 +27,7 @@ import {
 } from "./helpers";
 
 async function processElementsForWorkflowRunPages() {
-  const workflowRunElements = document.querySelectorAll(
-    WORKFLOW_RUN_ATTRIBUTE_SELECTOR
-  );
+  const workflowRunElements = document.querySelectorAll(WORKFLOW_RUN_SELECTOR);
 
   const currentlyRunningOrQueuedElements =
     getCurrentlyRunningOrQueuedWorkflowElements(workflowRunElements);
@@ -78,7 +76,7 @@ async function processElementsForWorkflowRunPages() {
 }
 
 async function processElementsForJobPages() {
-  const jobElements = document.querySelectorAll(JOB_RUN_ATTRIBUTE_SELECTOR);
+  const jobElements = document.querySelectorAll(JOB_RUN_SELECTOR);
 
   console.assert(jobElements.length > 0, "Expected job elements to exist");
 
@@ -143,7 +141,7 @@ async function main() {
     await processElementsForWorkflowRunPages();
 
     const workflowRunsContainer = document.querySelector(
-      WORKFLOW_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+      WORKFLOW_RUNS_CONTAINER_SELECTOR
     );
 
     if (workflowRunsContainer) {
@@ -162,7 +160,7 @@ async function main() {
     await processElementsForJobPages();
 
     const jobRunsContainer = document.querySelector(
-      JOB_RUNS_CONTAINER_ATTRIBUTE_SELECTOR
+      JOB_RUNS_CONTAINER_SELECTOR
     );
 
     if (jobRunsContainer) {
