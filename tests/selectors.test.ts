@@ -128,10 +128,10 @@ describe("Actions selectors", () => {
   describe("PR_CHECKS_ACTION_LINK_SELECTOR", () => {
     it("selects all the action links", async () => {
       const matches = await getMatchesFor(
-        "https://github.com/SpookSoftware/sandbox/pull/1/checks",
+        "https://github.com/SpookSoftware/sandbox/pull/2/checks",
         PR_CHECKS_ACTION_LINK_SELECTOR
       );
-      expect(matches).toHaveLength(6);
+      expect(matches).toHaveLength(12);
     });
   });
 });
