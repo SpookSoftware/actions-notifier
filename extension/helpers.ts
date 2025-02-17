@@ -386,34 +386,6 @@ export const createActionRunCallback = (onObservationChange: Function) => {
   };
 };
 
-export function parseRequest(request: MonitorRequest) {
-  try {
-    if (request.type === "action") {
-      const { runId, owner, repository } = request;
-      return {
-        runId,
-        owner,
-        repository,
-      };
-    } else if (request.type === "job") {
-      const { runId, jobId, owner, repository } = request;
-      return {
-        runId,
-        jobId,
-        owner,
-        repository,
-      };
-    }
-  } catch (error) {
-    throw Error(
-      `Error parsing request: ${error.message}. It's likely that one of runId, jobId, owner, or repository is missing.`
-    );
-  }
-  throw Error(
-    `Request was in a format not recognized: ${JSON.stringify(request)}`
-  );
-}
-
 // todo: turn this into a real type, since I use it everywhere.
 export function encode({
   runId,
