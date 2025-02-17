@@ -12,7 +12,7 @@ import {
   createNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
-  getCurrentlyRunningOrQueuedElements,
+  getTargetElements,
   createActionRunCallback,
   magicallyInsertButtonInRightPlace,
   encode,
@@ -20,7 +20,7 @@ import {
   insertButtonIntoJob,
   createMonitorToggleHandler,
   assertIsHTMLElement,
-  isAlreadyButtoned,
+  isButtoned,
   setSVGColor,
   isIdAlreadyMonitored,
   AutoDisconnectingMutationObserver,
@@ -29,49 +29,45 @@ import {
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
 
-  const currentlyRunningOrQueuedElements =
-    getCurrentlyRunningOrQueuedElements(actionRunElements);
+  const currentlyRunningOrQueuedElements = getTargetElements(actionRunElements);
 
   for (const element of currentlyRunningOrQueuedElements) {
-    // todo: incorporate this into the filter so that we just iterate through currently running && not already buttoned.
-    if (!isAlreadyButtoned(element)) {
-      const link = element.querySelector("a");
+    const link = element.querySelector("a");
 
-      console.assert(
-        link,
-        "Expected link to exist on currently running or queued element"
-      );
-      if (!link) {
-        continue;
-      }
-
-      const { owner, repository, runId } = extractActionDataFromURL(link.href);
-
-      const button = createNotificationButton({ runId, owner, repository });
-      const svg = createNotificationSVG();
-
-      button.appendChild(svg);
-
-      const handleMonitoringClickFn = createMonitorToggleHandler({
-        owner,
-        repository,
-        runId,
-        svg,
-      });
-
-      button.onclick = handleMonitoringClickFn;
-
-      const encoded = encode({ runId, owner, repository });
-      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-      if (isAlreadyMonitored) {
-        setSVGColor(svg, "yellow");
-      }
-
-      magicallyInsertButtonInRightPlace({
-        button,
-        actionRunElement: element,
-      });
+    console.assert(
+      link,
+      "Expected link to exist on currently running or queued element"
+    );
+    if (!link) {
+      continue;
     }
+
+    const { owner, repository, runId } = extractActionDataFromURL(link.href);
+
+    const button = createNotificationButton({ runId, owner, repository });
+    const svg = createNotificationSVG();
+
+    button.appendChild(svg);
+
+    const handleMonitoringClickFn = createMonitorToggleHandler({
+      owner,
+      repository,
+      runId,
+      svg,
+    });
+
+    button.onclick = handleMonitoringClickFn;
+
+    const encoded = encode({ runId, owner, repository });
+    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+    if (isAlreadyMonitored) {
+      setSVGColor(svg, "yellow");
+    }
+
+    magicallyInsertButtonInRightPlace({
+      button,
+      actionRunElement: element,
+    });
   }
 }
 
@@ -80,57 +76,54 @@ async function processElementsForJobPages() {
 
   console.assert(jobElements.length > 0, "Expected job elements to exist");
 
-  const currentlyRunningOrQueued =
-    getCurrentlyRunningOrQueuedElements(jobElements);
+  const currentlyRunningOrQueued = getTargetElements(jobElements);
 
   for (const element of currentlyRunningOrQueued) {
-    if (!isAlreadyButtoned(element)) {
-      assertIsHTMLElement(element);
+    assertIsHTMLElement(element);
 
-      const link = element.querySelector("a");
+    const link = element.querySelector("a");
 
-      console.assert(
-        link,
-        "Expected link to exist on currently running or queued element"
-      );
-      if (!link) {
-        continue;
-      }
-
-      const { owner, repository, runId, jobId } = extractJobDataFromURL(
-        link.href
-      );
-
-      const button = createNotificationButton({
-        runId,
-        owner,
-        repository,
-        jobId,
-      });
-
-      const svg = createNotificationSVG();
-
-      button.appendChild(svg);
-
-      const handleMonitoringClickFn = createMonitorToggleHandler({
-        runId,
-        jobId,
-        owner,
-        repository,
-        svg,
-      });
-      button.onclick = handleMonitoringClickFn;
-
-      const encoded = encode({ runId, jobId, owner, repository });
-      const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-      if (isAlreadyMonitored) {
-        svg.style.fill = "yellow";
-      }
-
-      element.style.display = "flex";
-
-      insertButtonIntoJob(button, element);
+    console.assert(
+      link,
+      "Expected link to exist on currently running or queued element"
+    );
+    if (!link) {
+      continue;
     }
+
+    const { owner, repository, runId, jobId } = extractJobDataFromURL(
+      link.href
+    );
+
+    const button = createNotificationButton({
+      runId,
+      owner,
+      repository,
+      jobId,
+    });
+
+    const svg = createNotificationSVG();
+
+    button.appendChild(svg);
+
+    const handleMonitoringClickFn = createMonitorToggleHandler({
+      runId,
+      jobId,
+      owner,
+      repository,
+      svg,
+    });
+    button.onclick = handleMonitoringClickFn;
+
+    const encoded = encode({ runId, jobId, owner, repository });
+    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+    if (isAlreadyMonitored) {
+      svg.style.fill = "yellow";
+    }
+
+    element.style.display = "flex";
+
+    insertButtonIntoJob(button, element);
   }
 }
 

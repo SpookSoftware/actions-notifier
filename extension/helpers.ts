@@ -109,16 +109,19 @@ const isQueued = (el: any) => {
 const isRunning = (el: any) => {
   return selectorHasChildren(CURRENTLY_RUNNING_SELECTOR, el);
 };
-export function isQueuedOrRunning<
+export function isButtoned(element: any) {
+  return element.querySelector(".gh-action-notifier-button");
+}
+export function isQueuedRunningAndNotButtoned<
   HasQuerySelector extends {
     querySelector: Function;
   }
 >(x: HasQuerySelector) {
-  return isQueued(x) || isRunning(x);
+  return (isQueued(x) || isRunning(x)) && !isButtoned(x);
 }
 
-export function getCurrentlyRunningOrQueuedElements(divs: NodeListOf<Element>) {
-  return [...divs].filter(isQueuedOrRunning);
+export function getTargetElements(divs: NodeListOf<Element>) {
+  return [...divs].filter(isQueuedRunningAndNotButtoned);
 }
 
 /**
@@ -369,7 +372,7 @@ export const createActionRunCallback = (onObservationChange: Function) => {
         for (const addedNode of mutation.addedNodes) {
           if (addedNode instanceof Element) {
             console.debug("A new element was added:", addedNode);
-            if (isQueuedOrRunning(addedNode)) {
+            if (isQueuedRunningAndNotButtoned(addedNode)) {
               console.debug("It is a queued or running action run DOM node");
               onObservationChange();
             } else {
@@ -650,10 +653,6 @@ export function assertIsHTMLElement(
   if (!isHTMLElement) {
     throw Error("Expected element to be an HTMLElement");
   }
-}
-
-export function isAlreadyButtoned(element: Element) {
-  return element.querySelector(".gh-action-notifier-button");
 }
 
 export class AutoDisconnectingMutationObserver {
