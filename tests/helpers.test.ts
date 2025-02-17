@@ -21,7 +21,7 @@ import {
   checkStatus,
   assertGithubToken,
   getElementToInsertNotificationButtonInto,
-  shouldAddJobNotificationButton,
+  shouldMonitorJobs,
   extractJobDataFromURL,
   isProperlyEncoded,
   createActionURL,
@@ -76,24 +76,24 @@ describe("shouldMonitorActions", () => {
   });
 });
 
-describe("shouldAddJobNotificationButton", () => {
+describe("shouldMonitorJobs", () => {
   it("returns true for action run URLs", () => {
     expect(
-      shouldAddJobNotificationButton(
+      shouldMonitorJobs(
         "https://github.com/SpookSoftware/sandbox/actions/runs/12447719676"
       )
     ).toBeTrue();
   });
   it("returns true for job run URLs", () => {
     expect(
-      shouldAddJobNotificationButton(
+      shouldMonitorJobs(
         "https://github.com/SpookSoftware/sandbox/actions/runs/11827241459/job/32954981270"
       )
     ).toBeTrue();
   });
   it("returns true for job run URLs with query params", () => {
     expect(
-      shouldAddJobNotificationButton(
+      shouldMonitorJobs(
         "https://github.com/SpookSoftware/sandbox/actions/runs/11827241459/job/32954981270?pr=1"
       )
     ).toBeTrue();

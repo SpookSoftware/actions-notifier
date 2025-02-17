@@ -8,7 +8,7 @@ import {
 } from "./selectors";
 import {
   shouldMonitorActions,
-  shouldAddJobNotificationButton,
+  shouldMonitorJobs,
   createNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
@@ -148,7 +148,7 @@ async function main() {
         actionRunsContainer
       );
     }
-  } else if (shouldAddJobNotificationButton(window.location.href)) {
+  } else if (shouldMonitorJobs(window.location.href)) {
     await processElementsForJobPages();
 
     const jobRunsContainer = document.querySelector(

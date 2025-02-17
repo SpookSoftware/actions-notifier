@@ -25,7 +25,7 @@ export function shouldMonitorActions(url: string) {
   return pattern.test(url);
 }
 
-export function shouldAddJobNotificationButton(url: string) {
+export function shouldMonitorJobs(url: string) {
   const runsPattern =
     /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/runs\/\d+$/;
   const specificJobPattern =
