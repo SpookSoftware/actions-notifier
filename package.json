@@ -4,6 +4,7 @@
     "@types/bun": "latest",
     "@types/chrome": "^0.0.243",
     "@types/node": "^22.9.0",
+        "@happy-dom/global-registrator": "^17.1.1",
     "playwright": "^1.50.1"
   },
   "peerDependencies": {
@@ -15,5 +16,5 @@
     "build": "bun ./build.ts",
     "build:production": "bun ./build.ts --production",
     "dev": "bun ./watcher.ts"
-  }
+  },
 }

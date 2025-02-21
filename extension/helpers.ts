@@ -20,13 +20,25 @@ export function sendMessageAsync(payload: unknown): Promise<MonitorResponse> {
 }
 
 export function shouldMonitorActions(url: string) {
-  // This is black magic. Basically, this regex matches the following kinds of URLs:
+  // Normalize the URL by removing query parameters for pattern matching
+  const cleanUrl = url.split("?")[0];
+
+  // Matches URLs for all actions pages, like:
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions
-  // - https://github.com/SpookSoftware/github-actions-browser-notifications/pull/22932/checks
+  // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions?query=blah
+  const allActionsPagePattern =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions$/;
+
+  // Matches specific workflow run pages, like:
   // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
-  const pattern =
-    /^https:\/\/github\.com\/[^/]+\/[^/]+\/(actions|actions\/workflows\/[^/]+|pull\/[^/]+\/checks)$/;
-  return pattern.test(url);
+  // - https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml?query=blah
+  const specificActionPagePattern =
+    /^https:\/\/github\.com\/[^/]+\/[^/]+\/actions\/workflows\/[^/]+$/;
+
+  return (
+    allActionsPagePattern.test(cleanUrl) ||
+    specificActionPagePattern.test(cleanUrl)
+  );
 }
 
 export function shouldMonitorJobs(url: string) {

@@ -51,19 +51,33 @@ describe("shouldMonitorActions", () => {
       )
     ).toBeTrue();
   });
-  it("returns true for all actions URLs", () => {
+  it("returns true for specific action run URLs with query params", () => {
+    expect(
+      shouldMonitorActions(
+        "https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml?kory=me"
+      )
+    ).toBeTrue();
+  });
+  it("returns true for general actions URLs", () => {
     expect(
       shouldMonitorActions(
         "https://github.com/SpookSoftware/github-actions-browser-notifications/actions"
       )
     ).toBeTrue();
   });
-  it("returns true for pull request URLs", () => {
+  it("returns true for all actions URLs", () => {
     expect(
       shouldMonitorActions(
-        "https://github.com/SpookSoftware/github-actions-browser-notifications/pull/22932/checks"
+        "https://github.com/SpookSoftware/github-actions-browser-notifications/actions?kory=who"
       )
     ).toBeTrue();
+  });
+  it("returns false for PR checks URLs (regression)", () => {
+    expect(
+      shouldMonitorActions(
+        "https://github.com/SpookSoftware/sandbox/pull/1/checks"
+      )
+    ).toBeFalse();
   });
   it("returns false for all other URLs", () => {
     const urls = [
