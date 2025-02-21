@@ -1,5 +1,6 @@
 import {
   CURRENTLY_RUNNING_SELECTOR,
+  IN_PROGRESS_SELECTOR,
   PR_CHECKS_CONTAINER_PARENT_SELECTOR,
   QUEUED_SELECTOR,
 } from "./selectors";
@@ -135,7 +136,10 @@ const isQueued = (el: any) => {
   return selectorHasChildren(QUEUED_SELECTOR, el);
 };
 const isRunning = (el: any) => {
-  return selectorHasChildren(CURRENTLY_RUNNING_SELECTOR, el);
+  return (
+    selectorHasChildren(CURRENTLY_RUNNING_SELECTOR, el) ||
+    selectorHasChildren(IN_PROGRESS_SELECTOR, el)
+  );
 };
 export function isButtoned(element: any) {
   return element.querySelector(".gh-action-notifier-button");

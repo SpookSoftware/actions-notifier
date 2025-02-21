@@ -7,6 +7,7 @@ import {
   PR_RUN_SELECTOR,
   PR_RUN_LINK_SELECTOR,
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
+  CHECKS_PAGE_CONTAINER_SELECTOR,
 } from "./selectors";
 import {
   shouldMonitorActions,
@@ -200,17 +201,60 @@ async function processElementsForPRPages() {
 }
 
 async function processElementForChecksPages(): Promise<void> {
-  debugger;
   const runs = document.querySelectorAll("div.checks-list-item");
 
   console.assert(runs.length > 0, "Expected run elements to exist");
 
   const currentlyRunningOrQueued = getTargetElements(runs);
-  console.log({ currentlyRunningOrQueued });
+
+  for (const element of currentlyRunningOrQueued) {
+    const link = element.querySelector("a");
+
+    console.assert(
+      link,
+      "Expected link to exist on currently running or queued element"
+    );
+    if (!link) {
+      continue;
+    }
+
+    const { owner, repository, runId, jobId } = extractJobDataFromURL(
+      link.href
+    );
+
+    const button = createNotificationButton({
+      runId,
+      owner,
+      repository,
+      jobId,
+    });
+
+    const svg = createNotificationSVG();
+
+    button.appendChild(svg);
+
+    const handleMonitoringClickFn = createMonitorToggleHandler({
+      runId,
+      jobId,
+      owner,
+      repository,
+      svg,
+    });
+    button.onclick = handleMonitoringClickFn;
+
+    const encoded = encode({ runId, jobId, owner, repository });
+    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+    if (isAlreadyMonitored) {
+      svg.style.fill = "yellow";
+    }
+
+    // element.style.display = "flex";
+
+    element.appendChild(button);
+  }
 }
 
 async function main(): Promise<void> {
-  debugger;
   console.debug("Running main()");
 
   if (shouldMonitorActions(window.location.href)) {
@@ -269,8 +313,23 @@ async function main(): Promise<void> {
       );
     }
   } else if (shouldMonitorChecks(window.location.href)) {
-    debugger;
     await processElementForChecksPages();
+
+    const checksContainer = document.querySelector(
+      CHECKS_PAGE_CONTAINER_SELECTOR
+    );
+
+    if (checksContainer) {
+      console.debug("Attaching checks observer");
+
+      const checksRunCallback = createActionRunCallback(
+        async () => await processElementForChecksPages()
+      );
+
+      new AutoDisconnectingMutationObserver(checksRunCallback, "debug").observe(
+        checksContainer
+      );
+    }
   }
 }
 

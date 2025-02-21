@@ -3,6 +3,8 @@ export const ACTION_RUNS_SELECTOR =
   "#partial-actions-workflow-runs [data-url*='workflow-run']";
 export const CURRENTLY_RUNNING_SELECTOR =
   "svg[aria-label*='currently running']";
+// Basically a synonym for "currently running"
+export const IN_PROGRESS_SELECTOR = "svg[aria-label*='In progress']";
 export const QUEUED_SELECTOR = "svg[aria-label*='queued']";
 export const SUCCESSFUL_SELECTOR = "svg[aria-label*='completed successfully']";
 
@@ -30,13 +32,6 @@ export const PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR =
 export const PR_RUN_SELECTOR = "div.merge-status-item";
 export const PR_RUN_LINK_SELECTOR = "a.status-actions";
 
-// Action URLs
-// https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
-export const specificWorkflowPageRegex =
-  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/actions\/workflows\/.*/;
-// https://github.com/SpookSoftware/github-actions-browser-notifications/actions
-export const allWorkflowsPageRegex =
-  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/actions/;
-// https://github.com/krogertechnology/esperanto/pull/22932/checks
-export const prChecksPageRegex =
-  /https:\/\/github\.com\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/pull\/[-a-zA-Z0-9._~:\/?#[\]@!$&'()*+,;=%]+\/checks/;
+// Checks page stuff
+export const CHECKS_PAGE_CONTAINER_SELECTOR =
+  "#repo-content-turbo-frame > div > div > div.d-flex.flex-column.width-full.flex-auto > div.d-flex.flex-items-stretch.flex-auto > div > aside";

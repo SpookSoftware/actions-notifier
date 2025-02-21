@@ -11,6 +11,7 @@ import {
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_PARENT_SELECTOR,
+  CHECKS_PAGE_CONTAINER_SELECTOR,
 } from "../../extension/selectors";
 
 if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
@@ -60,6 +61,8 @@ test.describe("Actions selectors", () => {
   test("CURRENTLY_RUNNING_SELECTOR selects currently running actions", async ({
     page,
   }) => {
+    test.slow();
+
     const actionStartResponse = await fetch(
       "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
       {
@@ -173,6 +176,20 @@ test.describe.skip("PR selectors", () => {
     await page.goto("https://github.com/SpookSoftware/sandbox/pull/1/checks");
     await page.waitForSelector(PR_CHECKS_CONTAINER_SELECTOR);
     const matches = await page.locator(PR_CHECKS_CONTAINER_SELECTOR).count();
+    expect(matches).toBe(1);
+  });
+});
+
+test.describe("Checks selectors", () => {
+  test.skip("IN_PROGRESS_SELECTOR", async ({ page }) => {
+    // For this, we will need to toggle the checkbox on a PR, then navigate to the checks page and look for > 1 checks.
+  });
+  test("CHECKS_PAGE_CONTAINER_SELECTOR selects the checks container", async ({
+    page,
+  }) => {
+    await page.goto("https://github.com/SpookSoftware/sandbox/pull/1/checks");
+    await page.waitForSelector(CHECKS_PAGE_CONTAINER_SELECTOR);
+    const matches = await page.locator(CHECKS_PAGE_CONTAINER_SELECTOR).count();
     expect(matches).toBe(1);
   });
 });
