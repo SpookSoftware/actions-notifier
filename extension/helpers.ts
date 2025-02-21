@@ -1,4 +1,8 @@
-import { CURRENTLY_RUNNING_SELECTOR, QUEUED_SELECTOR } from "./selectors";
+import {
+  CURRENTLY_RUNNING_SELECTOR,
+  PR_CHECKS_CONTAINER_PARENT_SELECTOR,
+  QUEUED_SELECTOR,
+} from "./selectors";
 
 import type {
   Encoded,
@@ -408,6 +412,27 @@ export const createActionRunCallback = (onObservationChange: Function) => {
               console.debug("It's not a action run DOM node");
             }
             console.groupEnd();
+          }
+        }
+      }
+    }
+  };
+};
+
+export const createPRRunCallback = (
+  onObservationChange: Function
+): ((mutationsList: MutationRecord[]) => void) => {
+  return (mutationsList: MutationRecord[]) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === "childList") {
+        for (const addedNode of mutation.addedNodes) {
+          if (addedNode instanceof Element) {
+            console.debug("A new element was added:", addedNode);
+            // If it is in fact the container we are expecting
+            if (addedNode.matches(PR_CHECKS_CONTAINER_PARENT_SELECTOR)) {
+              console.debug("The PR checks container was replaced");
+              onObservationChange();
+            }
           }
         }
       }

@@ -5,6 +5,9 @@ import {
   ACTION_RUNS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR,
   PR_CHECKS_CONTAINER_SELECTOR,
+  PR_RUN_SELECTOR,
+  PR_RUN_LINK_SELECTOR,
+  PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
 } from "./selectors";
 import {
   shouldMonitorActions,
@@ -27,6 +30,7 @@ import {
   isQueuedRunningAndNotButtoned,
   getTargetPRElements,
   insertButtonBetweenStatusAndDetails,
+  createPRRunCallback,
 } from "./helpers";
 
 async function processElementsForActionRunPages() {
@@ -131,7 +135,6 @@ async function processElementsForJobPages() {
 }
 
 async function processElementsForPRPages() {
-  console.log("inside processElementsForPRPages");
   const checksPanelIsOpen =
     document.querySelector(PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR) !== null;
 
@@ -142,14 +145,12 @@ async function processElementsForPRPages() {
     return;
   }
 
-  const runSelector = "div.merge-status-item";
-
-  const runs = document.querySelectorAll(runSelector);
+  const runs = document.querySelectorAll(PR_RUN_SELECTOR);
 
   const currentlyRunningOrQueued = getTargetPRElements(runs);
 
   for (const element of currentlyRunningOrQueued) {
-    const link = element.querySelector("a.status-actions");
+    const link = element.querySelector(PR_RUN_LINK_SELECTOR);
 
     console.assert(
       link,
@@ -163,6 +164,7 @@ async function processElementsForPRPages() {
       continue;
     }
 
+    // PRs show runs by job.
     const { owner, repository, runId, jobId } = extractJobDataFromURL(
       link.href
     );
@@ -239,35 +241,18 @@ async function main() {
   } else if (shouldMonitorPRs(window.location.href)) {
     await processElementsForPRPages();
 
-    // As far as I can tell right now, PRs are different: Any time a single element inside the PR checks container changes, the whole container is replaced.
+    // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
     const prRunsContainer = document.querySelector(
-      "div.discussion-timeline-actions"
+      PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR
     );
 
     if (prRunsContainer) {
       console.debug("Attaching PR actions observer");
 
-      // Inside here, we'll need to verify that the container has indeed been replaced and iterate through all of its children.
-      const prRunCallback = async (mutationsList: MutationRecord[]) => {
-        for (const mutation of mutationsList) {
-          if (mutation.type === "childList") {
-            console.log("A child node has been added or removed.");
-            for (const addedNode of mutation.addedNodes) {
-              if (addedNode instanceof Element) {
-                console.debug("A new element was added:", addedNode);
-                // If it is in fact the container we are expecting
-                if (addedNode.matches("div#partial-pull-merging")) {
-                  console.log("The PR checks container was replaced");
-                  await processElementsForPRPages();
-                } else {
-                  console.log("it was something else");
-                }
-                console.groupEnd();
-              }
-            }
-          }
-        }
-      };
+      const prRunCallback = createPRRunCallback(
+        async () => await processElementsForPRPages()
+      );
+
       new AutoDisconnectingMutationObserver(prRunCallback, "debug").observe(
         prRunsContainer
       );

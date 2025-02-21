@@ -20,10 +20,15 @@ export const QUEUED_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='que
 export const FAILED_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='failed']`;
 
 // PR stuff
+export const PR_CHECKS_CONTAINER_PARENT_SELECTOR = "div#partial-pull-merging";
+export const PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR =
+  "div.discussion-timeline-actions";
 export const PR_CHECKS_CONTAINER_SELECTOR =
   "div.branch-action-body.timeline-comment--caret";
 export const PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR =
   "div.branch-action-item.js-details-container.Details.open";
+export const PR_RUN_SELECTOR = "div.merge-status-item";
+export const PR_RUN_LINK_SELECTOR = "a.status-actions";
 
 // Action URLs
 // https://github.com/SpookSoftware/github-actions-browser-notifications/actions/workflows/waitAMinute.yml
