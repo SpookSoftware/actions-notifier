@@ -39,6 +39,12 @@ export function shouldMonitorJobs(url: string) {
   );
 }
 
+export function shouldMonitorPRs(url: string) {
+  const prPattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+$/;
+
+  return prPattern.test(url);
+}
+
 export function createNotificationButton({
   runId,
   jobId,
@@ -122,6 +128,26 @@ export function isQueuedRunningAndNotButtoned<
 
 export function getTargetElements(divs: NodeListOf<Element>) {
   return [...divs].filter(isQueuedRunningAndNotButtoned);
+}
+
+const isQueuedPR = (el: any) => {
+  return selectorHasChildren(
+    ".merge-status-item .octicon-dot-fill.hx_dot-fill-pending-icon",
+    el
+  );
+};
+const isRunningPR = (el: any) => {
+  return selectorHasChildren(".merge-status-item .anim-rotate", el);
+};
+export function isQueuedRunningAndNotButtonedPR<
+  HasQuerySelector extends {
+    querySelector: Function;
+  }
+>(x: HasQuerySelector) {
+  return (isQueuedPR(x) || isRunningPR(x)) && !isButtoned(x);
+}
+export function getTargetPRElements(divs: NodeListOf<Element>) {
+  return [...divs].filter(isQueuedRunningAndNotButtonedPR);
 }
 
 /**
@@ -618,6 +644,14 @@ export function magicallyInsertButtonInRightPlace({
 
 export function insertButtonIntoJob(button: Element, jobLi: Element) {
   jobLi.insertAdjacentElement("beforeend", button);
+}
+
+export function insertButtonBetweenStatusAndDetails(
+  button: Element,
+  element: Element
+) {
+  const referenceDiv = element.children[3];
+  element.insertBefore(button, referenceDiv);
 }
 
 export function assertIsHTMLElement(
