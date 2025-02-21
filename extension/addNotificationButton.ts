@@ -4,7 +4,6 @@ import {
   ACTION_RUNS_SELECTOR,
   ACTION_RUNS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR,
-  PR_CHECKS_CONTAINER_SELECTOR,
   PR_RUN_SELECTOR,
   PR_RUN_LINK_SELECTOR,
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
@@ -31,6 +30,7 @@ import {
   getTargetPRElements,
   insertButtonBetweenStatusAndDetails,
   createPRRunCallback,
+  shouldMonitorChecks,
 } from "./helpers";
 
 async function processElementsForActionRunPages() {
@@ -199,7 +199,18 @@ async function processElementsForPRPages() {
   }
 }
 
-async function main() {
+async function processElementForChecksPages(): Promise<void> {
+  debugger;
+  const runs = document.querySelectorAll("div.checks-list-item");
+
+  console.assert(runs.length > 0, "Expected run elements to exist");
+
+  const currentlyRunningOrQueued = getTargetElements(runs);
+  console.log({ currentlyRunningOrQueued });
+}
+
+async function main(): Promise<void> {
+  debugger;
   console.debug("Running main()");
 
   if (shouldMonitorActions(window.location.href)) {
@@ -257,6 +268,9 @@ async function main() {
         prRunsContainer
       );
     }
+  } else if (shouldMonitorChecks(window.location.href)) {
+    debugger;
+    await processElementForChecksPages();
   }
 }
 

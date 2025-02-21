@@ -31,6 +31,8 @@ import {
   isButtoned,
   buildMonitoringPayloads,
   AutoDisconnectingMutationObserver,
+  shouldMonitorPRs,
+  shouldMonitorChecks,
 } from "../../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -109,6 +111,43 @@ describe("shouldMonitorJobs", () => {
     expect(
       shouldMonitorJobs(
         "https://github.com/SpookSoftware/sandbox/actions/runs/11827241459/job/32954981270?pr=1"
+      )
+    ).toBeTrue();
+  });
+});
+
+describe("shouldMonitorPRs", () => {
+  it("returns true for PR URLs", () => {
+    expect(
+      shouldMonitorPRs("https://github.com/SpookSoftware/sandbox/pull/1")
+    ).toBeTrue();
+  });
+  it("returns true for PR URLs with query params", () => {
+    expect(
+      shouldMonitorPRs(
+        "https://github.com/SpookSoftware/sandbox/pull/1?kory=yeah"
+      )
+    ).toBeTrue();
+  });
+  it("returns false for PR checks URLs", () => {
+    expect(
+      shouldMonitorPRs("https://github.com/SpookSoftware/sandbox/pull/1/checks")
+    ).toBeFalse();
+  });
+});
+
+describe("shouldMonitorChecks", () => {
+  it("returns true for check URLs", () => {
+    expect(
+      shouldMonitorChecks(
+        "https://github.com/SpookSoftware/sandbox/pull/1/checks"
+      )
+    ).toBeTrue();
+  });
+  it("returns true for check URLs with query params", () => {
+    expect(
+      shouldMonitorChecks(
+        "https://github.com/SpookSoftware/sandbox/pull/1/checks?kory=woo"
       )
     ).toBeTrue();
   });

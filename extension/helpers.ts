@@ -56,9 +56,15 @@ export function shouldMonitorJobs(url: string) {
 }
 
 export function shouldMonitorPRs(url: string) {
-  const prPattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+$/;
+  const prPattern = /^https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+(?:\?.*)?$/;
 
   return prPattern.test(url);
+}
+
+export function shouldMonitorChecks(url: string) {
+  const checksPattern =
+    /^https:\/\/github\.com\/[\w-]+\/[\w-]+\/pull\/\d+\/checks(?:\?.*)?$/;
+  return checksPattern.test(url);
 }
 
 export function createNotificationButton({
