@@ -28,7 +28,7 @@ import {
   createJobURL,
   createURL,
   assertIsHTMLElement,
-  isAlreadyButtoned,
+  isButtoned,
   buildMonitoringPayloads,
   AutoDisconnectingMutationObserver,
 } from "../extension/helpers";
@@ -164,6 +164,14 @@ describe("extractActionDataFromURL", () => {
     );
   });
 
+  it("strips query parameters from the URL", () => {
+    const url =
+      "https://github.com/SpookSoftware/sandbox/actions/runs/11883722967?pr=1";
+
+    const { runId } = extractActionDataFromURL(url);
+    expect(runId).toEqual("11883722967");
+  });
+
   it("throws an error if any part is missing", () => {
     const url = "https://github.com/SpookSoftware/sandbox/actions/runs/";
     expect(() => extractActionDataFromURL(url)).toThrowError("Missing runId");
@@ -188,6 +196,13 @@ describe("extractJobDataFromURL", () => {
     expect(() => extractJobDataFromURL(url)).toThrowError(
       "Invalid URL: invalid-url"
     );
+  });
+
+  it("strips query parameters from the URL", () => {
+    const url =
+      "https://github.com/SpookSoftware/sandbox/actions/runs/13460967257/job/37615937628?pr=1";
+    const { jobId } = extractJobDataFromURL(url);
+    expect(jobId).toEqual("37615937628");
   });
 
   it("throws an error if any part is missing", () => {
@@ -793,14 +808,14 @@ describe("createURL", () => {
   });
 });
 
-describe("isAlreadyButtoned", () => {
+describe("isButtoned", () => {
   it("should return the button element if it exists", () => {
     const element = document.createElement("div");
     const button = document.createElement("button");
     button.classList.add("gh-action-notifier-button");
     element.appendChild(button);
 
-    const result = isAlreadyButtoned(element);
+    const result = isButtoned(element);
 
     expect(result).toBe(button);
   });
@@ -808,7 +823,7 @@ describe("isAlreadyButtoned", () => {
   it("should return null if the button element does not exist", () => {
     const element = document.createElement("div");
 
-    const result = isAlreadyButtoned(element);
+    const result = isButtoned(element);
 
     expect(result).toBeNull();
   });

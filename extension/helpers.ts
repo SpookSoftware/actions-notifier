@@ -142,10 +142,12 @@ try {
  */
 export function extractActionDataFromURL(url: string) {
   const isValidURL = URL.canParse(url);
+  const urlWithoutQueryParams = url.split("?")[0];
   if (!isValidURL) {
     throw new Error("Invalid URL: " + url);
   }
-  const [_, _2, _3, owner, repository, _4, _5, runId] = url.split("/");
+  const [_, _2, _3, owner, repository, _4, _5, runId] =
+    urlWithoutQueryParams.split("/");
   //  https://github.com/SpookSoftware/sandbox/actions/runs/12447719676
   //                         owner      repo                 runId
   [
@@ -162,9 +164,10 @@ export function extractActionDataFromURL(url: string) {
 
 export function extractJobDataFromURL(url: string) {
   const isValidURL = URL.canParse(url);
+  const urlWithoutQueryParams = url.split("?")[0];
   if (isValidURL) {
     const [_, _2, _3, owner, repository, _4, _5, runId, _6, jobId] =
-      url.split("/");
+      urlWithoutQueryParams.split("/");
     //  https://github.com/SpookSoftware/sandbox/actions/runs/12447719676/job/34751516975
     //                         owner      repo                 runId            jobId
     [
