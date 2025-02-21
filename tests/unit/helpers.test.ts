@@ -31,14 +31,14 @@ import {
   isButtoned,
   buildMonitoringPayloads,
   AutoDisconnectingMutationObserver,
-} from "../extension/helpers";
+} from "../../extension/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import type {
   StartMonitorActionRequest,
   StartMonitorJobRequest,
   StartMonitorRequest,
-} from "../types";
+} from "../../types";
 
 // Without this, the tests will fail because the extension uses the DOM API
 GlobalRegistrator.register();
@@ -344,7 +344,7 @@ describe("checkStatus", () => {
   it("calls checkJobStatus if jobId is provided", async () => {
     const mockJobStatus = { status: "completed", name: "job-name" };
     const checkJobStatusMock = spyOn(
-      await import("../extension/helpers"),
+      await import("../../extension/helpers"),
       "checkJobStatus"
     ).mockResolvedValue(mockJobStatus);
 
@@ -366,7 +366,7 @@ describe("checkStatus", () => {
   it("calls checkActionStatus if jobId is not provided", async () => {
     const mockActionStatus = { status: "completed", name: "action-name" };
     const checkActionStatusMock = spyOn(
-      await import("../extension/helpers"),
+      await import("../../extension/helpers"),
       "checkActionStatus"
     ).mockResolvedValue(mockActionStatus);
 
@@ -392,7 +392,7 @@ describe("createOnAlarmCallback", () => {
     } as chrome.alarms.Alarm;
     const mockStatus = { status: "completed", name: "task-name" };
     const checkStatusMock = spyOn(
-      await import("../extension/helpers"),
+      await import("../../extension/helpers"),
       "checkStatus"
     ).mockResolvedValue(mockStatus);
     const whenStatusIsCompleteCallback = jest.fn();
