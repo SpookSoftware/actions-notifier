@@ -142,22 +142,22 @@ try {
  */
 export function extractActionDataFromURL(url: string) {
   const isValidURL = URL.canParse(url);
-  if (isValidURL) {
-    const [_, _2, _3, owner, repository, _4, _5, runId] = url.split("/");
-    //  https://github.com/SpookSoftware/sandbox/actions/runs/12447719676
-    //                         owner      repo                 runId
-    [
-      { property: owner, key: "owner" },
-      { property: repository, key: "repository" },
-      { property: runId, key: "runId" },
-    ].forEach(({ property, key }) => {
-      if (!property) {
-        throw Error(`Missing ${key}`);
-      }
-    });
-    return { owner, repository, runId };
+  if (!isValidURL) {
+    throw new Error("Invalid URL: " + url);
   }
-  throw Error("Invalid URL: " + url);
+  const [_, _2, _3, owner, repository, _4, _5, runId] = url.split("/");
+  //  https://github.com/SpookSoftware/sandbox/actions/runs/12447719676
+  //                         owner      repo                 runId
+  [
+    { property: owner, key: "owner" },
+    { property: repository, key: "repository" },
+    { property: runId, key: "runId" },
+  ].forEach(({ property, key }) => {
+    if (!property) {
+      throw Error(`Missing ${key}`);
+    }
+  });
+  return { owner, repository, runId };
 }
 
 export function extractJobDataFromURL(url: string) {
