@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import {
   CURRENTLY_RUNNING_SELECTOR,
   IN_PROGRESS_SELECTOR,
@@ -14,10 +15,8 @@ import type {
   StopMonitorRequest,
 } from "./types";
 
-export function sendMessageAsync(payload: unknown): Promise<MonitorResponse> {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(payload, resolve);
-  });
+export async function sendMessageAsync(payload: unknown): Promise<MonitorResponse> {
+  return await browser.runtime.sendMessage(payload);
 }
 
 export function shouldMonitorActions(url: string) {
@@ -321,24 +320,22 @@ export function createMonitorToggleHandler({
   return sendMonitoringMessage;
 }
 
-export function isIdAlreadyMonitored(
+export async function isIdAlreadyMonitored(
   id:
     | Encoded
     | { runId: string; jobId?: string; owner: string; repository: string }
-) {
+): Promise<boolean> {
   if (typeof id === "string") {
-    return new Promise((resolve) => {
-      chrome.storage.local.get(id, (result) => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            "Error occurred while checking if id was already monitored",
-            chrome.runtime.lastError
-          );
-          resolve(false);
-        }
-        resolve(Object.keys(result).length > 0);
-      });
-    });
+    try {
+      const result = await browser.storage.local.get(id);
+      return Object.keys(result).length > 0;
+    } catch (error) {
+      console.error(
+        "Error occurred while checking if id was already monitored",
+        error
+      );
+      return false;
+    }
   } else {
     return isIdAlreadyMonitored(encode(id));
   }
@@ -355,7 +352,7 @@ export function resetSVGColor(svg: SVGElement) {
 }
 
 export async function assertGithubToken() {
-  const token = await chrome.storage.sync.get("githubToken");
+  const token = await browser.storage.sync.get("githubToken");
 
   if (!token) {
     throw Error("Expected Github token to be available");
@@ -558,14 +555,13 @@ export function createURL({
 const GENERATE_TOKEN_URL =
   "https://github.com/settings/tokens/new?description=CICD%20Workflow%20Notifications&scopes=repo";
 
-// Must be dispatcher because it is an action! Logicless!
 export function createOnAlarmCallback(
   whenStatusIsCompleteCallback: (
-    alarm: chrome.alarms.Alarm,
+    alarm: browser.Alarms.Alarm,
     taskName: string
   ) => Promise<void>
 ) {
-  return async (alarm: chrome.alarms.Alarm) => {
+  return async (alarm: browser.Alarms.Alarm) => {
     if (!isProperlyEncoded(alarm.name)) {
       throw Error("Unexpected alarm name format: " + alarm.name);
     }
@@ -585,7 +581,7 @@ export function createOnAlarmCallback(
     console.debug(`Alarm ${alarm.name} fired with status ${status}`);
 
     if (status === "completed") {
-      whenStatusIsCompleteCallback(alarm, taskName);
+      await whenStatusIsCompleteCallback(alarm, taskName);
     }
   };
 }
@@ -602,44 +598,40 @@ function isStopMonitoringRequest(
   return request.task === "stop-monitoring";
 }
 
-// Using promises here is necessary because of the chrome runtime's poor async support.
 export function createOnMessageCallback(
   setupMonitoring: (id: string, lengthInMinutes: number) => Promise<void[]>,
   cancelMonitoring: (id: string) => Promise<[boolean, void]>
 ) {
-  return (
+  return async (
     request: MonitorRequest,
-    _sender: chrome.runtime.MessageSender,
-    sendResponse: (response: MonitorResponse) => void
-  ) => {
+    _sender: browser.Runtime.MessageSender
+  ): Promise<MonitorResponse> => {
     if (isStartMonitoringRequest(request)) {
       const encoded = encodeRequest(request);
 
       console.debug(`Received request to monitor ${encoded}`);
 
-      setupMonitoring(encoded, 0.1)
-        .then((_res) => {
-          console.debug(`Started monitoring for id ${encoded}`);
-          sendResponse({ status: "ok" });
-        })
-        .catch((err) => {
-          console.error(`Monitoring setup failed for id ${encoded}`);
-          sendResponse({ status: "error", error: err });
-        });
+      try {
+        await setupMonitoring(encoded, 0.1);
+        console.debug(`Started monitoring for id ${encoded}`);
+        return { status: "ok" };
+      } catch (err) {
+        console.error(`Monitoring setup failed for id ${encoded}`);
+        return { status: "error", error: err as Error };
+      }
     } else if (isStopMonitoringRequest(request)) {
       const encoded = encodeRequest(request);
 
       console.debug(`Received request to stop monitoring ${encoded}`);
 
-      cancelMonitoring(encoded)
-        .then((_res) => {
-          console.debug(`Stopped monitoring for id ${encoded}`);
-          sendResponse({ status: "ok" });
-        })
-        .catch((err) => {
-          console.error(`Monitoring cancellation failed for id ${encoded}`);
-          sendResponse({ status: "error", error: err });
-        });
+      try {
+        await cancelMonitoring(encoded);
+        console.debug(`Stopped monitoring for id ${encoded}`);
+        return { status: "ok" };
+      } catch (err) {
+        console.error(`Monitoring cancellation failed for id ${encoded}`);
+        return { status: "error", error: err as Error };
+      }
     } else {
       throw Error(
         `Unexpected request task ${
@@ -647,8 +639,6 @@ export function createOnMessageCallback(
         }. Full request for debugging: ${JSON.stringify(request)}`
       );
     }
-    // This signals to chrome that the connection will remain open until sendResponse is called.
-    return true;
   };
 }
 
@@ -712,48 +702,65 @@ export function assertIsHTMLElement(
 }
 
 export class AutoDisconnectingMutationObserver {
+  private static instance: AutoDisconnectingMutationObserver | null = null;
   private observer: MutationObserver;
   private activeTarget: Element | null;
   public mode: "normal" | "debug";
 
   constructor(callback: MutationCallback, mode: "normal" | "debug" = "normal") {
+    if (AutoDisconnectingMutationObserver.instance) {
+      console.warn(
+        "[AutoDisconnectingMutationObserver] Instance already exists. Reusing existing observer."
+      );
+      return AutoDisconnectingMutationObserver.instance;
+    }
+
     this.observer = new MutationObserver(callback);
     this.activeTarget = null;
     this.mode = mode;
 
     if (this.mode === "debug") {
-      console.group("[ScopedMutationObserver]");
+      console.group("[AutoDisconnectingMutationObserver]");
     }
+
     // Handle normal full-page navigations
-    window.addEventListener("pagehide", () => {
-      if (this.mode === "debug") {
-        console.debug(
-          "[ScopedMutationObserver] Disconnecting due to: pagehide event (standard navigation)"
-        );
-      }
-      this.disconnect();
-    });
+    window.addEventListener("pagehide", this.handlePageHide.bind(this));
 
     // Handle TurboDrive SPA-style navigation (GitHub, Hotwire, etc.)
-    document.addEventListener("turbo:before-render", () => {
-      if (this.mode === "debug") {
-        console.debug(
-          "[ScopedMutationObserver] Disconnecting due to: turbo:before-render (TurboDrive navigation)"
-        );
-      }
-      this.disconnect();
-    });
-    document.addEventListener("turbo:before-cache", () => {
-      if (this.mode === "debug") {
-        console.debug(
-          "[ScopedMutationObserver] Disconnecting due to: turbo:before-cache (TurboDrive caching)"
-        );
-      }
-      this.disconnect();
-    });
+    document.addEventListener(
+      "turbo:before-render",
+      this.handleTurboRender.bind(this)
+    );
+    document.addEventListener(
+      "turbo:before-cache",
+      this.handleTurboCache.bind(this)
+    );
+
+    // Store instance globally
+    AutoDisconnectingMutationObserver.instance = this;
+
+    if (this.mode === "debug") {
+      console.debug("[AutoDisconnectingMutationObserver] New instance created");
+    }
+  }
+
+  private handlePageHide() {
+    this.logAndDisconnect("pagehide event (standard navigation)");
+  }
+
+  private handleTurboRender() {
+    this.logAndDisconnect("turbo:before-render (TurboDrive navigation)");
+  }
+
+  private handleTurboCache() {
+    this.logAndDisconnect("turbo:before-cache (TurboDrive caching)");
   }
 
   observe(target: Element) {
+    if (this.activeTarget) {
+      this.logAndDisconnect("Switching observed target");
+    }
+
     this.observer.observe(target, {
       childList: true,
       subtree: true,
@@ -762,20 +769,52 @@ export class AutoDisconnectingMutationObserver {
     this.activeTarget = target;
     if (this.mode === "debug") {
       console.debug(
-        "[ScopedMutationObserver] MutationObserver attached to:",
+        "[AutoDisconnectingMutationObserver] MutationObserver attached to:",
         target
       );
     }
   }
 
+  private logAndDisconnect(reason: string) {
+    if (this.mode === "debug") {
+      console.debug(
+        `[AutoDisconnectingMutationObserver] Disconnecting due to: ${reason}`
+      );
+    }
+    this.disconnect();
+  }
+
   disconnect() {
     if (this.activeTarget) {
       if (this.mode === "debug") {
-        console.debug("[ScopedMutationObserver] MutationObserver disconnected");
+        console.debug(
+          "[AutoDisconnectingMutationObserver] MutationObserver disconnected"
+        );
         console.groupEnd();
       }
       this.observer.disconnect();
       this.activeTarget = null;
     }
+  }
+
+  destroy() {
+    if (this.mode === "debug") {
+      console.debug(
+        "[AutoDisconnectingMutationObserver] Destroying instance and removing event listeners"
+      );
+    }
+
+    window.removeEventListener("pagehide", this.handlePageHide.bind(this));
+    document.removeEventListener(
+      "turbo:before-render",
+      this.handleTurboRender.bind(this)
+    );
+    document.removeEventListener(
+      "turbo:before-cache",
+      this.handleTurboCache.bind(this)
+    );
+
+    this.disconnect();
+    AutoDisconnectingMutationObserver.instance = null;
   }
 }

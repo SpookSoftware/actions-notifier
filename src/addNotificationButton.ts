@@ -1,3 +1,4 @@
+import browser from 'webextension-polyfill';
 import {
   JOB_RUN_SELECTOR,
   JOB_RUNS_CONTAINER_SELECTOR,

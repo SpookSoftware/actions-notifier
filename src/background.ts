@@ -1,3 +1,4 @@
+import browser from "webextension-polyfill";
 import {
   createOnAlarmCallback,
   createOnMessageCallback,
@@ -11,41 +12,48 @@ import ExtPay from "extpay";
 let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
 
-self.addEventListener("activate", (_event) => {
+self.addEventListener("activate", async (_event) => {
   console.log("I'm active! Whee!");
 
-  chrome.alarms.clearAll(() => {
-    console.log("Cleared all old alarms.");
-  });
+  await browser.alarms.clearAll();
+  console.log("Cleared all old alarms.");
 });
 
-function createAlarmForId(id: string, lengthInMinutes: number) {
-  return chrome.alarms.create(id, {
+async function createAlarmForId(
+  id: string,
+  lengthInMinutes: number
+): Promise<void> {
+  await browser.alarms.create(id, {
     periodInMinutes: lengthInMinutes,
   });
 }
 
-function cancelAlarmForId(id: string) {
-  return chrome.alarms.clear(id);
+async function cancelAlarmForId(id: string): Promise<boolean> {
+  return await browser.alarms.clear(id);
 }
 
-function storeMonitoringStatus(id: string) {
-  return chrome.storage.local.set({ [id]: true });
+async function storeMonitoringStatus(id: string): Promise<void> {
+  await browser.storage.local.set({ [id]: true });
 }
 
-function performAllStartMonitoringTasks(id: string, lengthInMinutes: number) {
-  return Promise.all([
+async function performAllStartMonitoringTasks(
+  id: string,
+  lengthInMinutes: number
+): Promise<void[]> {
+  return await Promise.all([
     createAlarmForId(id, lengthInMinutes),
     storeMonitoringStatus(id),
   ]);
 }
 
-function removeMonitoringStatus(id: string) {
-  return chrome.storage.local.remove(id);
+async function removeMonitoringStatus(id: string): Promise<void> {
+  await browser.storage.local.remove(id);
 }
 
-function performAllStopMonitoringTasks(id: string) {
-  return Promise.all([cancelAlarmForId(id), removeMonitoringStatus(id)]);
+async function performAllStopMonitoringTasks(
+  id: string
+): Promise<[boolean, void]> {
+  return await Promise.all([cancelAlarmForId(id), removeMonitoringStatus(id)]);
 }
 
 const onMessageCallback = createOnMessageCallback(
@@ -53,36 +61,31 @@ const onMessageCallback = createOnMessageCallback(
   performAllStopMonitoringTasks
 );
 
-chrome.runtime.onMessage.addListener(onMessageCallback);
+browser.runtime.onMessage.addListener(onMessageCallback);
 
 const onAlarmCallback = createOnAlarmCallback(
-  async (alarm: chrome.alarms.Alarm, taskName: string) => {
-    chrome.notifications.create(
-      alarm.name,
-      {
-        type: "basic",
-        title: "Action/job completed",
-        message: `Item ${taskName} has completed. Click the notification to view the results.`,
-        iconUrl:
-          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
-      },
-      (id) => {
-        console.debug(`Successfully created notification with id ${id}`);
-      }
-    );
+  async (alarm: browser.Alarms.Alarm, taskName: string) => {
+    await browser.notifications.create(alarm.name, {
+      type: "basic",
+      title: "Action/job completed",
+      message: `Item ${taskName} has completed. Click the notification to view the results.`,
+      iconUrl:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
+    });
+    console.debug(`Successfully created notification with id ${alarm.name}`);
     console.debug(`Clearing alarm ${alarm.name}`);
 
-    await chrome.alarms.clear(alarm.name);
+    await browser.alarms.clear(alarm.name);
     console.debug(`Alarm ${alarm.name} cleared`);
 
-    await chrome.storage.local.remove(alarm.name);
+    await browser.storage.local.remove(alarm.name);
     console.debug(`Monitoring status for ${alarm.name} cleared from storage`);
   }
 );
 
-chrome.alarms.onAlarm.addListener(onAlarmCallback);
+browser.alarms.onAlarm.addListener(onAlarmCallback);
 
-chrome.notifications.onClicked.addListener((notificationId) => {
+browser.notifications.onClicked.addListener(async (notificationId) => {
   console.debug(`Notification ${notificationId} clicked.`);
   if (!isProperlyEncoded(notificationId)) {
     throw new Error(
@@ -90,7 +93,7 @@ chrome.notifications.onClicked.addListener((notificationId) => {
     );
   }
   const decoded = decode(notificationId);
-  chrome.tabs.create({
+  await browser.tabs.create({
     url: createURL(decoded),
   });
 });
