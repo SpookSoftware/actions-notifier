@@ -16,8 +16,7 @@
   "scripts": {
     "test:unit": "bun test",
     "test:pw": "playwright test",
-    "build": "bun ./build.ts",
-    "build:production": "bun ./build.ts --production",
-    "dev": "bun ./watcher.ts"
+  "dependencies": {
+    "extpay": "^3.0.7"
   }
 }
