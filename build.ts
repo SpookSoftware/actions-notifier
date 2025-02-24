@@ -21,7 +21,7 @@ import type { BuildConfig } from "bun";
   const manifest = Bun.file("./src/manifest.json");
   await Bun.write("./dist/manifest.json", manifest);
 
-  const imageGlob = new Bun.Glob("**/*.{png,jpg,jpeg,gif,svg}");
+  const imageGlob = new Bun.Glob("**/*.{png,jpg,jpeg,gif}");
   for (const filePath of imageGlob.scanSync("./src/images")) {
     const file = Bun.file(`./src/images/${filePath}`);
     await Bun.write(`./dist/images/${filePath}`, file);
