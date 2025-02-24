@@ -1,6 +1,9 @@
 import type { BuildConfig } from "bun";
+import { rm } from "node:fs/promises";
 
 (async () => {
+  await rm("./dist", { recursive: true, force: true });
+
   const options: BuildConfig = {
     entrypoints: [
       "./src/addNotificationButton.ts",
