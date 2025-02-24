@@ -1,4 +1,7 @@
 {
+  "name": "cicd-workflow-notifications",
+  "description": "Adds a button to the Github UI that will trigger a notification when an action or job completes when clicked.",
+  "author": "Spook Software",
   "devDependencies": {
     "@playwright/test": "^1.50.1",
     "@types/bun": "latest",

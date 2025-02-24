@@ -1,8 +1,8 @@
 {
-  "name": "Github Action Notifier",
-  "description": "Notifies when a Github action run completes.",
+  "name": "CI/CD Workflow Notifications",
+  "description": "Adds a button to the Github UI that will trigger a notification when an action or job completes when clicked.",
   "author": "Spook Software",
-  "version": "0.0.1",
+  "version": "0.9.0",
   "manifest_version": 3,
   "content_scripts": [
     {
