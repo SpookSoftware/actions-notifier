@@ -12,7 +12,7 @@ import {
   PR_CHECKS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_PARENT_SELECTOR,
   CHECKS_PAGE_CONTAINER_SELECTOR,
-} from "../../extension/selectors";
+} from "../../src/selectors";
 
 if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
   throw new Error("SANDBOX_REPO_GITHUB_TOKEN is not set.");

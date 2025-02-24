@@ -4,5 +4,3 @@ playwright-report
 .cache
 .env
 dist
-# Output dir
-extension

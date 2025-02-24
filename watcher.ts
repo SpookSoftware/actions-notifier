@@ -7,7 +7,7 @@ const watcher = watch(
   { recursive: true },
   (_eventType, filename) => {
     // Prevents infinite loop when the dist folder is updated. There is probably (definitely) a better way to do this.
-    if (filename && !filename.startsWith("extension/")) {
+    if (filename && !filename.startsWith("dist/")) {
       console.log(`File ${filename} changed. Reloading.`);
       reloadExtension();
     }

@@ -7,7 +7,7 @@ import type { BuildConfig } from "bun";
       "./src/background.ts",
       "./src/popup.html",
     ],
-    outdir: "./extension",
+    outdir: "./dist",
     target: "browser",
   };
 
@@ -19,11 +19,11 @@ import type { BuildConfig } from "bun";
   await Bun.build(options);
 
   const manifest = Bun.file("./src/manifest.json");
-  await Bun.write("./extension/manifest.json", manifest);
+  await Bun.write("./dist/manifest.json", manifest);
 
   const imageGlob = new Bun.Glob("**/*.{png,jpg,jpeg,gif,svg}");
   for (const filePath of imageGlob.scanSync("./src/images")) {
     const file = Bun.file(`./src/images/${filePath}`);
-    await Bun.write(`./extension/images/${filePath}`, file);
+    await Bun.write(`./dist/images/${filePath}`, file);
   }
 })();
