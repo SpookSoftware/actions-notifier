@@ -12,7 +12,7 @@ import type {
   MonitorResponse,
   StartMonitorRequest,
   StopMonitorRequest,
-} from "../types";
+} from "./types";
 
 export function sendMessageAsync(payload: unknown): Promise<MonitorResponse> {
   return new Promise((resolve) => {

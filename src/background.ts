@@ -6,6 +6,11 @@ import {
   createURL,
 } from "./helpers";
 
+import ExtPay from "extpay";
+
+let extpay = ExtPay("cicd-workflow-notifications");
+extpay.startBackground();
+
 self.addEventListener("activate", (_event) => {
   console.log("I'm active! Whee!");
 
