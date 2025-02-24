@@ -1,7 +1,8 @@
 node_modules
-credentials.js
 test-results
 playwright-report
 .cache
 .env
 dist
+# Output dir
+extension

@@ -1,17 +1,13 @@
 import { watch } from "fs";
-import os from "os";
 
-const mainBrowser =
-  os.hostname() === "Giskard.local" ? "Brave" : "Google Chrome";
-
-const EXTENSION_PATH = "./extension";
+const EXTENSION_PATH = "./src";
 
 const watcher = watch(
   EXTENSION_PATH,
   { recursive: true },
   (_eventType, filename) => {
     // Prevents infinite loop when the dist folder is updated. There is probably (definitely) a better way to do this.
-    if (filename && !filename.startsWith("dist/")) {
+    if (filename && !filename.startsWith("extension/")) {
       console.log(`File ${filename} changed. Reloading.`);
       reloadExtension();
     }
@@ -24,7 +20,7 @@ async function reloadExtension() {
   Bun.spawnSync([
     "osascript",
     "-e",
-    `tell application "${mainBrowser}" to open location "http://reload.extensions"`,
+    `tell application "Brave Browser" to open location "http://reload.extensions"`,
   ]);
   Bun.spawnSync([
     "osascript",
