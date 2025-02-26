@@ -19,6 +19,7 @@ if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
 }
 
 test.describe("Actions selectors", () => {
+  test.describe.configure({ retries: 3 });
   test("ACTION_RUNS_CONTAINER_SELECTOR selects the action container", async ({
     page,
   }) => {
@@ -61,8 +62,6 @@ test.describe("Actions selectors", () => {
   test("CURRENTLY_RUNNING_SELECTOR selects currently running actions", async ({
     page,
   }) => {
-    test.describe.configure({ retries: 3 });
-
     const actionStartResponse = await fetch(
       "https://api.github.com/repos/SpookSoftware/sandbox/dispatches",
       {
