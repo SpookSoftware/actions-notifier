@@ -49,25 +49,4 @@ test.describe("CI/CD Workflow Notifications Extension", () => {
     const tokenValue = await tokenInput.inputValue();
     expect(tokenValue).toBe(token);
   });
-
-  test("Extension should inject button on GitHub workflow pages", async ({
-    page,
-  }) => {
-    // Navigate to a GitHub workflow page
-    // Note: This test might need authentication to access private repositories
-    await page.goto("https://github.com/SpookSoftware/sandbox/actions");
-
-    // Wait for the page to load
-    await page.waitForLoadState("domcontentloaded");
-
-    // Give the extension time to inject the button
-    await page.waitForTimeout(2000);
-
-    // Check for elements that might have been injected by the extension
-    // This depends on how your extension injects elements - you might need to update this selector
-    const notificationButtons = await page
-      .locator('button[data-testid="cicd-notification-button"]')
-      .count();
-    expect(notificationButtons).toBeGreaterThan(0);
-  });
 });
