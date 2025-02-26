@@ -1,4 +1,3 @@
-import browser from "./browserPolyfill";
 import {
   JOB_RUN_SELECTOR,
   JOB_RUNS_CONTAINER_SELECTOR,
@@ -28,7 +27,6 @@ import {
   isIdAlreadyMonitored,
   AutoDisconnectingMutationObserver,
   shouldMonitorPRs,
-  isQueuedRunningAndNotButtoned,
   getTargetPRElements,
   insertButtonBetweenStatusAndDetails,
   createPRRunCallback,
