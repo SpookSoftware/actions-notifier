@@ -34,6 +34,7 @@ import {
   shouldMonitorPRs,
   shouldMonitorChecks,
   isValidGithubResponse,
+  NOTIFICATION_BUTTON_CLASS,
 } from "../../src/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -866,7 +867,7 @@ describe("isButtoned", () => {
   it("should return the button element if it exists", () => {
     const element = document.createElement("div");
     const button = document.createElement("button");
-    button.classList.add("gh-action-notifier-button");
+    button.classList.add(NOTIFICATION_BUTTON_CLASS);
     element.appendChild(button);
 
     const result = isButtoned(element);

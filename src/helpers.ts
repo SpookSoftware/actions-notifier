@@ -69,6 +69,8 @@ export function shouldMonitorChecks(url: string) {
   return checksPattern.test(url);
 }
 
+export const NOTIFICATION_BUTTON_CLASS = "gh-action-notifier-button";
+
 export function createNotificationButton({
   runId,
   jobId,
@@ -82,7 +84,7 @@ export function createNotificationButton({
 }) {
   const button = document.createElement("button");
   button.classList.add("Button");
-  button.classList.add("gh-action-notifier-button");
+  button.classList.add(NOTIFICATION_BUTTON_CLASS);
   button.dataset.runId = runId;
   button.dataset.jobId = jobId;
   button.dataset.owner = owner;
@@ -143,7 +145,7 @@ const isRunning = (el: any) => {
   );
 };
 export function isButtoned(element: any) {
-  return element.querySelector(".gh-action-notifier-button");
+  return element.querySelector(`.${NOTIFICATION_BUTTON_CLASS}`);
 }
 export function isQueuedRunningAndNotButtoned<
   HasQuerySelector extends {

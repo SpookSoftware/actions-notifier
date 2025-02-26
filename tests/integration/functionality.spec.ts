@@ -1,3 +1,4 @@
+import { NOTIFICATION_BUTTON_CLASS } from "../../src/helpers";
 import { test, expect } from "./fixtures";
 
 if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
@@ -48,7 +49,7 @@ test.describe("Extension Functionality", () => {
 
     // Find and click the notification button
     const notificationButton = page
-      .locator("button.gh-action-notifier-button")
+      .locator(`button.${NOTIFICATION_BUTTON_CLASS}`)
       .first();
 
     // Make sure it's visible before clicking
@@ -62,7 +63,9 @@ test.describe("Extension Functionality", () => {
 
     // Check that the SVG inside the button has the color style set to yellow
     const svgColor = await page.evaluate(() => {
-      const button = document.querySelector("button.gh-action-notifier-button");
+      const button = document.querySelector(
+        `button.${NOTIFICATION_BUTTON_CLASS}`
+      );
       if (!button) throw new Error("Button not found");
       const svg = button.querySelector("svg");
       if (!svg) throw new Error("SVG not found");
@@ -78,7 +81,9 @@ test.describe("Extension Functionality", () => {
 
     // Also check that the SVG no longer has the 'color-fg-muted' class
     const hasMutedClass = await page.evaluate(() => {
-      const button = document.querySelector("button.gh-action-notifier-button");
+      const button = document.querySelector(
+        `button.${NOTIFICATION_BUTTON_CLASS}`
+      );
       if (!button) throw new Error("Button not found");
       const svg = button.querySelector("svg");
       if (!svg) throw new Error("SVG not found");
