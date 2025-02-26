@@ -22,8 +22,34 @@ test.describe('CI/CD Workflow Notifications Extension', () => {
     const title = await page.title();
     expect(title).toBeTruthy();
   });
-  
-  test('Extension should inject button on GitHub workflow pages', async ({ page }) => {
+
+  test("Extension should populate the text field with the correct value if it is in chrome.storage.sync", async ({
+    page,
+    extensionId,
+  }) => {
+    // Navigate to the extension's popup page
+    await page.goto(`chrome-extension://${extensionId}/popup.html`);
+
+    const token = "test-token";
+
+    await page.evaluate((tokenValue) => {
+      return new Promise<void>((resolve) => {
+        chrome.storage.sync.set({ githubToken: tokenValue }, resolve);
+      });
+    }, token);
+
+    // Reload the page to ensure the storage is read
+    await page.reload();
+
+    // Wait for the page to load and verify content
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForSelector('input[name="githubToken"]');
+
+    const tokenInput = page.locator('input[name="githubToken"]');
+    const tokenValue = await tokenInput.inputValue();
+    expect(tokenValue).toBe(token);
+  });
+
     // Navigate to a GitHub workflow page
     // Note: This test might need authentication to access private repositories
     await page.goto('https://github.com/SpookSoftware/sandbox/actions');
