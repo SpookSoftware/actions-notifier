@@ -17,6 +17,7 @@
   "scripts": {
     "test:unit": "bun test",
     "test:pw": "playwright test",
+    "test:extension": "bun run build && playwright test tests/integration/extension/",
     "build": "bun ./scripts/build.ts",
     "build:production": "bun ./scripts/build.ts --production",
     "build:firefox": "bun ./scripts/build.ts --firefox",
