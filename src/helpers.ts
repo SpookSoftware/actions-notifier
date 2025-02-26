@@ -1,4 +1,5 @@
-import browser from "webextension-polyfill";
+import browser from "./browserPolyfill";
+import type Browser from "webextension-polyfill";
 import {
   CURRENTLY_RUNNING_SELECTOR,
   IN_PROGRESS_SELECTOR,
@@ -586,11 +587,11 @@ const GENERATE_TOKEN_URL =
 
 export function createOnAlarmCallback(
   whenStatusIsCompleteCallback: (
-    alarm: browser.Alarms.Alarm,
+    alarm: Browser.Alarms.Alarm,
     taskName: string
   ) => Promise<void>
 ) {
-  return async (alarm: browser.Alarms.Alarm) => {
+  return async (alarm: Browser.Alarms.Alarm) => {
     if (!isProperlyEncoded(alarm.name)) {
       throw Error("Unexpected alarm name format: " + alarm.name);
     }
@@ -633,7 +634,7 @@ export function createOnMessageCallback(
 ) {
   return async (
     request: MonitorRequest,
-    _sender: browser.Runtime.MessageSender
+    _sender: Browser.Runtime.MessageSender
   ): Promise<MonitorResponse> => {
     if (isStartMonitoringRequest(request)) {
       const encoded = encodeRequest(request);

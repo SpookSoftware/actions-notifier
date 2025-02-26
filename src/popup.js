@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from "./browserPolyfill";
 
 document.addEventListener("DOMContentLoaded", async function () {
   try {
@@ -10,14 +10,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     console.error("Error loading GitHub token:", error);
   }
 
-  document.getElementById("tokenForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const token = document.getElementById("githubToken").value;
-    try {
-      await browser.storage.sync.set({ githubToken: token });
-      console.debug("GitHub token saved.");
-    } catch (error) {
-      console.error("Error saving GitHub token:", error);
-    }
-  });
+  document
+    .getElementById("tokenForm")
+    .addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const token = document.getElementById("githubToken").value;
+      try {
+        await browser.storage.sync.set({ githubToken: token });
+        console.debug("GitHub token saved.");
+      } catch (error) {
+        console.error("Error saving GitHub token:", error);
+      }
+    });
 });
