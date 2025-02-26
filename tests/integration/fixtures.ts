@@ -7,8 +7,9 @@ export const test = base.extend<{
 }>({
   context: async ({}, use) => {
     // Path to the extension directory (where manifest.json is located)
-    const pathToExtension = path.join(__dirname, "../../../dist");
+    const pathToExtension = path.join(__dirname, "../../dist");
 
+    console.log({ pathToExtension });
     // Launch browser with the extension loaded
     const context = await chromium.launchPersistentContext("", {
       headless: false, // Extensions require a head
