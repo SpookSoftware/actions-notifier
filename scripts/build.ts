@@ -4,7 +4,7 @@ import { rm } from "node:fs/promises";
 (async () => {
   const browser = Bun.argv.includes("--firefox") ? "firefox" : "chrome";
   const outputDir = browser === "firefox" ? "./dist-firefox" : "./dist";
-  
+
   await rm(outputDir, { recursive: true, force: true });
 
   const options: BuildConfig = {
@@ -33,21 +33,24 @@ import { rm } from "node:fs/promises";
     manifestJson.browser_specific_settings = {
       gecko: {
         id: "cicd-workflow-notifications@spooksoftware.com",
-        strict_min_version: "109.0"
-      }
+        strict_min_version: "109.0",
+      },
     };
-    
+
     // Firefox requires "scripts" instead of "service_worker" in background
     if (manifestJson.background && manifestJson.background.service_worker) {
       manifestJson.background = {
         scripts: [manifestJson.background.service_worker],
-        type: "module"
+        type: "module",
       };
     }
   }
 
   // Write the appropriate manifest
-  await Bun.write(`${outputDir}/manifest.json`, JSON.stringify(manifestJson, null, 2));
+  await Bun.write(
+    `${outputDir}/manifest.json`,
+    JSON.stringify(manifestJson, null, 2)
+  );
 
   // Copy images
   const imageGlob = new Bun.Glob("**/*.{png,jpg,jpeg,gif,svg}");
