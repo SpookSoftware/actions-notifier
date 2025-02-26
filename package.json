@@ -5,6 +5,7 @@
   "devDependencies": {
     "@happy-dom/global-registrator": "^17.1.1",
     "@playwright/test": "^1.50.1",
+    "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "latest",
     "@types/chrome": "^0.0.243",
     "@types/node": "^22.9.0",
