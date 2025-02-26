@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from "webextension-polyfill";
 import {
   JOB_RUN_SELECTOR,
   JOB_RUNS_CONTAINER_SELECTOR,
@@ -127,7 +127,7 @@ async function processElementsForJobPages() {
     const encoded = encode({ runId, jobId, owner, repository });
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
     if (isAlreadyMonitored) {
-      svg.style.fill = "yellow";
+      setSVGColor(svg, "yellow");
     }
 
     element.style.display = "flex";
@@ -194,7 +194,7 @@ async function processElementsForPRPages() {
     const encoded = encode({ runId, jobId, owner, repository });
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
     if (isAlreadyMonitored) {
-      svg.style.fill = "yellow";
+      setSVGColor(svg, "yellow");
     }
 
     insertButtonBetweenStatusAndDetails(button, element);
@@ -246,7 +246,7 @@ async function processElementForChecksPages(): Promise<void> {
     const encoded = encode({ runId, jobId, owner, repository });
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
     if (isAlreadyMonitored) {
-      svg.style.fill = "yellow";
+      setSVGColor(svg, "yellow");
     }
 
     // element.style.display = "flex";
