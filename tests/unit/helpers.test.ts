@@ -33,6 +33,7 @@ import {
   AutoDisconnectingMutationObserver,
   shouldMonitorPRs,
   shouldMonitorChecks,
+  isValidGithubResponse,
 } from "../../src/helpers";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
@@ -40,7 +41,7 @@ import type {
   StartMonitorActionRequest,
   StartMonitorJobRequest,
   StartMonitorRequest,
-} from "../../types";
+} from "../../src/types";
 
 // Without this, the tests will fail because the extension uses the DOM API
 GlobalRegistrator.register();
@@ -982,5 +983,35 @@ describe("AutoDisconnectingMutationObserver", () => {
       expect(callback).toHaveBeenCalled();
       done();
     }, 0);
+  });
+});
+
+describe("isValidGithubResponse", () => {
+  it("returns true for valid GitHub response objects", () => {
+    const validResponse = { status: "completed", name: "action-name" };
+    expect(isValidGithubResponse(validResponse)).toBeTrue();
+  });
+
+  it("returns false for objects missing the status property", () => {
+    const invalidResponse = { name: "action-name" };
+    expect(isValidGithubResponse(invalidResponse)).toBeFalse();
+  });
+
+  it("returns false for objects missing the name property", () => {
+    const invalidResponse = { status: "completed" };
+    expect(isValidGithubResponse(invalidResponse)).toBeFalse();
+  });
+
+  it("returns false for objects with incorrect types", () => {
+    const invalidResponse = { status: 123, name: true };
+    expect(isValidGithubResponse(invalidResponse)).toBeFalse();
+  });
+
+  it("returns false for non-object types", () => {
+    expect(isValidGithubResponse(null)).toBeFalse();
+    expect(isValidGithubResponse(undefined)).toBeFalse();
+    expect(isValidGithubResponse("string")).toBeFalse();
+    expect(isValidGithubResponse(123)).toBeFalse();
+    expect(isValidGithubResponse(true)).toBeFalse();
   });
 });

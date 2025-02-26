@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import browser from "webextension-polyfill";
 import {
   CURRENTLY_RUNNING_SELECTOR,
   IN_PROGRESS_SELECTOR,
@@ -15,7 +15,9 @@ import type {
   StopMonitorRequest,
 } from "./types";
 
-export async function sendMessageAsync(payload: unknown): Promise<MonitorResponse> {
+export async function sendMessageAsync(
+  payload: unknown
+): Promise<MonitorResponse> {
   return await browser.runtime.sendMessage(payload);
 }
 
@@ -379,6 +381,17 @@ export async function checkStatus({
   }
 }
 
+export function isValidGithubResponse(
+  data: unknown
+): data is { status: string; name: string } {
+  return (
+    typeof data === "object" &&
+    data != undefined &&
+    "status" in data &&
+    "name" in data
+  );
+}
+
 export async function checkActionStatus({ runId, owner, repository }) {
   const token = await assertGithubToken();
   const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
@@ -390,6 +403,13 @@ export async function checkActionStatus({ runId, owner, repository }) {
   });
 
   const data = await response.json();
+
+  if (!isValidGithubResponse(data)) {
+    throw new Error(
+      "Expected response to contain data.status and data.name. Unexpected response from GitHub API: " +
+        JSON.stringify(data)
+    );
+  }
 
   return {
     status: data.status,
@@ -410,6 +430,13 @@ export async function checkJobStatus({ jobId, owner, repository }) {
   );
 
   const data = await response.json();
+
+  if (!isValidGithubResponse(data)) {
+    throw new Error(
+      "Expected response to contain data.status and data.name. Unexpected response from GitHub API: " +
+        JSON.stringify(data)
+    );
+  }
 
   return {
     status: data.status,
