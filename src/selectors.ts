@@ -34,4 +34,4 @@ export const PR_RUN_LINK_SELECTOR = "a.status-actions";
 
 // Checks page stuff
 export const CHECKS_PAGE_CONTAINER_SELECTOR =
-  "#repo-content-turbo-frame > div > div > div.d-flex.flex-column.width-full.flex-auto > div.d-flex.flex-items-stretch.flex-auto > div > aside";
+  "aside[aria-label='Check suites']";
