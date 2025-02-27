@@ -503,3 +503,11 @@ export function assertIsHTMLElement(
     throw Error("Expected element to be an HTMLElement");
   }
 }
+
+export function hasClickHandler(element: Element): boolean {
+  // Check if the element is an HTMLElement and has an onclick property
+  if (element instanceof HTMLElement) {
+    return typeof element.onclick === "function" && element.onclick !== null;
+  }
+  return false;
+}

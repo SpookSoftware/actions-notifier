@@ -11,6 +11,7 @@ import {
 } from "./selectors";
 import {
   createMonitorToggleHandler,
+  ensureButtonHasHandler,
   isIdAlreadyMonitored,
   URLAwareMutationObserver,
 } from "./helpers/browser";
@@ -33,6 +34,7 @@ import {
   insertButtonBetweenStatusAndDetails,
   createPRRunCallback,
   shouldMonitorChecks,
+  NOTIFICATION_BUTTON_CLASS,
 } from "./helpers/pure";
 
 // Declare the type for our patched history
@@ -72,6 +74,15 @@ function debounce(func: Function, wait: number) {
 
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
+
+  // Github will recreate the buttons on back/forward but will remove the event listeners.
+  document
+    .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
+    .forEach((button) => {
+      if (button instanceof HTMLElement) {
+        ensureButtonHasHandler(button);
+      }
+    });
 
   const currentlyRunningOrQueuedElements = getTargetElements(actionRunElements);
 
@@ -122,6 +133,15 @@ async function processElementsForJobPages() {
     console.debug("No job elements found");
     return;
   }
+
+  // Github will recreate the buttons on back/forward but will remove the event listeners.
+  document
+    .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
+    .forEach((button) => {
+      if (button instanceof HTMLElement) {
+        ensureButtonHasHandler(button);
+      }
+    });
 
   const currentlyRunningOrQueued = getTargetElements(jobElements);
 
@@ -185,6 +205,15 @@ async function processElementsForPRPages() {
     return;
   }
 
+  // Github will recreate the buttons on back/forward but will remove the event listeners.
+  document
+    .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
+    .forEach((button) => {
+      if (button instanceof HTMLElement) {
+        ensureButtonHasHandler(button);
+      }
+    });
+
   const runs = document.querySelectorAll(PR_RUN_SELECTOR);
 
   const currentlyRunningOrQueued = getTargetPRElements(runs);
@@ -246,6 +275,15 @@ async function processElementForChecksPages(): Promise<void> {
     console.debug("No check elements found");
     return;
   }
+
+  // Github will recreate the buttons on back/forward but will remove the event listeners.
+  document
+    .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
+    .forEach((button) => {
+      if (button instanceof HTMLElement) {
+        ensureButtonHasHandler(button);
+      }
+    });
 
   const currentlyRunningOrQueued = getTargetElements(runs);
 

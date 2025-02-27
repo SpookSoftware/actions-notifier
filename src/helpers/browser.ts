@@ -13,6 +13,7 @@ import {
   isProperlyEncoded,
   isStartMonitoringRequest,
   isStopMonitoringRequest,
+  hasClickHandler,
 } from "@/helpers/pure";
 import { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 
@@ -442,5 +443,54 @@ export class URLAwareMutationObserver {
 
     URLAwareMutationObserver.instances.clear();
     console.debug("All observers destroyed");
+  }
+}
+
+export function ensureButtonHasHandler(button: HTMLElement): void {
+  if (!hasClickHandler(button)) {
+    console.debug("Fixing button with missing click handler");
+
+    // Extract data from button attributes
+    const runId = button.dataset.runId;
+    const jobId = button.dataset.jobId;
+    const owner = button.dataset.owner;
+    const repository = button.dataset.repository;
+
+    // Find the SVG
+    const svg = button.querySelector("svg");
+
+    if (runId && owner && repository && svg instanceof SVGElement) {
+      // Create a new handler and attach it
+      const handleMonitoringClickFn = createMonitorToggleHandler({
+        runId,
+        jobId,
+        owner,
+        repository,
+        svg,
+      });
+
+      // Re-attach the handler
+      button.onclick = handleMonitoringClickFn;
+
+      // Update color if needed
+      const encoded = encode({
+        runId,
+        jobId,
+        owner,
+        repository,
+      });
+
+      isIdAlreadyMonitored(encoded).then((isMonitored) => {
+        if (isMonitored) {
+          setSVGColor(svg, "yellow");
+        } else {
+          resetSVGColor(svg);
+        }
+      });
+
+      console.debug("Successfully restored button handler");
+    } else {
+      console.debug("Couldn't restore button - missing data attributes or SVG");
+    }
   }
 }
