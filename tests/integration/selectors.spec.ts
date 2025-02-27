@@ -180,9 +180,6 @@ test.describe.skip("PR selectors", () => {
 });
 
 test.describe("Checks selectors", () => {
-  test.skip("IN_PROGRESS_SELECTOR", async ({ page }) => {
-    // For this, we will need to toggle the checkbox on a PR, then navigate to the checks page and look for > 1 checks.
-  });
   test("CHECKS_PAGE_CONTAINER_SELECTOR selects the checks container", async ({
     page,
   }) => {
