@@ -546,7 +546,11 @@ describe("createOnMessageCallback", () => {
         setupMonitoring,
         cancelMonitoring
       );
-      const result = callback(request, {} as chrome.runtime.MessageSender);
+      const result = callback(
+        request,
+        {} as chrome.runtime.MessageSender,
+        sendResponse
+      );
 
       expect(result).toBeTrue();
       expect(setupMonitoring).toHaveBeenCalledWith(

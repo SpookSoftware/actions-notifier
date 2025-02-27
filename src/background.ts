@@ -1,5 +1,4 @@
-import browser from "./browserPolyfill";
-import type Browser from "webextension-polyfill";
+import browser from "webextension-polyfill";
 import {
   createOnAlarmCallback,
   createOnMessageCallback,
@@ -65,7 +64,7 @@ const onMessageCallback = createOnMessageCallback(
 browser.runtime.onMessage.addListener(onMessageCallback);
 
 const onAlarmCallback = createOnAlarmCallback(
-  async (alarm: Browser.Alarms.Alarm, taskName: string) => {
+  async (alarm: browser.Alarms.Alarm, taskName: string) => {
     await browser.notifications.create(alarm.name, {
       type: "basic",
       title: "Action/job completed",
