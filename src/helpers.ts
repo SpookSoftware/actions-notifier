@@ -585,15 +585,95 @@ const GENERATE_TOKEN_URL =
   "https://github.com/settings/tokens/new?description=CICD%20Workflow%20Notifications&scopes=repo";
 
 function isStartMonitoringRequest(
-  request: MonitorRequest
+  request: unknown
 ): request is StartMonitorRequest {
-  return request.task === "start-monitoring";
+  return (
+    typeof request === "object" &&
+    request !== null &&
+    "task" in request &&
+    request.task === "start-monitoring"
+  );
 }
 
 function isStopMonitoringRequest(
-  request: MonitorRequest
+  request: unknown
 ): request is StopMonitorRequest {
-  return request.task === "stop-monitoring";
+  return (
+    typeof request === "object" &&
+    request !== null &&
+    "task" in request &&
+    request.task === "stop-monitoring"
+  );
+}
+
+async function createAlarmForId(
+  id: string,
+  lengthInMinutes: number
+): Promise<void> {
+  browser.alarms.create(id, {
+    periodInMinutes: lengthInMinutes,
+  });
+}
+
+export async function storeMonitoringStatus(id: string): Promise<void> {
+  await browser.storage.local.set({ [id]: true });
+}
+
+async function setupMonitoring(
+  id: string,
+  lengthInMinutes: number
+): Promise<void[]> {
+  return await Promise.all([
+    createAlarmForId(id, lengthInMinutes),
+    storeMonitoringStatus(id),
+  ]);
+}
+
+async function removeMonitoringStatus(id: string): Promise<void> {
+  await browser.storage.local.remove(id);
+}
+
+export async function cancelAlarmForId(id: string): Promise<boolean> {
+  return await browser.alarms.clear(id);
+}
+
+async function cancelMonitoring(id: string): Promise<[boolean, void]> {
+  return await Promise.all([cancelAlarmForId(id), removeMonitoringStatus(id)]);
+}
+
+export async function onMessageCallback(
+  request: unknown,
+  _sender: browser.Runtime.MessageSender
+): Promise<MonitorResponse> {
+  if (isStartMonitoringRequest(request)) {
+    const encoded = encodeRequest(request);
+
+    console.debug(`Received request to monitor ${encoded}`);
+
+    try {
+      await setupMonitoring(encoded, 0.1);
+      console.debug(`Started monitoring for id ${encoded}`);
+      return { status: "ok" };
+    } catch (err) {
+      console.error(`Monitoring setup failed for id ${encoded}`);
+      return { status: "error", error: err as Error };
+    }
+  } else if (isStopMonitoringRequest(request)) {
+    const encoded = encodeRequest(request);
+
+    console.debug(`Received request to stop monitoring ${encoded}`);
+
+    try {
+      await cancelMonitoring(encoded);
+      console.debug(`Stopped monitoring for id ${encoded}`);
+      return { status: "ok" };
+    } catch (err) {
+      console.error(`Monitoring cancellation failed for id ${encoded}`);
+      return { status: "error", error: err as Error };
+    }
+  } else {
+    throw Error(`Unexpected request: ${JSON.stringify(request)}`);
+  }
 }
 
 export function createOnMessageCallback(
