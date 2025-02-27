@@ -1,4 +1,4 @@
-import { NOTIFICATION_BUTTON_CLASS } from "../../src/helpers";
+import { NOTIFICATION_BUTTON_CLASS } from "../../src/helpers/pure";
 import { test, expect } from "./fixtures";
 
 if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {

@@ -10,6 +10,10 @@ import {
   CHECKS_PAGE_CONTAINER_SELECTOR,
 } from "./selectors";
 import {
+  createMonitorToggleHandler,
+  isIdAlreadyMonitored,
+} from "./helpers/browser";
+import {
   shouldMonitorActions,
   shouldMonitorJobs,
   createNotificationButton,
@@ -21,17 +25,15 @@ import {
   encode,
   extractJobDataFromURL,
   insertButtonIntoJob,
-  createMonitorToggleHandler,
   assertIsHTMLElement,
   setSVGColor,
-  isIdAlreadyMonitored,
   AutoDisconnectingMutationObserver,
   shouldMonitorPRs,
   getTargetPRElements,
   insertButtonBetweenStatusAndDetails,
   createPRRunCallback,
   shouldMonitorChecks,
-} from "./helpers";
+} from "./helpers/pure";
 
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);

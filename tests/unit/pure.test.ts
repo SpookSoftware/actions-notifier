@@ -1,12 +1,4 @@
-import {
-  expect,
-  describe,
-  it,
-  jest,
-  spyOn,
-  afterEach,
-  beforeEach,
-} from "bun:test";
+import { expect, describe, it, jest, afterEach, beforeEach } from "bun:test";
 import {
   createNotificationButton,
   shouldMonitorActions,
@@ -16,8 +8,6 @@ import {
   selectorHasChildren,
   encodeRequest,
   decode,
-  checkStatus,
-  assertGithubToken,
   getElementToInsertNotificationButtonInto,
   shouldMonitorJobs,
   extractJobDataFromURL,
@@ -33,14 +23,8 @@ import {
   shouldMonitorChecks,
   isValidGithubResponse,
   NOTIFICATION_BUTTON_CLASS,
-} from "../../src/helpers";
+} from "../../src/helpers/pure";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-
-import type {
-  StartMonitorActionRequest,
-  StartMonitorJobRequest,
-  StartMonitorRequest,
-} from "../../src/types";
 
 // Without this, the tests will fail because the extension uses the DOM API
 GlobalRegistrator.register();
@@ -360,81 +344,6 @@ describe("decode", () => {
   it("throws an error if the encoded string is not in the correct format", () => {
     const badlyEncoded = "Rats...rats make me crazy";
     expect(() => decode(badlyEncoded as any)).toThrowError();
-  });
-});
-
-describe("assertGithubToken", () => {
-  it("returns the GitHub token if it exists", async () => {
-    const mockToken = { githubToken: "mock-token" };
-    global.chrome = {
-      storage: {
-        // @ts-ignore
-        sync: {
-          get: jest.fn().mockResolvedValue(mockToken),
-        },
-      },
-    };
-
-    const token = await assertGithubToken();
-    expect(token).toEqual("mock-token");
-  });
-
-  it("throws an error if the GitHub token does not exist", async () => {
-    global.chrome = {
-      storage: {
-        // @ts-ignore
-        sync: {
-          get: jest.fn().mockResolvedValue(null),
-        },
-      },
-    };
-
-    expect(assertGithubToken()).rejects.toThrow();
-  });
-});
-
-describe("checkStatus", () => {
-  it("calls checkJobStatus if jobId is provided", async () => {
-    const mockJobStatus = { status: "completed", name: "job-name" };
-    const checkJobStatusMock = spyOn(
-      await import("../../src/helpers"),
-      "checkJobStatus"
-    ).mockResolvedValue(mockJobStatus);
-
-    const result = await checkStatus({
-      runId: "123",
-      owner: "owner",
-      repository: "repo",
-      jobId: "456",
-    });
-
-    expect(checkJobStatusMock).toHaveBeenCalledWith({
-      jobId: "456",
-      owner: "owner",
-      repository: "repo",
-    });
-    expect(result).toEqual(mockJobStatus);
-  });
-
-  it("calls checkActionStatus if jobId is not provided", async () => {
-    const mockActionStatus = { status: "completed", name: "action-name" };
-    const checkActionStatusMock = spyOn(
-      await import("../../src/helpers"),
-      "checkActionStatus"
-    ).mockResolvedValue(mockActionStatus);
-
-    const result = await checkStatus({
-      runId: "123",
-      owner: "owner",
-      repository: "repo",
-    });
-
-    expect(checkActionStatusMock).toHaveBeenCalledWith({
-      runId: "123",
-      owner: "owner",
-      repository: "repo",
-    });
-    expect(result).toEqual(mockActionStatus);
   });
 });
 

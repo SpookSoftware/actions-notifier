@@ -4,7 +4,7 @@ import {
   onAlarmCallback,
   onMessageCallback,
   onNotificationClickedCallback,
-} from "./helpers";
+} from "./helpers/browser";
 
 let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
