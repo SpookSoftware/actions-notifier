@@ -2,6 +2,8 @@ import {
   CURRENTLY_RUNNING_SELECTOR,
   IN_PROGRESS_SELECTOR,
   PR_CHECKS_CONTAINER_PARENT_SELECTOR,
+  PR_CURRENTLY_RUNNING_SELECTOR,
+  PR_QUEUED_SELECTOR,
   QUEUED_SELECTOR,
 } from "@/selectors";
 
@@ -153,13 +155,10 @@ export function getTargetElements(divs: NodeListOf<Element>) {
 }
 
 const isQueuedPR = (el: any) => {
-  return selectorHasChildren(
-    ".merge-status-item .octicon-dot-fill.hx_dot-fill-pending-icon",
-    el
-  );
+  return selectorHasChildren(PR_QUEUED_SELECTOR, el);
 };
 const isRunningPR = (el: any) => {
-  return selectorHasChildren(".merge-status-item .anim-rotate", el);
+  return selectorHasChildren(PR_CURRENTLY_RUNNING_SELECTOR, el);
 };
 export function isQueuedRunningAndNotButtonedPR<
   HasQuerySelector extends {

@@ -8,7 +8,7 @@ export const IN_PROGRESS_SELECTOR = "svg[aria-label*='In progress']";
 export const QUEUED_SELECTOR = "svg[aria-label*='queued']";
 export const SUCCESSFUL_SELECTOR = "svg[aria-label*='completed successfully']";
 
-// These are ripped from the DOM "copy selector" option
+// Ripped from the DOM "copy selector" option
 export const ACTION_RUNS_CONTAINER_SELECTOR =
   "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
 
@@ -31,6 +31,9 @@ export const PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR =
   "div.branch-action-item.js-details-container.Details.open";
 export const PR_RUN_SELECTOR = "div.merge-status-item";
 export const PR_RUN_LINK_SELECTOR = "a.status-actions";
+export const PR_QUEUED_SELECTOR =
+  ".merge-status-item .octicon-dot-fill.hx_dot-fill-pending-icon";
+export const PR_CURRENTLY_RUNNING_SELECTOR = ".merge-status-item .anim-rotate";
 
 // Checks page stuff
 export const CHECKS_PAGE_CONTAINER_SELECTOR =
