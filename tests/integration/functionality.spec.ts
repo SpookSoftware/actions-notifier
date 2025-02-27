@@ -408,4 +408,126 @@ test.describe("Job functionality", () => {
       )
     ).toBeFalsy();
   });
+
+  test(
+    "Button should maintain state when using browser back/forward navigation",
+    {
+      tag: "@regression",
+    },
+    async ({ page }) => {
+      // Start by navigating to the repo main page to establish history
+      await page.goto("https://github.com/SpookSoftware/sandbox");
+      await page.waitForLoadState("domcontentloaded");
+
+      // Navigate to GitHub actions page
+      await page.goto("https://github.com/SpookSoftware/sandbox/actions");
+
+      // Wait for the page to load completely
+      await page.waitForLoadState("domcontentloaded");
+      await page.waitForLoadState("networkidle");
+
+      // Look for a queued or running action
+      const queuedOrRunningSelector =
+        'svg[aria-label*="queued"], svg[aria-label*="currently running"], svg[aria-label*="In progress"]';
+      await page.waitForSelector(queuedOrRunningSelector, { timeout: 10000 });
+
+      // Click on the first queued/running workflow to view it
+      const actionLink = await page
+        .locator(queuedOrRunningSelector)
+        .first()
+        .locator("xpath=./ancestor::a")
+        .first();
+      await actionLink.click();
+
+      // Wait for job list to load
+      await page.waitForLoadState("domcontentloaded");
+      await page.waitForSelector('li[data-item-id^="job"]');
+
+      // Save the current URL to verify we actually navigate away and back
+      const workflowUrl = page.url();
+
+      // Give the extension time to inject the buttons on the jobs page
+      await page.waitForTimeout(2000);
+
+      // Look for a notification button on one of the jobs
+      const jobNotificationButton = page
+        .locator(`button.${NOTIFICATION_BUTTON_CLASS}`)
+        .first();
+      await expect(jobNotificationButton).toBeVisible();
+
+      // Click on the button to turn it yellow
+      await jobNotificationButton.click();
+
+      // Wait for the color change to take effect
+      await page.waitForTimeout(500);
+
+      // Verify it's yellow
+      const svgColorAfterClick = await page.evaluate((buttonClass) => {
+        const button = document.querySelector(`button.${buttonClass}`);
+        if (!button) throw new Error("Button not found");
+        const svg = button.querySelector("svg");
+        if (!svg) throw new Error("SVG not found");
+        return window.getComputedStyle(svg).color || svg.style.color;
+      }, NOTIFICATION_BUTTON_CLASS);
+
+      // Check if the color is yellow
+      expect(
+        ["yellow", "rgb(255, 255, 0)", "#ffff00"].some((color) =>
+          svgColorAfterClick.toLowerCase().includes(color)
+        )
+      ).toBeTruthy();
+
+      // Use browser back button to navigate back to actions page
+      await page.goBack();
+
+      // Verify we actually navigated back by checking the URL
+      await page.waitForLoadState("domcontentloaded");
+      expect(page.url()).not.toBe(workflowUrl);
+
+      // Now use browser forward button to go back to the workflow page
+      await page.goForward();
+
+      // Verify we navigated forward to the correct page
+      await page.waitForLoadState("domcontentloaded");
+      expect(page.url()).toBe(workflowUrl);
+
+      // Wait for job list to load again
+      await page.waitForSelector('li[data-item-id^="job"]');
+
+      // Give the extension time to reinitialize
+      await page.waitForTimeout(2000);
+
+      // Click the button again
+      const jobNotificationButtonAgain = page
+        .locator(`button.${NOTIFICATION_BUTTON_CLASS}`)
+        .first();
+      await expect(jobNotificationButtonAgain).toBeVisible();
+
+      await jobNotificationButtonAgain.click();
+
+      const svgColorAfterNavigation = await page.evaluate((buttonClass) => {
+        const button = document.querySelector(`button.${buttonClass}`);
+        if (!button) throw new Error("Button not found");
+        const svg = button.querySelector("svg");
+        if (!svg) throw new Error("SVG not found");
+        return window.getComputedStyle(svg).color || svg.style.color;
+      }, NOTIFICATION_BUTTON_CLASS);
+
+      expect(
+        ["yellow", "rgb(255, 255, 0)", "#ffff00"].some((color) =>
+          svgColorAfterNavigation.toLowerCase().includes(color)
+        )
+      ).toBeFalsy();
+
+      const hasMutedClass = await page.evaluate((buttonClass) => {
+        const button = document.querySelector(`button.${buttonClass}`);
+        if (!button) throw new Error("Button not found");
+        const svg = button.querySelector("svg");
+        if (!svg) throw new Error("SVG not found");
+        return svg.classList.contains("color-fg-muted");
+      }, NOTIFICATION_BUTTON_CLASS);
+
+      expect(hasMutedClass).toBeTruthy();
+    }
+  );
 });
