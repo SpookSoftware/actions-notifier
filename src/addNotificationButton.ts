@@ -530,16 +530,8 @@ function setupURLChangeTracking() {
     }
   });
 
-  // GitHub's Turbo Drive navigation
   document.addEventListener("turbo:render", () => {
-    if (window.location.href !== currentUrl) {
-      console.debug(
-        `turbo:render: URL changed from ${currentUrl} to ${window.location.href}`
-      );
-      debouncedMain();
-    } else {
-      console.debug("turbo:render fired but URL didn't change");
-    }
+    debouncedMain();
   });
 
   console.debug("URL change tracking initialized");
