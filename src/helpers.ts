@@ -584,37 +584,6 @@ export function createURL({
 const GENERATE_TOKEN_URL =
   "https://github.com/settings/tokens/new?description=CICD%20Workflow%20Notifications&scopes=repo";
 
-export function createOnAlarmCallback(
-  whenStatusIsCompleteCallback: (
-    alarm: browser.Alarms.Alarm,
-    taskName: string
-  ) => Promise<void>
-) {
-  return async (alarm: browser.Alarms.Alarm) => {
-    if (!isProperlyEncoded(alarm.name)) {
-      throw Error("Unexpected alarm name format: " + alarm.name);
-    }
-    const decoded = decode(alarm.name);
-    const runId = decoded.runId;
-    const owner = decoded.owner;
-    const repository = decoded.repository;
-    const jobId = decoded.jobId;
-
-    const { status, name: taskName } = await checkStatus({
-      runId,
-      owner,
-      repository,
-      jobId,
-    });
-
-    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
-
-    if (status === "completed") {
-      await whenStatusIsCompleteCallback(alarm, taskName);
-    }
-  };
-}
-
 function isStartMonitoringRequest(
   request: MonitorRequest
 ): request is StartMonitorRequest {
@@ -729,7 +698,6 @@ export function assertIsHTMLElement(
     throw Error("Expected element to be an HTMLElement");
   }
 }
-
 export class AutoDisconnectingMutationObserver {
   private static instance: AutoDisconnectingMutationObserver | null = null;
   private observer: MutationObserver;
@@ -846,4 +814,52 @@ export class AutoDisconnectingMutationObserver {
     this.disconnect();
     AutoDisconnectingMutationObserver.instance = null;
   }
+}
+
+export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
+  if (!isProperlyEncoded(alarm.name)) {
+    throw Error("Unexpected alarm name format: " + alarm.name);
+  }
+  const decoded = decode(alarm.name);
+  const runId = decoded.runId;
+  const owner = decoded.owner;
+  const repository = decoded.repository;
+  const jobId = decoded.jobId;
+
+  const { status, name: taskName } = await checkStatus({
+    runId,
+    owner,
+    repository,
+    jobId,
+  });
+
+  console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+
+  if (status === "completed") {
+    await createCompletionNotification(alarm.name, taskName);
+    // Is this a failure point? Should I be doing something to handle any potential failures here?
+    await teardown(alarm.name);
+  }
+};
+
+export async function teardown(alarmName: string) {
+  await browser.alarms.clear(alarmName);
+  console.debug(`Alarm ${alarmName} cleared`);
+  await browser.storage.local.remove(alarmName);
+  console.debug(`Monitoring status for ${alarmName} cleared from storage`);
+}
+
+export async function createCompletionNotification(
+  alarmName: string,
+  taskName: string
+) {
+  await browser.notifications.create(alarmName, {
+    type: "basic",
+    title: "Action/job completed",
+    message: `Item ${taskName} has completed. Click the notification to view the results.`,
+    // todo: change this
+    iconUrl:
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
+  });
+  console.debug(`Successfully created notification with id ${alarmName}`);
 }

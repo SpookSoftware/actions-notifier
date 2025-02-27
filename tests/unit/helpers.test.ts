@@ -17,7 +17,6 @@ import {
   selectorHasChildren,
   encodeRequest,
   decode,
-  createOnAlarmCallback,
   checkStatus,
   assertGithubToken,
   getElementToInsertNotificationButtonInto,
@@ -437,44 +436,6 @@ describe("checkStatus", () => {
       repository: "repo",
     });
     expect(result).toEqual(mockActionStatus);
-  });
-});
-
-describe("createOnAlarmCallback", () => {
-  it("checks the status of the relevant workflow and calls the callback if completed", async () => {
-    const mockAlarm = {
-      name: "123|owner|repo",
-    } as chrome.alarms.Alarm;
-    const mockStatus = { status: "completed", name: "task-name" };
-    const checkStatusMock = spyOn(
-      await import("../../src/helpers"),
-      "checkStatus"
-    ).mockResolvedValue(mockStatus);
-    const whenStatusIsCompleteCallback = jest.fn();
-
-    const onAlarmCallback = createOnAlarmCallback(whenStatusIsCompleteCallback);
-    await onAlarmCallback(mockAlarm);
-
-    expect(checkStatusMock).toHaveBeenCalledWith({
-      runId: "123",
-      owner: "owner",
-      repository: "repo",
-    });
-    expect(whenStatusIsCompleteCallback).toHaveBeenCalledWith(
-      mockAlarm,
-      "task-name"
-    );
-  });
-
-  it("throws an error if the alarm name format is unexpected", async () => {
-    const mockAlarm = {
-      name: "As far as names go, I am the worst",
-    } as chrome.alarms.Alarm;
-    const whenStatusIsCompleteCallback = jest.fn();
-
-    const onAlarmCallback = createOnAlarmCallback(whenStatusIsCompleteCallback);
-
-    expect(onAlarmCallback(mockAlarm)).rejects.toThrow();
   });
 });
 

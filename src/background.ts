@@ -1,10 +1,10 @@
 import browser from "webextension-polyfill";
 import {
-  createOnAlarmCallback,
   createOnMessageCallback,
   decode,
   isProperlyEncoded,
   createURL,
+  onAlarmCallback,
 } from "./helpers";
 
 import ExtPay from "extpay";
@@ -23,7 +23,7 @@ async function createAlarmForId(
   id: string,
   lengthInMinutes: number
 ): Promise<void> {
-  await browser.alarms.create(id, {
+  browser.alarms.create(id, {
     periodInMinutes: lengthInMinutes,
   });
 }
@@ -62,26 +62,6 @@ const onMessageCallback = createOnMessageCallback(
 );
 
 browser.runtime.onMessage.addListener(onMessageCallback);
-
-const onAlarmCallback = createOnAlarmCallback(
-  async (alarm: browser.Alarms.Alarm, taskName: string) => {
-    await browser.notifications.create(alarm.name, {
-      type: "basic",
-      title: "Action/job completed",
-      message: `Item ${taskName} has completed. Click the notification to view the results.`,
-      iconUrl:
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
-    });
-    console.debug(`Successfully created notification with id ${alarm.name}`);
-    console.debug(`Clearing alarm ${alarm.name}`);
-
-    await browser.alarms.clear(alarm.name);
-    console.debug(`Alarm ${alarm.name} cleared`);
-
-    await browser.storage.local.remove(alarm.name);
-    console.debug(`Monitoring status for ${alarm.name} cleared from storage`);
-  }
-);
 
 browser.alarms.onAlarm.addListener(onAlarmCallback);
 
