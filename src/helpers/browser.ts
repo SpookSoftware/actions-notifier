@@ -13,8 +13,8 @@ import {
   isProperlyEncoded,
   isStartMonitoringRequest,
   isStopMonitoringRequest,
-} from "./pure";
-import { MonitorResponse, Encoded, MonitorRequest } from "../types";
+} from "@/helpers/pure";
+import { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 
 export async function sendMessageAsync(
   payload: unknown

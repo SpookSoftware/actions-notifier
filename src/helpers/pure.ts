@@ -3,7 +3,7 @@ import {
   IN_PROGRESS_SELECTOR,
   PR_CHECKS_CONTAINER_PARENT_SELECTOR,
   QUEUED_SELECTOR,
-} from "../selectors";
+} from "@/selectors";
 
 import type {
   Encoded,
@@ -12,7 +12,7 @@ import type {
   MonitorResponse,
   StartMonitorRequest,
   StopMonitorRequest,
-} from "../types";
+} from "@/types";
 
 export function shouldMonitorActions(url: string) {
   // Normalize the URL by removing query parameters for pattern matching

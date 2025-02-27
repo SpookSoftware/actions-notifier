@@ -8,11 +8,11 @@ import {
   PR_RUN_LINK_SELECTOR,
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
   CHECKS_PAGE_CONTAINER_SELECTOR,
-} from "./selectors";
+} from "@/selectors";
 import {
   createMonitorToggleHandler,
   isIdAlreadyMonitored,
-} from "./helpers/browser";
+} from "@/helpers/browser";
 import {
   shouldMonitorActions,
   shouldMonitorJobs,
@@ -33,7 +33,7 @@ import {
   insertButtonBetweenStatusAndDetails,
   createPRRunCallback,
   shouldMonitorChecks,
-} from "./helpers/pure";
+} from "@/helpers/pure";
 
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);

@@ -23,7 +23,7 @@ import {
   shouldMonitorChecks,
   isValidGithubResponse,
   NOTIFICATION_BUTTON_CLASS,
-} from "../../src/helpers/pure";
+} from "@/helpers/pure";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 // Without this, the tests will fail because the extension uses the DOM API
