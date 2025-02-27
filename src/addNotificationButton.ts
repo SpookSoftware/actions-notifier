@@ -8,11 +8,12 @@ import {
   PR_RUN_LINK_SELECTOR,
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
   CHECKS_PAGE_CONTAINER_SELECTOR,
-} from "@/selectors";
+} from "./selectors";
 import {
   createMonitorToggleHandler,
   isIdAlreadyMonitored,
-} from "@/helpers/browser";
+  URLAwareMutationObserver,
+} from "./helpers/browser";
 import {
   shouldMonitorActions,
   shouldMonitorJobs,
@@ -27,13 +28,47 @@ import {
   insertButtonIntoJob,
   assertIsHTMLElement,
   setSVGColor,
-  AutoDisconnectingMutationObserver,
   shouldMonitorPRs,
   getTargetPRElements,
   insertButtonBetweenStatusAndDetails,
   createPRRunCallback,
   shouldMonitorChecks,
-} from "@/helpers/pure";
+} from "./helpers/pure";
+
+// Declare the type for our patched history
+declare global {
+  interface History {
+    _patchedByNotifier?: boolean;
+  }
+}
+
+// Global observers
+let actionObserver: URLAwareMutationObserver | null = null;
+let jobObserver: URLAwareMutationObserver | null = null;
+let prObserver: URLAwareMutationObserver | null = null;
+let checksObserver: URLAwareMutationObserver | null = null;
+
+// URL change tracking
+let currentUrl = window.location.href;
+let isInitialized = false;
+let pendingMainExecution = false;
+
+// Debounce helper
+function debounce(func: Function, wait: number) {
+  let timeout: number | null = null;
+
+  return function (...args: any[]) {
+    const later = () => {
+      timeout = null;
+      func(...args);
+    };
+
+    if (timeout !== null) {
+      window.clearTimeout(timeout);
+    }
+    timeout = window.setTimeout(later, wait) as unknown as number;
+  };
+}
 
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
@@ -83,7 +118,10 @@ async function processElementsForActionRunPages() {
 async function processElementsForJobPages() {
   const jobElements = document.querySelectorAll(JOB_RUN_SELECTOR);
 
-  console.assert(jobElements.length > 0, "Expected job elements to exist");
+  if (jobElements.length === 0) {
+    console.debug("No job elements found");
+    return;
+  }
 
   const currentlyRunningOrQueued = getTargetElements(jobElements);
 
@@ -204,7 +242,10 @@ async function processElementsForPRPages() {
 async function processElementForChecksPages(): Promise<void> {
   const runs = document.querySelectorAll("div.checks-list-item");
 
-  console.assert(runs.length > 0, "Expected run elements to exist");
+  if (runs.length === 0) {
+    console.debug("No check elements found");
+    return;
+  }
 
   const currentlyRunningOrQueued = getTargetElements(runs);
 
@@ -249,99 +290,232 @@ async function processElementForChecksPages(): Promise<void> {
       setSVGColor(svg, "yellow");
     }
 
-    // element.style.display = "flex";
-
     element.appendChild(button);
   }
 }
 
+// Clean up all observers
+function cleanupObservers() {
+  console.debug("Cleaning up all observers");
+
+  // Clean up individual observers
+  if (actionObserver) {
+    actionObserver.destroy();
+    actionObserver = null;
+  }
+  if (jobObserver) {
+    jobObserver.destroy();
+    jobObserver = null;
+  }
+  if (prObserver) {
+    prObserver.destroy();
+    prObserver = null;
+  }
+  if (checksObserver) {
+    checksObserver.destroy();
+    checksObserver = null;
+  }
+
+  // Just to be extra safe, destroy any leftover instances
+  URLAwareMutationObserver.destroyAll();
+}
+
 async function main(): Promise<void> {
-  console.debug("Running main()");
+  // If there's already a pending execution, don't create another one
+  if (pendingMainExecution) {
+    console.debug("Main execution already pending, skipping duplicate call");
+    return;
+  }
 
-  if (shouldMonitorActions(window.location.href)) {
-    console.debug("Determined we are in the action monitoring path");
-    await processElementsForActionRunPages();
+  pendingMainExecution = true;
 
-    const actionRunsContainer = document.querySelector(
-      ACTION_RUNS_CONTAINER_SELECTOR
-    );
+  try {
+    console.debug(`Running main() for URL: ${window.location.href}`);
 
-    if (actionRunsContainer) {
-      console.debug("Attaching action observer");
+    // Track current URL
+    currentUrl = window.location.href;
 
-      const actionRunCallback = createActionRunCallback(
-        async () => await processElementsForActionRunPages()
+    // First clean up any existing observers
+    cleanupObservers();
+
+    if (shouldMonitorActions(window.location.href)) {
+      console.debug("Determined we are in the action monitoring path");
+      await processElementsForActionRunPages();
+
+      const actionRunsContainer = document.querySelector(
+        ACTION_RUNS_CONTAINER_SELECTOR
       );
 
-      new AutoDisconnectingMutationObserver(actionRunCallback, "debug").observe(
-        actionRunsContainer
+      if (actionRunsContainer) {
+        console.debug("Attaching action observer");
+
+        const actionRunCallback = createActionRunCallback(
+          async () => await processElementsForActionRunPages()
+        );
+
+        actionObserver = new URLAwareMutationObserver(
+          actionRunCallback,
+          "debug"
+        );
+        actionObserver.observe(actionRunsContainer);
+      }
+    } else if (shouldMonitorJobs(window.location.href)) {
+      console.debug("Determined we are in the jobs monitoring path");
+      await processElementsForJobPages();
+
+      const jobRunsContainer = document.querySelector(
+        JOB_RUNS_CONTAINER_SELECTOR
       );
+
+      if (jobRunsContainer) {
+        console.debug("Attaching job observer");
+
+        const jobRunCallback = createActionRunCallback(
+          async () => await processElementsForJobPages()
+        );
+
+        jobObserver = new URLAwareMutationObserver(jobRunCallback, "debug");
+        jobObserver.observe(jobRunsContainer);
+      }
+    } else if (shouldMonitorPRs(window.location.href)) {
+      console.debug("Determined we are in the PR monitoring path");
+      await processElementsForPRPages();
+
+      // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
+      const prRunsContainer = document.querySelector(
+        PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR
+      );
+
+      if (prRunsContainer) {
+        console.debug("Attaching PR actions observer");
+
+        const prRunCallback = createPRRunCallback(
+          async () => await processElementsForPRPages()
+        );
+
+        prObserver = new URLAwareMutationObserver(prRunCallback, "debug");
+        prObserver.observe(prRunsContainer);
+      }
+    } else if (shouldMonitorChecks(window.location.href)) {
+      console.debug("Determined we are in the checks monitoring path");
+      await processElementForChecksPages();
+
+      const checksContainer = document.querySelector(
+        CHECKS_PAGE_CONTAINER_SELECTOR
+      );
+
+      if (checksContainer) {
+        console.debug("Attaching checks observer");
+
+        const checksRunCallback = createActionRunCallback(
+          async () => await processElementForChecksPages()
+        );
+
+        checksObserver = new URLAwareMutationObserver(
+          checksRunCallback,
+          "debug"
+        );
+        checksObserver.observe(checksContainer);
+      }
+    } else {
+      console.debug("Current URL doesn't match any monitoring paths");
     }
-  } else if (shouldMonitorJobs(window.location.href)) {
-    console.debug("Determined we are in the jobs monitoring path");
-    await processElementsForJobPages();
 
-    const jobRunsContainer = document.querySelector(
-      JOB_RUNS_CONTAINER_SELECTOR
-    );
-
-    if (jobRunsContainer) {
-      console.debug("Attaching job observer");
-
-      const jobRunCallback = createActionRunCallback(
-        async () => await processElementsForJobPages()
-      );
-
-      new AutoDisconnectingMutationObserver(jobRunCallback, "debug").observe(
-        jobRunsContainer
-      );
-    }
-  } else if (shouldMonitorPRs(window.location.href)) {
-    console.debug("Determined we are in the PR monitoring path");
-    await processElementsForPRPages();
-
-    // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
-    const prRunsContainer = document.querySelector(
-      PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR
-    );
-
-    if (prRunsContainer) {
-      console.debug("Attaching PR actions observer");
-
-      const prRunCallback = createPRRunCallback(
-        async () => await processElementsForPRPages()
-      );
-
-      new AutoDisconnectingMutationObserver(prRunCallback, "debug").observe(
-        prRunsContainer
-      );
-    }
-  } else if (shouldMonitorChecks(window.location.href)) {
-    console.debug("Determined we are in the checks monitoring path");
-    await processElementForChecksPages();
-
-    const checksContainer = document.querySelector(
-      CHECKS_PAGE_CONTAINER_SELECTOR
-    );
-
-    if (checksContainer) {
-      console.debug("Attaching checks observer");
-
-      const checksRunCallback = createActionRunCallback(
-        async () => await processElementForChecksPages()
-      );
-
-      new AutoDisconnectingMutationObserver(checksRunCallback, "debug").observe(
-        checksContainer
-      );
-    }
+    isInitialized = true;
+  } finally {
+    pendingMainExecution = false;
   }
 }
 
-document.removeEventListener("turbo:render", main);
-document.addEventListener("turbo:render", async () => {
-  console.debug("turbo:render triggered");
-  await main();
-});
+// Debounced version of main to prevent multiple rapid executions
+const debouncedMain = debounce(main, 150);
 
-main();
+// Track URL changes using the History API
+function patchHistoryAPI() {
+  if (window.history._patchedByNotifier) {
+    console.debug("History API already patched, skipping");
+    return;
+  }
+
+  // Save original methods
+  const originalPushState = window.history.pushState;
+  const originalReplaceState = window.history.replaceState;
+
+  // Patch pushState
+  window.history.pushState = function (...args) {
+    // Call original method
+    const result = originalPushState.apply(this, args);
+
+    // Check if URL actually changed
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `pushState: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    }
+
+    return result;
+  };
+
+  // Patch replaceState
+  window.history.replaceState = function (...args) {
+    // Call original method
+    const result = originalReplaceState.apply(this, args);
+
+    // Check if URL actually changed
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `replaceState: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    }
+
+    return result;
+  };
+
+  window.history._patchedByNotifier = true;
+  console.debug("History API patched to detect URL changes");
+}
+
+// Setup URL change tracking
+function setupURLChangeTracking() {
+  // Patch History API
+  patchHistoryAPI();
+
+  // Handle browser back/forward navigation
+  window.addEventListener("popstate", () => {
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `popstate: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    }
+  });
+
+  // GitHub's Turbo Drive navigation
+  document.addEventListener("turbo:render", () => {
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `turbo:render: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    } else {
+      console.debug("turbo:render fired but URL didn't change");
+    }
+  });
+
+  console.debug("URL change tracking initialized");
+}
+
+// Initialize if this hasn't been done already
+if (!isInitialized) {
+  console.debug("Initializing extension");
+  setupURLChangeTracking();
+  main();
+}
+
+// Cleanup on unload
+window.addEventListener("unload", () => {
+  console.debug("Page unloading, cleaning up observers");
+  cleanupObservers();
+});

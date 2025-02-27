@@ -322,3 +322,125 @@ export async function checkStatus({
     return await checkActionStatus({ runId, owner, repository });
   }
 }
+
+export class URLAwareMutationObserver {
+  private observer: MutationObserver;
+  private activeTarget: Element | null = null;
+  private currentUrl: string;
+
+  // Store bound handler references for proper removal
+  private boundHandleUrlChange: () => void;
+
+  public mode: "normal" | "debug";
+  private id: string; // Unique ID for this observer instance
+
+  // Track all observer instances to prevent duplicates
+  private static instances: Set<URLAwareMutationObserver> = new Set();
+  private static instanceCounter = 0;
+
+  constructor(callback: MutationCallback, mode: "normal" | "debug" = "normal") {
+    this.observer = new MutationObserver(callback);
+    this.currentUrl = window.location.href;
+    this.mode = mode;
+    this.id = `observer-${++URLAwareMutationObserver.instanceCounter}`;
+
+    // Bind event handlers once
+    this.boundHandleUrlChange = this.handleUrlChange.bind(this);
+
+    if (this.mode === "debug") {
+      console.debug(`[${this.id}] New URLAwareMutationObserver created`);
+    }
+
+    // Add to instance tracking
+    URLAwareMutationObserver.instances.add(this);
+
+    if (this.mode === "debug") {
+      console.debug(
+        `Active observer count: ${URLAwareMutationObserver.instances.size}`
+      );
+    }
+  }
+
+  observe(target: Element) {
+    if (this.activeTarget) {
+      if (this.mode === "debug") {
+        console.debug(
+          `[${this.id}] Disconnecting previous observer before attaching to new target`
+        );
+      }
+      this.disconnect();
+    }
+
+    this.observer.observe(target, {
+      childList: true,
+      subtree: true,
+    });
+
+    this.activeTarget = target;
+
+    if (this.mode === "debug") {
+      console.debug(`[${this.id}] MutationObserver attached to:`, target);
+    }
+  }
+
+  disconnect() {
+    if (this.activeTarget) {
+      if (this.mode === "debug") {
+        console.debug(`[${this.id}] MutationObserver disconnected`);
+      }
+
+      this.observer.disconnect();
+      this.activeTarget = null;
+    }
+  }
+
+  destroy() {
+    if (this.mode === "debug") {
+      console.debug(`[${this.id}] Destroying observer instance`);
+    }
+
+    this.disconnect();
+
+    // Remove from instance tracking
+    URLAwareMutationObserver.instances.delete(this);
+
+    if (this.mode === "debug") {
+      console.debug(
+        `Active observer count after destroy: ${URLAwareMutationObserver.instances.size}`
+      );
+    }
+  }
+
+  private handleUrlChange() {
+    const newUrl = window.location.href;
+
+    if (this.currentUrl === newUrl) return;
+
+    if (this.mode === "debug") {
+      console.debug(
+        `[${this.id}] URL changed from ${this.currentUrl} to ${newUrl}`
+      );
+    }
+
+    // Disconnect the current observer
+    this.disconnect();
+
+    // Update current URL
+    this.currentUrl = newUrl;
+  }
+
+  // Static method to destroy all observer instances
+  static destroyAll() {
+    console.debug(
+      `Destroying all ${URLAwareMutationObserver.instances.size} observer instances`
+    );
+
+    // Create a new array to avoid issues with modifying the set during iteration
+    [...URLAwareMutationObserver.instances].forEach((instance) => {
+      instance.destroy();
+    });
+
+    URLAwareMutationObserver.instances.clear();
+    console.debug("All observers destroyed");
+  }
+}

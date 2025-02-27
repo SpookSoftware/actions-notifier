@@ -18,7 +18,6 @@ import {
   assertIsHTMLElement,
   isButtoned,
   buildMonitoringPayloads,
-  AutoDisconnectingMutationObserver,
   shouldMonitorPRs,
   shouldMonitorChecks,
   isValidGithubResponse,
@@ -547,56 +546,6 @@ describe("buildMonitoringPayloads", () => {
       task: "stop-monitoring",
       type: "job",
     });
-  });
-});
-
-describe("AutoDisconnectingMutationObserver", () => {
-  let observer: AutoDisconnectingMutationObserver;
-  let callback: MutationCallback;
-  let target: Element;
-
-  beforeEach(() => {
-    callback = jest.fn();
-    observer = new AutoDisconnectingMutationObserver(callback);
-    target = document.createElement("div");
-    document.body.appendChild(target);
-  });
-
-  afterEach(() => {
-    document.body.removeChild(target);
-  });
-
-  it("should attach MutationObserver to the target element", () => {
-    observer.observe(target);
-    expect(observer["activeTarget"]).toBe(target);
-  });
-
-  it("should disconnect MutationObserver on pagehide event", () => {
-    observer.observe(target);
-    window.dispatchEvent(new Event("pagehide"));
-    expect(observer["activeTarget"]).toBeNull();
-  });
-
-  it("should disconnect MutationObserver on turbo:before-render event", () => {
-    observer.observe(target);
-    document.dispatchEvent(new Event("turbo:before-render"));
-    expect(observer["activeTarget"]).toBeNull();
-  });
-
-  it("should disconnect MutationObserver on turbo:before-cache event", () => {
-    observer.observe(target);
-    document.dispatchEvent(new Event("turbo:before-cache"));
-    expect(observer["activeTarget"]).toBeNull();
-  });
-
-  it("should call the callback when mutations occur", (done) => {
-    observer.observe(target);
-    const child = document.createElement("div");
-    target.appendChild(child);
-    setTimeout(() => {
-      expect(callback).toHaveBeenCalled();
-      done();
-    }, 0);
   });
 });
 
