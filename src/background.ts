@@ -12,7 +12,7 @@ import ExtPay from "extpay";
 let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
 
-self.addEventListener("activate", async (_event) => {
+self.addEventListener("activate", async (_event: Event) => {
   console.log("I'm active! Whee!");
 
   await browser.alarms.clearAll();
