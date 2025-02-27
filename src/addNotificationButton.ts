@@ -257,6 +257,7 @@ async function main(): Promise<void> {
   console.debug("Running main()");
 
   if (shouldMonitorActions(window.location.href)) {
+    console.debug("Determined we are in the action monitoring path");
     await processElementsForActionRunPages();
 
     const actionRunsContainer = document.querySelector(
@@ -275,6 +276,7 @@ async function main(): Promise<void> {
       );
     }
   } else if (shouldMonitorJobs(window.location.href)) {
+    console.debug("Determined we are in the jobs monitoring path");
     await processElementsForJobPages();
 
     const jobRunsContainer = document.querySelector(
@@ -293,6 +295,7 @@ async function main(): Promise<void> {
       );
     }
   } else if (shouldMonitorPRs(window.location.href)) {
+    console.debug("Determined we are in the PR monitoring path");
     await processElementsForPRPages();
 
     // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
@@ -312,6 +315,7 @@ async function main(): Promise<void> {
       );
     }
   } else if (shouldMonitorChecks(window.location.href)) {
+    console.debug("Determined we are in the checks monitoring path");
     await processElementForChecksPages();
 
     const checksContainer = document.querySelector(
