@@ -35,7 +35,7 @@ Test case ideas
  */
 
 test.describe("Extension Functionality", () => {
-  test.only("Notification button should be clickable on GitHub workflow pages", async ({
+  test("Notification button should be clickable on GitHub workflow pages", async ({
     page,
   }) => {
     // Navigate to a GitHub workflow page
@@ -62,15 +62,13 @@ test.describe("Extension Functionality", () => {
     await page.waitForTimeout(500);
 
     // Check that the SVG inside the button has the color style set to yellow
-    const svgColor = await page.evaluate(() => {
-      const button = document.querySelector(
-        `button.${NOTIFICATION_BUTTON_CLASS}`
-      );
+    const svgColor = await page.evaluate((buttonClass) => {
+      const button = document.querySelector(`button.${buttonClass}`);
       if (!button) throw new Error("Button not found");
       const svg = button.querySelector("svg");
       if (!svg) throw new Error("SVG not found");
       return window.getComputedStyle(svg).color || svg.style.color;
-    });
+    }, NOTIFICATION_BUTTON_CLASS);
 
     // Check if the color is yellow (could be in different formats)
     expect(
@@ -80,15 +78,13 @@ test.describe("Extension Functionality", () => {
     ).toBeTruthy();
 
     // Also check that the SVG no longer has the 'color-fg-muted' class
-    const hasMutedClass = await page.evaluate(() => {
-      const button = document.querySelector(
-        `button.${NOTIFICATION_BUTTON_CLASS}`
-      );
+    const hasMutedClass = await page.evaluate((buttonClass) => {
+      const button = document.querySelector(`button.${buttonClass}`);
       if (!button) throw new Error("Button not found");
       const svg = button.querySelector("svg");
       if (!svg) throw new Error("SVG not found");
       return svg.classList.contains("color-fg-muted");
-    });
+    }, NOTIFICATION_BUTTON_CLASS);
 
     expect(hasMutedClass).toBeFalsy();
   });
