@@ -943,3 +943,16 @@ export async function createCompletionNotification(
   });
   console.debug(`Successfully created notification with id ${alarmName}`);
 }
+
+export async function onNotificationClickedCallback(notificationId: string) {
+  console.debug(`Notification ${notificationId} clicked.`);
+  if (!isProperlyEncoded(notificationId)) {
+    throw new Error(
+      `Unexpected id format:  ${notificationId}. Should be in the format string|string|string or string|string|string|string`
+    );
+  }
+  const decoded = decode(notificationId);
+  await browser.tabs.create({
+    url: createURL(decoded),
+  });
+}
