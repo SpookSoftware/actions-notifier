@@ -22,7 +22,8 @@
     "build:production": "bun ./scripts/build.ts --production",
     "build:firefox": "bun ./scripts/build.ts --firefox",
     "build:firefox:production": "bun ./scripts/build.ts --firefox --production",
-    "dev": "bun ./scripts/watcher.ts"
+    "dev": "bun ./scripts/watcher.ts",
+    "refresh": "bun run build && osascript -e 'tell application \"Brave Browser\" to open location \"http://reload.extensions\"'"
   },
   "dependencies": {
     "-": "^0.0.1",
