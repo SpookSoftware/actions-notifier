@@ -80,6 +80,12 @@ export function createNotificationButton({
   const button = document.createElement("button");
   button.classList.add("Button");
   button.classList.add(NOTIFICATION_BUTTON_CLASS);
+
+  // Basic styles
+  button.style.display = "inline-flex";
+  button.style.justifyContent = "center";
+  button.style.alignItems = "center";
+
   button.dataset.runId = runId;
   button.dataset.jobId = jobId;
   button.dataset.owner = owner;
@@ -91,8 +97,9 @@ export function createNotificationSVG() {
   const NOTIFICATION_BELL_PATH =
     "M12 1c3.681 0 7 2.565 7 6v4.539c0 .642.189 1.269.545 1.803l2.2 3.298A1.517 1.517 0 0 1 20.482 19H15.5a3.5 3.5 0 1 1-7 0H3.519a1.518 1.518 0 0 1-1.265-2.359l2.2-3.299A3.25 3.25 0 0 0 5 11.539V7c0-3.435 3.318-6 7-6ZM6.5 7v4.539a4.75 4.75 0 0 1-.797 2.635l-2.2 3.298-.003.01.001.007.004.006.006.004.007.001h16.964l.007-.001.006-.004.004-.006.001-.006a.017.017 0 0 0-.003-.01l-2.199-3.299a4.753 4.753 0 0 1-.798-2.635V7c0-2.364-2.383-4.5-5.5-4.5S6.5 4.636 6.5 7ZM14 19h-4a2 2 0 1 0 4 0Z";
   const NOTIFICATION_BELL_VIEW_BOX = "0 0 24 24";
-  const NOTIFICATION_BELL_WIDTH = "24";
-  const NOTIFICATION_BELL_HEIGHT = "24";
+  const NOTIFICATION_BELL_WIDTH = "16";
+  const NOTIFICATION_BELL_HEIGHT = "16";
+
   const svgElement = document.createElementNS(
     "http://www.w3.org/2000/svg",
     "svg"
@@ -266,10 +273,21 @@ export function buildMonitoringPayloads({
 export function setSVGColor(svg: SVGElement, color: string) {
   svg.style.color = color;
   svg.classList.remove("color-fg-muted");
+
+  // Add a subtle transition effect
+  svg.style.transition = "color 0.2s ease";
+
+  // Add a small outline/glow when active
+  if (color === "yellow") {
+    svg.style.filter = "drop-shadow(0 0 2px rgba(255, 204, 0, 0.5))";
+  } else if (color === "red") {
+    svg.style.filter = "drop-shadow(0 0 2px rgba(255, 0, 0, 0.5))";
+  }
 }
 
 export function resetSVGColor(svg: SVGElement) {
   svg.style.color = "";
+  svg.style.filter = "";
   svg.classList.add("color-fg-muted");
 }
 
@@ -464,35 +482,6 @@ export function getElementToInsertNotificationButtonInto(
   return betweenBranchAndTime;
 }
 
-/**
- * On workflow run pages, like https://github.com/SpookSoftware/sandbox/actions/workflows/waitXMinutes.yml, inserts the supplied button
- * between the branch name and the "this was last run on" icons.
- */
-export function magicallyInsertButtonInRightPlace({
-  button,
-  actionRunElement,
-}: {
-  button: HTMLButtonElement;
-  actionRunElement: Element;
-}) {
-  const betweenBranchAndTime =
-    getElementToInsertNotificationButtonInto(actionRunElement);
-  const childDiv = actionRunElement.children[0];
-  childDiv.insertBefore(button, betweenBranchAndTime);
-}
-
-export function insertButtonIntoJob(button: Element, jobLi: Element) {
-  jobLi.insertAdjacentElement("beforeend", button);
-}
-
-export function insertButtonBetweenStatusAndDetails(
-  button: Element,
-  element: Element
-) {
-  const referenceDiv = element.children[3];
-  element.insertBefore(button, referenceDiv);
-}
-
 export function assertIsHTMLElement(
   element: Element
 ): asserts element is HTMLElement {
@@ -509,4 +498,86 @@ export function hasClickHandler(element: Element): boolean {
     return typeof element.onclick === "function" && element.onclick !== null;
   }
   return false;
+}
+
+/**
+ * On workflow run pages, inserts the supplied button
+ * between the branch name and the "this was last run on" icons.
+ */
+// For Actions page workflow run elements - aligned with three dots menu
+export function magicallyInsertButtonInRightPlace({
+  button,
+  actionRunElement,
+}: {
+  button: HTMLButtonElement;
+  actionRunElement: Element;
+}) {
+  const betweenBranchAndTime =
+    getElementToInsertNotificationButtonInto(actionRunElement);
+  const childDiv = actionRunElement.children[0];
+
+  // Actions page specific styling
+  button.style.padding = "3px";
+  button.style.marginLeft = "4px";
+  button.style.marginRight = "8px";
+  button.style.width = "24px";
+  button.style.height = "24px";
+  button.style.verticalAlign = "middle";
+  button.style.position = "relative";
+  button.style.top = "12px"; // Increased to align with three dots
+
+  // SVG specific styling for Actions page
+  const svg = button.querySelector("svg");
+  if (svg instanceof SVGElement) {
+    svg.style.display = "block";
+    svg.style.margin = "auto";
+  }
+
+  childDiv.insertBefore(button, betweenBranchAndTime);
+}
+
+export function insertButtonIntoJob(button: HTMLButtonElement, jobLi: Element) {
+  if (jobLi instanceof HTMLElement) {
+    jobLi.style.display = "flex";
+    jobLi.style.alignItems = "center";
+  }
+
+  // Job page specific styling
+  button.style.padding = "4px";
+  button.style.marginLeft = "auto";
+  button.style.marginRight = "8px";
+  button.style.width = "28px";
+  button.style.height = "28px";
+
+  // SVG specific styling for Job page
+  const svg = button.querySelector("svg");
+  if (svg instanceof SVGElement) {
+    svg.style.display = "block";
+    svg.style.margin = "auto";
+  }
+
+  jobLi.appendChild(button);
+}
+
+// For PR pages - keep their specific styling separate
+export function insertButtonBetweenStatusAndDetails(
+  button: HTMLButtonElement,
+  element: Element
+) {
+  const referenceDiv = element.children[3];
+
+  // PR page specific styling
+  button.style.padding = "4px";
+  button.style.margin = "0 8px";
+  button.style.width = "28px";
+  button.style.height = "28px";
+
+  // SVG specific styling for PR page
+  const svg = button.querySelector("svg");
+  if (svg instanceof SVGElement) {
+    svg.style.display = "block";
+    svg.style.margin = "auto";
+  }
+
+  element.insertBefore(button, referenceDiv);
 }
