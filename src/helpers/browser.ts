@@ -106,7 +106,15 @@ export async function assertGithubToken() {
   return token.githubToken;
 }
 
-export async function checkActionStatus({ runId, owner, repository }) {
+export async function checkActionStatus({
+  runId,
+  owner,
+  repository,
+}: {
+  runId: string;
+  owner: string;
+  repository: string;
+}) {
   const token = await assertGithubToken();
   const url = `https://api.github.com/repos/${owner}/${repository}/actions/runs/${runId}`;
   const response = await fetch(url, {
@@ -131,7 +139,15 @@ export async function checkActionStatus({ runId, owner, repository }) {
   };
 }
 
-export async function checkJobStatus({ jobId, owner, repository }) {
+export async function checkJobStatus({
+  jobId,
+  owner,
+  repository,
+}: {
+  jobId: string;
+  owner: string;
+  repository: string;
+}) {
   const token = await assertGithubToken();
   const response = await fetch(
     `https://api.github.com/repos/${owner}/${repository}/actions/jobs/${jobId}`,

@@ -505,9 +505,9 @@ export function assertIsHTMLElement(
 }
 export class AutoDisconnectingMutationObserver {
   private static instance: AutoDisconnectingMutationObserver | null = null;
-  private observer: MutationObserver;
-  private activeTarget: Element | null;
-  public mode: "normal" | "debug";
+  private observer!: MutationObserver;
+  private activeTarget!: Element | null;
+  public mode!: "normal" | "debug";
 
   constructor(callback: MutationCallback, mode: "normal" | "debug" = "normal") {
     if (AutoDisconnectingMutationObserver.instance) {
