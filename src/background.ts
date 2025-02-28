@@ -13,6 +13,9 @@ extpay.startBackground();
 const TOKEN_NOTIFICATION_ID = "github-token-required";
 const MAX_ALARMS = 500; // Chrome's limit
 
+// Flag to track if we've already shown the welcome notification
+let hasShownWelcomeNotification = false;
+
 // On extension activation
 self.addEventListener("activate", async (_event: Event) => {
   console.log("Extension activated");
@@ -20,21 +23,13 @@ self.addEventListener("activate", async (_event: Event) => {
   // Clear all old alarms for a clean start
   await browser.alarms.clearAll();
   console.log("Cleared all old alarms.");
+
+  // Schedule a welcome notification check
+  setTimeout(checkFirstRunAndShowWelcome, 2000);
 });
 
 // Modified message handler
 browser.runtime.onMessage.addListener(async (request, sender) => {
-  // Special action handlers
-  if (request.action === "openOptionsPage") {
-    browser.runtime.openOptionsPage();
-    return;
-  }
-
-  if (request.action === "openOnboarding") {
-    browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
-    return;
-  }
-
   // Check if this is a monitoring request that requires a token
   if (
     request &&
@@ -48,8 +43,13 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
         "Monitoring request received but no GitHub token is configured"
       );
 
-      // Show the onboarding page instead of a notification
-      browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
+      // Show a notification to inform the user
+      browser.notifications.create(TOKEN_NOTIFICATION_ID, {
+        type: "basic",
+        title: "GitHub Token Required",
+        message: "Please add a GitHub token to enable workflow monitoring.",
+        iconUrl: "images/icon-128.png",
+      });
 
       return {
         status: "error",
@@ -64,7 +64,13 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
         console.warn(`Alarm limit reached (${alarms.length}/${MAX_ALARMS})`);
 
         // Show a notification about the alarm limit
-        browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
+        browser.notifications.create("alarm-limit-reached", {
+          type: "basic",
+          title: "Alarm Limit Reached",
+          message:
+            "You've reached the maximum number of workflows that can be monitored (500). Please remove some existing monitors.",
+          iconUrl: "images/icon-128.png",
+        });
 
         return { status: "error", error: { message: "Alarm limit reached" } };
       }
@@ -85,8 +91,14 @@ browser.alarms.onAlarm.addListener(onAlarmCallback);
 browser.notifications.onClicked.addListener((notificationId) => {
   // Handle special notification IDs
   if (notificationId === TOKEN_NOTIFICATION_ID) {
-    // Open onboarding page instead of options
-    browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
+    // Open extension popup to configure token
+    browser.runtime.openOptionsPage();
+    return;
+  }
+
+  if (notificationId === "welcome-notification") {
+    // Open extension popup on welcome notification click
+    browser.runtime.openOptionsPage();
     return;
   }
 
@@ -100,36 +112,38 @@ browser.notifications.onClicked.addListener((notificationId) => {
   onNotificationClickedCallback(notificationId);
 });
 
+// Function to check if this is first run and show welcome
+async function checkFirstRunAndShowWelcome() {
+  // Avoid showing multiple welcome notifications
+  if (hasShownWelcomeNotification) return;
+
+  try {
+    const data = await browser.storage.local.get("hasSeenOnboarding");
+
+    // If this is first run, show welcome notification
+    if (!data.hasSeenOnboarding) {
+      browser.notifications.create("welcome-notification", {
+        type: "basic",
+        title: "CI/CD Workflow Notifications",
+        message:
+          "Thanks for installing! Please configure your GitHub token to start monitoring workflows.",
+        iconUrl: "images/icon-128.png",
+      });
+
+      hasShownWelcomeNotification = true;
+    }
+  } catch (error) {
+    console.error("Error checking first run status:", error);
+  }
+}
+
 // Listen for installation events
 browser.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
     // Set first run flag
-    browser.storage.local.set({ hasCompletedOnboarding: false });
+    browser.storage.local.set({ hasSeenOnboarding: false });
 
-    // Open onboarding page on install
-    browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
-  } else if (details.reason === "update") {
-    // When updating, check if user has ever completed onboarding
-    browser.storage.local.get(["hasCompletedOnboarding"], (data) => {
-      // If no record of completed onboarding, show it
-      if (!data.hasCompletedOnboarding) {
-        browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
-      }
-    });
+    // Open options page on install to guide token setup
+    browser.runtime.openOptionsPage();
   }
 });
-
-// Add context menu item for debugging/testing (development only)
-if (process.env.NODE_ENV === "development") {
-  browser.contextMenus.create({
-    id: "open-onboarding",
-    title: "Open Onboarding (Dev)",
-    contexts: ["browser_action"],
-  });
-
-  browser.contextMenus.onClicked.addListener((info) => {
-    if (info.menuItemId === "open-onboarding") {
-      browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
-    }
-  });
-}
