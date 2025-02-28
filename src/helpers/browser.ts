@@ -17,6 +17,27 @@ import {
 } from "@/helpers/pure";
 import { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 
+// Token validation error types
+export type TokenValidationError =
+  | "NO_TOKEN_FOUND"
+  | "INVALID_TOKEN"
+  | "NETWORK_ERROR"
+  | "PERMISSION_ERROR";
+
+// Token status information
+export type TokenStatus = {
+  isValid: boolean;
+  errorType?: TokenValidationError;
+  errorMessage?: string;
+};
+
+// Constants
+export const MAX_ALARMS = 500;
+const TOKEN_NOTIFICATION_ID = "github-token-required";
+
+/**
+ * Sends a message to the background script
+ */
 export async function sendMessageAsync(
   payload: unknown
 ): Promise<MonitorResponse> {
@@ -24,8 +45,90 @@ export async function sendMessageAsync(
 }
 
 /**
- * Creates a callback function that sends a message to the background script to start monitoring a given run.
- * @returns A function that sends a message to the background script to start or stop monitoring the given run.
+ * Validates if a token exists and has proper permissions
+ */
+export async function validateGitHubToken(): Promise<TokenStatus> {
+  try {
+    // Check if token exists
+    const data = await browser.storage.sync.get("githubToken");
+
+    if (!data.githubToken) {
+      return {
+        isValid: false,
+        errorType: "NO_TOKEN_FOUND",
+        errorMessage: "No GitHub token configured",
+      };
+    }
+
+    // Test token with GitHub API
+    const response = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `token ${data.githubToken}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    });
+
+    // Check for unauthorized
+    if (response.status === 401) {
+      return {
+        isValid: false,
+        errorType: "INVALID_TOKEN",
+        errorMessage: "Invalid GitHub token",
+      };
+    }
+
+    // Test if token has repo scope with a sample repo request
+    const repoResponse = await fetch(
+      "https://api.github.com/repos/octocat/hello-world",
+      {
+        headers: {
+          Authorization: `token ${data.githubToken}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      }
+    );
+
+    if (repoResponse.status === 403) {
+      return {
+        isValid: false,
+        errorType: "PERMISSION_ERROR",
+        errorMessage: "Token lacks required 'repo' permissions",
+      };
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    return {
+      isValid: false,
+      errorType: "NETWORK_ERROR",
+      errorMessage: error instanceof Error ? error.message : "Network error",
+    };
+  }
+}
+
+/**
+ * Gets the current number of active alarms
+ */
+export async function getActiveAlarmCount(): Promise<number> {
+  try {
+    const alarms = await browser.alarms.getAll();
+    return alarms.length;
+  } catch (error) {
+    console.error("Error getting alarm count:", error);
+    return 0;
+  }
+}
+
+/**
+ * Opens the token configuration page
+ */
+export function openTokenConfigPage(): void {
+  browser.runtime.openOptionsPage();
+}
+
+/**
+ * Creates a callback function that sends a message to the background script to start/stop monitoring
+ * With added token validation and alarm limit checking
  */
 export function createMonitorToggleHandler({
   runId,
@@ -48,28 +151,85 @@ export function createMonitorToggleHandler({
       repository,
     });
 
-  // In case future me forgets, all the dynamic "runtime-y" stuff has to happen here, because this is what's actually getting called when the function gets clicked.
   async function sendMonitoringMessage(_event: MouseEvent) {
-    const isAlreadyMonitored = await isIdAlreadyMonitored({
-      runId,
-      jobId,
-      owner,
-      repository,
-    });
-    if (!isAlreadyMonitored) {
-      const startResponse = await sendMessageAsync(startMonitorPayload);
-      if (startResponse.status === "ok") {
-        setSVGColor(svg, "yellow");
-      } else {
+    try {
+      // First validate token
+      const tokenStatus = await validateGitHubToken();
+
+      if (!tokenStatus.isValid) {
+        // Show token notification
+        browser.notifications.create(TOKEN_NOTIFICATION_ID, {
+          type: "basic",
+          title: "GitHub Token Required",
+          message:
+            tokenStatus.errorMessage ||
+            "Please add a valid GitHub token to enable workflow monitoring.",
+          iconUrl: browser.runtime.getURL("images/icon-128.png"),
+        });
+
+        // Change button to error state
         setSVGColor(svg, "red");
+
+        // Open token config page
+        setTimeout(() => {
+          openTokenConfigPage();
+        }, 500);
+
+        return;
       }
-    } else {
-      const stopResponse = await sendMessageAsync(stopMonitorPayload);
-      if (stopResponse.status === "ok") {
-        resetSVGColor(svg);
+
+      const isAlreadyMonitored = await isIdAlreadyMonitored({
+        runId,
+        jobId,
+        owner,
+        repository,
+      });
+
+      if (!isAlreadyMonitored) {
+        // Check if we're at the alarm limit before starting
+        const alarmCount = await getActiveAlarmCount();
+
+        if (alarmCount >= MAX_ALARMS) {
+          // Show limit notification
+          browser.notifications.create("alarm-limit-reached", {
+            type: "basic",
+            title: "Monitoring Limit Reached",
+            message: `You've reached the maximum number of workflows that can be monitored (${MAX_ALARMS}).`,
+            iconUrl: browser.runtime.getURL("images/icon-128.png"),
+          });
+
+          // Change button to error state
+          setSVGColor(svg, "red");
+          return;
+        }
+
+        // Start monitoring
+        const startResponse = await sendMessageAsync(startMonitorPayload);
+
+        if (startResponse.status === "ok") {
+          setSVGColor(svg, "yellow");
+
+          // Store timestamp when monitor was created
+          const encoded = encode({ runId, jobId, owner, repository });
+          await browser.storage.local.set({
+            [encoded]: Date.now(),
+          });
+        } else {
+          setSVGColor(svg, "red");
+        }
       } else {
-        setSVGColor(svg, "red");
+        // Stop monitoring
+        const stopResponse = await sendMessageAsync(stopMonitorPayload);
+
+        if (stopResponse.status === "ok") {
+          resetSVGColor(svg);
+        } else {
+          setSVGColor(svg, "red");
+        }
       }
+    } catch (error) {
+      console.error("Error in monitor toggle handler:", error);
+      setSVGColor(svg, "red");
     }
   }
 
@@ -98,12 +258,14 @@ export async function isIdAlreadyMonitored(
 }
 
 export async function assertGithubToken() {
-  const token = await browser.storage.sync.get("githubToken");
+  const tokenStatus = await validateGitHubToken();
 
-  if (!token) {
-    throw Error("Expected Github token to be available");
+  if (!tokenStatus.isValid) {
+    throw Error(tokenStatus.errorMessage || "GitHub token validation failed");
   }
 
+  // Get the token if valid
+  const token = await browser.storage.sync.get("githubToken");
   return token.githubToken;
 }
 
@@ -185,7 +347,7 @@ async function createAlarmForId(
 }
 
 export async function storeMonitoringStatus(id: string): Promise<void> {
-  await browser.storage.local.set({ [id]: true });
+  await browser.storage.local.set({ [id]: Date.now() });
 }
 
 async function setupMonitoring(
@@ -219,6 +381,28 @@ export async function onMessageCallback(
 
     console.debug(`Received request to monitor ${encoded}`);
 
+    // Check token status first
+    const tokenStatus = await validateGitHubToken();
+    if (!tokenStatus.isValid) {
+      console.error(`Monitoring setup failed: ${tokenStatus.errorMessage}`);
+      return {
+        status: "error",
+        error: new Error(tokenStatus.errorMessage || "Token validation failed"),
+      };
+    }
+
+    // Check alarm count
+    const alarmCount = await getActiveAlarmCount();
+    if (alarmCount >= MAX_ALARMS) {
+      console.error(
+        `Monitoring setup failed: Alarm limit reached (${alarmCount}/${MAX_ALARMS})`
+      );
+      return {
+        status: "error",
+        error: new Error(`Alarm limit reached (${alarmCount}/${MAX_ALARMS})`),
+      };
+    }
+
     try {
       await setupMonitoring(encoded, 0.1);
       console.debug(`Started monitoring for id ${encoded}`);
@@ -249,25 +433,38 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
   if (!isProperlyEncoded(alarm.name)) {
     throw Error("Unexpected alarm name format: " + alarm.name);
   }
-  const decoded = decode(alarm.name);
-  const runId = decoded.runId;
-  const owner = decoded.owner;
-  const repository = decoded.repository;
-  const jobId = decoded.jobId;
 
-  const { status, name: taskName } = await checkStatus({
-    runId,
-    owner,
-    repository,
-    jobId,
-  });
+  try {
+    const decoded = decode(alarm.name);
+    const runId = decoded.runId;
+    const owner = decoded.owner;
+    const repository = decoded.repository;
+    const jobId = decoded.jobId;
 
-  console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+    // Validate token before making API calls
+    const tokenStatus = await validateGitHubToken();
+    if (!tokenStatus.isValid) {
+      console.error(`Alarm callback failed: ${tokenStatus.errorMessage}`);
+      // Don't cancel monitoring yet - the user might fix their token
+      return;
+    }
 
-  if (status === "completed") {
-    await createCompletionNotification(alarm.name, taskName);
-    // Is this a failure point? Should I be doing something to handle any potential failures here?
-    await teardown(alarm.name);
+    const { status, name: taskName } = await checkStatus({
+      runId,
+      owner,
+      repository,
+      jobId,
+    });
+
+    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+
+    if (status === "completed") {
+      await createCompletionNotification(alarm.name, taskName);
+      await teardown(alarm.name);
+    }
+  } catch (error) {
+    console.error(`Error in alarm callback for ${alarm.name}:`, error);
+    // Consider cleaning up the alarm if it's consistently failing
   }
 };
 
@@ -284,26 +481,46 @@ export async function createCompletionNotification(
 ) {
   await browser.notifications.create(alarmName, {
     type: "basic",
-    title: "Action/job completed",
-    message: `Item ${taskName} has completed. Click the notification to view the results.`,
-    // todo: change this to a relevant icon.
-    iconUrl:
-      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAGlJREFUWEftl9EKABAMRfnZfdR+lvcpa01GHa+S03G56a149OL92wIgImMHpapb6Oh6ADCAgf8NRO+9fWPSBgC4bsArL68r0hkAoNyAPePrIQTgOQM2lNFMpLsAAAxg4LgBr2xOz5f/jiczr9Ahlc1SawAAAABJRU5ErkJggg==",
+    title: "Workflow Completed",
+    message: `${taskName} has completed. Click to view the results.`,
+    iconUrl: browser.runtime.getURL("images/icon-128.png"),
   });
   console.debug(`Successfully created notification with id ${alarmName}`);
 }
 
 export async function onNotificationClickedCallback(notificationId: string) {
   console.debug(`Notification ${notificationId} clicked.`);
+
+  // Handle special notification IDs
+  if (notificationId === TOKEN_NOTIFICATION_ID) {
+    // Open token configuration page
+    openTokenConfigPage();
+    return;
+  }
+
+  if (notificationId === "alarm-limit-reached") {
+    // Open management page
+    browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
+    return;
+  }
+
   if (!isProperlyEncoded(notificationId)) {
-    throw new Error(
-      `Unexpected id format:  ${notificationId}. Should be in the format string|string|string or string|string|string|string`
+    console.error(`Unexpected notification ID format: ${notificationId}`);
+    return;
+  }
+
+  // Handle normal workflow notifications
+  try {
+    const decoded = decode(notificationId);
+    await browser.tabs.create({
+      url: createURL(decoded),
+    });
+  } catch (error) {
+    console.error(
+      `Error handling notification click for ${notificationId}:`,
+      error
     );
   }
-  const decoded = decode(notificationId);
-  await browser.tabs.create({
-    url: createURL(decoded),
-  });
 }
 
 export async function checkStatus({

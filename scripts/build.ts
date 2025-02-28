@@ -12,6 +12,7 @@ import { rm } from "node:fs/promises";
       "./src/addNotificationButton.ts",
       "./src/background.ts",
       "./src/popup.html",
+      "./src/manage.html",
     ],
     outdir: outputDir,
     target: "browser",
@@ -58,4 +59,13 @@ import { rm } from "node:fs/promises";
     const file = Bun.file(`./src/images/${filePath}`);
     await Bun.write(`${outputDir}/images/${filePath}`, file);
   }
+
+  // Copy any CSS files (if you decide to separate CSS)
+  const cssGlob = new Bun.Glob("**/*.css");
+  for (const filePath of cssGlob.scanSync("./src")) {
+    const file = Bun.file(`./src/${filePath}`);
+    await Bun.write(`${outputDir}/${filePath}`, file);
+  }
+
+  console.log(`Build completed successfully for ${browser}`);
 })();

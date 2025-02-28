@@ -11,10 +11,12 @@ import {
 } from "./selectors";
 import {
   createMonitorToggleHandler,
-  debounce,
   ensureButtonHasHandler,
   isIdAlreadyMonitored,
   URLAwareMutationObserver,
+  validateGitHubToken,
+  getActiveAlarmCount,
+  MAX_ALARMS,
 } from "./helpers/browser";
 import {
   shouldMonitorActions,
@@ -37,8 +39,8 @@ import {
   shouldMonitorChecks,
   NOTIFICATION_BUTTON_CLASS,
 } from "./helpers/pure";
+import browser from "webextension-polyfill";
 
-// Declare the type for our patched history
 declare global {
   interface History {
     _patchedByNotifier?: boolean;
@@ -56,6 +58,62 @@ let currentUrl = window.location.href;
 let isInitialized = false;
 let pendingMainExecution = false;
 
+// Token and limit tracking
+let hasValidToken = false;
+let hasCheckedTokenStatus = false;
+let currentAlarmCount = 0;
+let isApproachingAlarmLimit = false;
+
+// Debounce helper
+function debounce(func: Function, wait: number) {
+  let timeout: number | null = null;
+
+  return function (...args: any[]) {
+    const later = () => {
+      timeout = null;
+      func(...args);
+    };
+
+    if (timeout !== null) {
+      window.clearTimeout(timeout);
+    }
+    timeout = window.setTimeout(later, wait) as unknown as number;
+  };
+}
+
+// Check token and alarm status
+async function checkTokenAndAlarmStatus() {
+  try {
+    // Check token status
+    const tokenStatus = await validateGitHubToken();
+    hasValidToken = tokenStatus.isValid;
+    hasCheckedTokenStatus = true;
+
+    // Check alarm count
+    currentAlarmCount = await getActiveAlarmCount();
+    isApproachingAlarmLimit = currentAlarmCount >= MAX_ALARMS * 0.8; // 80% of limit
+
+    console.debug(
+      `Token status: ${
+        hasValidToken ? "Valid" : "Invalid"
+      }, Alarm count: ${currentAlarmCount}/${MAX_ALARMS}`
+    );
+
+    return {
+      hasValidToken,
+      currentAlarmCount,
+      isApproachingAlarmLimit,
+    };
+  } catch (error) {
+    console.error("Error checking token and alarm status:", error);
+    return {
+      hasValidToken: false,
+      currentAlarmCount: 0,
+      isApproachingAlarmLimit: false,
+    };
+  }
+}
+
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
 
@@ -67,6 +125,11 @@ async function processElementsForActionRunPages() {
         ensureButtonHasHandler(button);
       }
     });
+
+  // Check token status if not already done
+  if (!hasCheckedTokenStatus) {
+    await checkTokenAndAlarmStatus();
+  }
 
   const currentlyRunningOrQueuedElements = getTargetElements(actionRunElements);
 
@@ -97,6 +160,24 @@ async function processElementsForActionRunPages() {
 
     button.onclick = handleMonitoringClickFn;
 
+    // Visual indicators for token/alarm status
+    if (!hasValidToken) {
+      // Add a subtle indicator that token is missing
+      svg.style.opacity = "0.6";
+      button.title = "GitHub token required for notifications";
+    } else if (isApproachingAlarmLimit) {
+      // Add a subtle indicator for approaching limit
+      button.title = `Monitor limit: ${currentAlarmCount}/${MAX_ALARMS}`;
+
+      if (currentAlarmCount >= MAX_ALARMS) {
+        // Disabled style if at limit
+        svg.style.opacity = "0.5";
+        button.style.cursor = "not-allowed";
+        button.title = `Monitor limit reached (${MAX_ALARMS}/${MAX_ALARMS})`;
+      }
+    }
+
+    // Check if already monitored
     const encoded = encode({ runId, owner, repository });
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
     if (isAlreadyMonitored) {
@@ -126,6 +207,11 @@ async function processElementsForJobPages() {
         ensureButtonHasHandler(button);
       }
     });
+
+  // Check token status if not already done
+  if (!hasCheckedTokenStatus) {
+    await checkTokenAndAlarmStatus();
+  }
 
   const currentlyRunningOrQueued = getTargetElements(jobElements);
 
@@ -165,6 +251,23 @@ async function processElementsForJobPages() {
       svg,
     });
     button.onclick = handleMonitoringClickFn;
+
+    // Visual indicators for token/alarm status
+    if (!hasValidToken) {
+      // Add a subtle indicator that token is missing
+      svg.style.opacity = "0.6";
+      button.title = "GitHub token required for notifications";
+    } else if (isApproachingAlarmLimit) {
+      // Add a subtle indicator for approaching limit
+      button.title = `Monitor limit: ${currentAlarmCount}/${MAX_ALARMS}`;
+
+      if (currentAlarmCount >= MAX_ALARMS) {
+        // Disabled style if at limit
+        svg.style.opacity = "0.5";
+        button.style.cursor = "not-allowed";
+        button.title = `Monitor limit reached (${MAX_ALARMS}/${MAX_ALARMS})`;
+      }
+    }
 
     const encoded = encode({ runId, jobId, owner, repository });
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
@@ -316,6 +419,163 @@ async function processElementForChecksPages(): Promise<void> {
   }
 }
 
+async function main(): Promise<void> {
+  // If there's already a pending execution, don't create another one
+  if (pendingMainExecution) {
+    console.debug("Main execution already pending, skipping duplicate call");
+    return;
+  }
+
+  pendingMainExecution = true;
+
+  try {
+    console.debug(`Running main() for URL: ${window.location.href}`);
+
+    // Track current URL
+    currentUrl = window.location.href;
+
+    // First clean up any existing observers
+    cleanupObservers();
+
+    // Check token and alarm status
+    await checkTokenAndAlarmStatus();
+
+    if (shouldMonitorActions(window.location.href)) {
+      console.debug("Determined we are in the action monitoring path");
+      await processElementsForActionRunPages();
+
+      const actionRunsContainer = document.querySelector(
+        ACTION_RUNS_CONTAINER_SELECTOR
+      );
+
+      if (actionRunsContainer) {
+        console.debug("Attaching action observer");
+
+        const actionRunCallback = createActionRunCallback(
+          async () => await processElementsForActionRunPages()
+        );
+
+        actionObserver = new URLAwareMutationObserver(
+          actionRunCallback,
+          "debug"
+        );
+        actionObserver.observe(actionRunsContainer);
+      }
+    } else if (shouldMonitorJobs(window.location.href)) {
+      console.debug("Determined we are in the jobs monitoring path");
+      await processElementsForJobPages();
+
+      const jobRunsContainer = document.querySelector(
+        JOB_RUNS_CONTAINER_SELECTOR
+      );
+
+      if (jobRunsContainer) {
+        console.debug("Attaching job observer");
+
+        const jobRunCallback = createActionRunCallback(
+          async () => await processElementsForJobPages()
+        );
+
+        jobObserver = new URLAwareMutationObserver(jobRunCallback, "debug");
+        jobObserver.observe(jobRunsContainer);
+      }
+    } else if (shouldMonitorPRs(window.location.href)) {
+      console.debug("Determined we are in the PR monitoring path");
+      await processElementsForPRPages();
+
+      // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
+      const prRunsContainer = document.querySelector(
+        PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR
+      );
+
+      if (prRunsContainer) {
+        console.debug("Attaching PR actions observer");
+
+        const prRunCallback = createPRRunCallback(
+          async () => await processElementsForPRPages()
+        );
+
+        prObserver = new URLAwareMutationObserver(prRunCallback, "debug");
+        prObserver.observe(prRunsContainer);
+      }
+    } else if (shouldMonitorChecks(window.location.href)) {
+      console.debug("Determined we are in the checks monitoring path");
+      await processElementForChecksPages();
+
+      const checksContainer = document.querySelector(
+        CHECKS_PAGE_CONTAINER_SELECTOR
+      );
+
+      if (checksContainer) {
+        console.debug("Attaching checks observer");
+
+        const checksRunCallback = createActionRunCallback(
+          async () => await processElementForChecksPages()
+        );
+
+        checksObserver = new URLAwareMutationObserver(
+          checksRunCallback,
+          "debug"
+        );
+        checksObserver.observe(checksContainer);
+      }
+    } else {
+      console.debug("Current URL doesn't match any monitoring paths");
+    }
+
+    // Set up periodical token and alarm status check
+    setupStatusChecks();
+
+    isInitialized = true;
+  } finally {
+    pendingMainExecution = false;
+  }
+}
+
+// Set up periodic status checks
+function setupStatusChecks() {
+  // Check token and alarm status every 5 minutes
+  setInterval(async () => {
+    console.debug("Running periodic token and alarm status check");
+    await checkTokenAndAlarmStatus();
+
+    // Update visual indicators for all buttons based on new status
+    updateAllButtonsStatus();
+  }, 5 * 60 * 1000); // 5 minutes
+}
+
+// Update visual indicators for all buttons
+function updateAllButtonsStatus() {
+  document
+    .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
+    .forEach((button) => {
+      if (button instanceof HTMLElement) {
+        const svg = button.querySelector("svg");
+        if (svg instanceof SVGElement) {
+          // Update based on token status
+          if (!hasValidToken) {
+            svg.style.opacity = "0.6";
+            button.title = "GitHub token required for notifications";
+          } else if (isApproachingAlarmLimit) {
+            button.title = `Monitor limit: ${currentAlarmCount}/${MAX_ALARMS}`;
+
+            if (currentAlarmCount >= MAX_ALARMS) {
+              svg.style.opacity = "0.5";
+              button.style.cursor = "not-allowed";
+              button.title = `Monitor limit reached (${MAX_ALARMS}/${MAX_ALARMS})`;
+            }
+          } else {
+            // Reset to normal if conditions have improved
+            svg.style.opacity = "";
+            button.style.cursor = "";
+            button.title = "";
+          }
+        }
+      }
+    });
+}
+
+// Clean up all observers
 function cleanupObservers() {
   console.debug("Cleaning up all observers");
 
@@ -413,10 +673,102 @@ function setupURLChangeTracking() {
   console.debug("URL change tracking initialized");
 }
 
+// Check if first run and show welcome notification if needed
+async function checkFirstRun() {
+  try {
+    const data = await browser.storage.local.get("hasSeenOnboarding");
+
+    if (!data.hasSeenOnboarding) {
+      console.debug("First run detected, showing welcome message");
+
+      // Subtle notification at the bottom of the page
+      const welcomeMessage = document.createElement("div");
+      welcomeMessage.style.position = "fixed";
+      welcomeMessage.style.bottom = "20px";
+      welcomeMessage.style.right = "20px";
+      welcomeMessage.style.backgroundColor = "#0366d6";
+      welcomeMessage.style.color = "white";
+      welcomeMessage.style.padding = "12px 16px";
+      welcomeMessage.style.borderRadius = "6px";
+      welcomeMessage.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
+      welcomeMessage.style.zIndex = "9999";
+      welcomeMessage.style.maxWidth = "320px";
+      welcomeMessage.style.display = "flex";
+      welcomeMessage.style.alignItems = "center";
+      welcomeMessage.style.gap = "12px";
+
+      // Icon
+      const icon = document.createElement("img");
+      icon.src = browser.runtime.getURL("images/icon-48.png");
+      icon.style.width = "24px";
+      icon.style.height = "24px";
+
+      // Message text
+      const text = document.createElement("div");
+      text.innerHTML = `<b>CI/CD Workflow Notifications</b><br>Please configure your GitHub token to enable notifications.`;
+
+      // Close button
+      const closeBtn = document.createElement("button");
+      closeBtn.innerHTML = "×";
+      closeBtn.style.background = "none";
+      closeBtn.style.border = "none";
+      closeBtn.style.color = "white";
+      closeBtn.style.fontSize = "20px";
+      closeBtn.style.padding = "0";
+      closeBtn.style.cursor = "pointer";
+      closeBtn.style.marginLeft = "auto";
+      closeBtn.style.lineHeight = "1";
+
+      // Configure button
+      const configBtn = document.createElement("button");
+      configBtn.textContent = "Configure";
+      configBtn.style.background = "white";
+      configBtn.style.color = "#0366d6";
+      configBtn.style.border = "none";
+      configBtn.style.borderRadius = "4px";
+      configBtn.style.padding = "4px 8px";
+      configBtn.style.cursor = "pointer";
+      configBtn.style.fontWeight = "bold";
+      configBtn.style.fontSize = "12px";
+
+      welcomeMessage.appendChild(icon);
+      welcomeMessage.appendChild(text);
+      welcomeMessage.appendChild(configBtn);
+      welcomeMessage.appendChild(closeBtn);
+
+      // Event listeners
+      closeBtn.addEventListener("click", () => {
+        document.body.removeChild(welcomeMessage);
+      });
+
+      configBtn.addEventListener("click", () => {
+        browser.runtime.sendMessage({ action: "openOptionsPage" });
+        document.body.removeChild(welcomeMessage);
+      });
+
+      // Add to page
+      document.body.appendChild(welcomeMessage);
+
+      // Auto-close after 15 seconds
+      setTimeout(() => {
+        if (document.body.contains(welcomeMessage)) {
+          document.body.removeChild(welcomeMessage);
+        }
+      }, 15000);
+
+      // Mark as seen
+      await browser.storage.local.set({ hasSeenOnboarding: true });
+    }
+  } catch (error) {
+    console.error("Error checking first run:", error);
+  }
+}
+
 // Initialize if this hasn't been done already
 if (!isInitialized) {
   console.debug("Initializing extension");
   setupURLChangeTracking();
+  checkFirstRun(); // Check if this is first run
   main();
 }
 
@@ -425,110 +777,3 @@ window.addEventListener("unload", () => {
   console.debug("Page unloading, cleaning up observers");
   cleanupObservers();
 });
-
-async function main(): Promise<void> {
-  // If there's already a pending execution, don't create another one
-  if (pendingMainExecution) {
-    console.debug("Main execution already pending, skipping duplicate call");
-    return;
-  }
-
-  pendingMainExecution = true;
-
-  try {
-    console.debug(`Running main() for URL: ${window.location.href}`);
-
-    // Track current URL
-    currentUrl = window.location.href;
-
-    // First clean up any existing observers
-    cleanupObservers();
-
-    if (shouldMonitorActions(window.location.href)) {
-      console.debug("Determined we are in the action monitoring path");
-      await processElementsForActionRunPages();
-
-      const actionRunsContainer = document.querySelector(
-        ACTION_RUNS_CONTAINER_SELECTOR
-      );
-
-      if (actionRunsContainer) {
-        console.debug("Attaching action observer");
-
-        const actionRunCallback = createActionRunCallback(
-          async () => await processElementsForActionRunPages()
-        );
-
-        actionObserver = new URLAwareMutationObserver(
-          actionRunCallback,
-          "debug"
-        );
-        actionObserver.observe(actionRunsContainer);
-      }
-    } else if (shouldMonitorJobs(window.location.href)) {
-      console.debug("Determined we are in the jobs monitoring path");
-      await processElementsForJobPages();
-
-      const jobRunsContainer = document.querySelector(
-        JOB_RUNS_CONTAINER_SELECTOR
-      );
-
-      if (jobRunsContainer) {
-        console.debug("Attaching job observer");
-
-        const jobRunCallback = createActionRunCallback(
-          async () => await processElementsForJobPages()
-        );
-
-        jobObserver = new URLAwareMutationObserver(jobRunCallback, "debug");
-        jobObserver.observe(jobRunsContainer);
-      }
-    } else if (shouldMonitorPRs(window.location.href)) {
-      console.debug("Determined we are in the PR monitoring path");
-      await processElementsForPRPages();
-
-      // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
-      const prRunsContainer = document.querySelector(
-        PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR
-      );
-
-      if (prRunsContainer) {
-        console.debug("Attaching PR actions observer");
-
-        const prRunCallback = createPRRunCallback(
-          async () => await processElementsForPRPages()
-        );
-
-        prObserver = new URLAwareMutationObserver(prRunCallback, "debug");
-        prObserver.observe(prRunsContainer);
-      }
-    } else if (shouldMonitorChecks(window.location.href)) {
-      console.debug("Determined we are in the checks monitoring path");
-      await processElementForChecksPages();
-
-      const checksContainer = document.querySelector(
-        CHECKS_PAGE_CONTAINER_SELECTOR
-      );
-
-      if (checksContainer) {
-        console.debug("Attaching checks observer");
-
-        const checksRunCallback = createActionRunCallback(
-          async () => await processElementForChecksPages()
-        );
-
-        checksObserver = new URLAwareMutationObserver(
-          checksRunCallback,
-          "debug"
-        );
-        checksObserver.observe(checksContainer);
-      }
-    } else {
-      console.debug("Current URL doesn't match any monitoring paths");
-    }
-
-    isInitialized = true;
-  } finally {
-    pendingMainExecution = false;
-  }
-}
