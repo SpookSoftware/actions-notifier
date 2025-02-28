@@ -494,3 +494,19 @@ export function ensureButtonHasHandler(button: HTMLElement): void {
     }
   }
 }
+
+export function debounce(func: Function, wait: number) {
+  let timeout: number | null = null;
+
+  return function (...args: any[]) {
+    const later = () => {
+      timeout = null;
+      func(...args);
+    };
+
+    if (timeout !== null) {
+      window.clearTimeout(timeout);
+    }
+    timeout = window.setTimeout(later, wait) as unknown as number;
+  };
+}

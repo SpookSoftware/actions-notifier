@@ -11,6 +11,7 @@ import {
 } from "./selectors";
 import {
   createMonitorToggleHandler,
+  debounce,
   ensureButtonHasHandler,
   isIdAlreadyMonitored,
   URLAwareMutationObserver,
@@ -54,23 +55,6 @@ let checksObserver: URLAwareMutationObserver | null = null;
 let currentUrl = window.location.href;
 let isInitialized = false;
 let pendingMainExecution = false;
-
-// Debounce helper
-function debounce(func: Function, wait: number) {
-  let timeout: number | null = null;
-
-  return function (...args: any[]) {
-    const later = () => {
-      timeout = null;
-      func(...args);
-    };
-
-    if (timeout !== null) {
-      window.clearTimeout(timeout);
-    }
-    timeout = window.setTimeout(later, wait) as unknown as number;
-  };
-}
 
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
@@ -332,7 +316,6 @@ async function processElementForChecksPages(): Promise<void> {
   }
 }
 
-// Clean up all observers
 function cleanupObservers() {
   console.debug("Cleaning up all observers");
 
@@ -357,6 +340,91 @@ function cleanupObservers() {
   // Just to be extra safe, destroy any leftover instances
   URLAwareMutationObserver.destroyAll();
 }
+
+// Debounced version of main to prevent multiple rapid executions
+const debouncedMain = debounce(main, 150);
+
+// Track URL changes using the History API
+function patchHistoryAPI() {
+  if (window.history._patchedByNotifier) {
+    console.debug("History API already patched, skipping");
+    return;
+  }
+
+  // Save original methods
+  const originalPushState = window.history.pushState;
+  const originalReplaceState = window.history.replaceState;
+
+  // Patch pushState
+  window.history.pushState = function (...args) {
+    // Call original method
+    const result = originalPushState.apply(this, args);
+
+    // Check if URL actually changed
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `pushState: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    }
+
+    return result;
+  };
+
+  // Patch replaceState
+  window.history.replaceState = function (...args) {
+    // Call original method
+    const result = originalReplaceState.apply(this, args);
+
+    // Check if URL actually changed
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `replaceState: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    }
+
+    return result;
+  };
+
+  window.history._patchedByNotifier = true;
+  console.debug("History API patched to detect URL changes");
+}
+
+// Setup URL change tracking
+function setupURLChangeTracking() {
+  // Patch History API
+  patchHistoryAPI();
+
+  // Handle browser back/forward navigation
+  window.addEventListener("popstate", () => {
+    if (window.location.href !== currentUrl) {
+      console.debug(
+        `popstate: URL changed from ${currentUrl} to ${window.location.href}`
+      );
+      debouncedMain();
+    }
+  });
+
+  document.addEventListener("turbo:render", () => {
+    debouncedMain();
+  });
+
+  console.debug("URL change tracking initialized");
+}
+
+// Initialize if this hasn't been done already
+if (!isInitialized) {
+  console.debug("Initializing extension");
+  setupURLChangeTracking();
+  main();
+}
+
+// Cleanup on unload
+window.addEventListener("unload", () => {
+  console.debug("Page unloading, cleaning up observers");
+  cleanupObservers();
+});
 
 async function main(): Promise<void> {
   // If there's already a pending execution, don't create another one
@@ -464,88 +532,3 @@ async function main(): Promise<void> {
     pendingMainExecution = false;
   }
 }
-
-// Debounced version of main to prevent multiple rapid executions
-const debouncedMain = debounce(main, 150);
-
-// Track URL changes using the History API
-function patchHistoryAPI() {
-  if (window.history._patchedByNotifier) {
-    console.debug("History API already patched, skipping");
-    return;
-  }
-
-  // Save original methods
-  const originalPushState = window.history.pushState;
-  const originalReplaceState = window.history.replaceState;
-
-  // Patch pushState
-  window.history.pushState = function (...args) {
-    // Call original method
-    const result = originalPushState.apply(this, args);
-
-    // Check if URL actually changed
-    if (window.location.href !== currentUrl) {
-      console.debug(
-        `pushState: URL changed from ${currentUrl} to ${window.location.href}`
-      );
-      debouncedMain();
-    }
-
-    return result;
-  };
-
-  // Patch replaceState
-  window.history.replaceState = function (...args) {
-    // Call original method
-    const result = originalReplaceState.apply(this, args);
-
-    // Check if URL actually changed
-    if (window.location.href !== currentUrl) {
-      console.debug(
-        `replaceState: URL changed from ${currentUrl} to ${window.location.href}`
-      );
-      debouncedMain();
-    }
-
-    return result;
-  };
-
-  window.history._patchedByNotifier = true;
-  console.debug("History API patched to detect URL changes");
-}
-
-// Setup URL change tracking
-function setupURLChangeTracking() {
-  // Patch History API
-  patchHistoryAPI();
-
-  // Handle browser back/forward navigation
-  window.addEventListener("popstate", () => {
-    if (window.location.href !== currentUrl) {
-      console.debug(
-        `popstate: URL changed from ${currentUrl} to ${window.location.href}`
-      );
-      debouncedMain();
-    }
-  });
-
-  document.addEventListener("turbo:render", () => {
-    debouncedMain();
-  });
-
-  console.debug("URL change tracking initialized");
-}
-
-// Initialize if this hasn't been done already
-if (!isInitialized) {
-  console.debug("Initializing extension");
-  setupURLChangeTracking();
-  main();
-}
-
-// Cleanup on unload
-window.addEventListener("unload", () => {
-  console.debug("Page unloading, cleaning up observers");
-  cleanupObservers();
-});
