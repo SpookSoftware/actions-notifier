@@ -559,25 +559,59 @@ export function insertButtonIntoJob(button: HTMLButtonElement, jobLi: Element) {
   jobLi.appendChild(button);
 }
 
-// For PR pages - keep their specific styling separate
 export function insertButtonBetweenStatusAndDetails(
   button: HTMLButtonElement,
   element: Element
 ) {
   const referenceDiv = element.children[3];
 
-  // PR page specific styling
-  button.style.padding = "4px";
-  button.style.margin = "0 8px";
-  button.style.width = "28px";
-  button.style.height = "28px";
+  // Create a container with zero layout impact that can hold a larger SVG
+  const buttonContainer = document.createElement("span");
+  buttonContainer.style.display = "inline-block";
+  buttonContainer.style.width = "0"; // Zero-width container
+  buttonContainer.style.height = "0"; // Zero-height container
+  buttonContainer.style.position = "relative"; // For positioning the button
+  buttonContainer.style.overflow = "visible"; // Allow content to overflow
+  buttonContainer.style.verticalAlign = "middle";
+  buttonContainer.style.margin = "0 12px"; // Space on either side
 
-  // SVG specific styling for PR page
+  // Position the button absolutely inside the zero-sized container
+  button.style.position = "absolute";
+  button.style.top = "-14px"; // Adjust vertical position slightly higher
+  button.style.left = "-10px"; // Adjust horizontal position
+  button.style.width = "20px"; // Maintain good button size
+  button.style.height = "20px";
+  button.style.padding = "0";
+  button.style.margin = "0";
+  button.style.border = "none";
+  button.style.background = "transparent";
+  button.style.display = "flex";
+  button.style.alignItems = "center";
+  button.style.justifyContent = "center";
+  button.style.zIndex = "1";
+
+  // SVG can now be a reasonable size but won't affect layout
   const svg = button.querySelector("svg");
   if (svg instanceof SVGElement) {
+    svg.style.width = "16px";
+    svg.style.height = "16px";
+    svg.setAttribute("width", "16");
+    svg.setAttribute("height", "16");
     svg.style.display = "block";
-    svg.style.margin = "auto";
+
+    // Ensure viewBox is properly set for scaling
+    if (!svg.hasAttribute("viewBox")) {
+      svg.setAttribute("viewBox", "0 0 24 24");
+    }
   }
 
-  element.insertBefore(button, referenceDiv);
+  // Add button to zero-sized container
+  buttonContainer.appendChild(button);
+
+  // Insert the container before the reference div
+  if (referenceDiv) {
+    element.insertBefore(buttonContainer, referenceDiv);
+  } else {
+    element.appendChild(buttonContainer);
+  }
 }
