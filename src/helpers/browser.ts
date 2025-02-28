@@ -128,7 +128,6 @@ export function openTokenConfigPage(): void {
 
 /**
  * Creates a callback function that sends a message to the background script to start/stop monitoring
- * With added token validation and alarm limit checking
  */
 export function createMonitorToggleHandler({
   runId,
@@ -153,31 +152,6 @@ export function createMonitorToggleHandler({
 
   async function sendMonitoringMessage(_event: MouseEvent) {
     try {
-      // First validate token
-      const tokenStatus = await validateGitHubToken();
-
-      if (!tokenStatus.isValid) {
-        // Show token notification
-        browser.notifications.create(TOKEN_NOTIFICATION_ID, {
-          type: "basic",
-          title: "GitHub Token Required",
-          message:
-            tokenStatus.errorMessage ||
-            "Please add a valid GitHub token to enable workflow monitoring.",
-          iconUrl: browser.runtime.getURL("images/icon-128.png"),
-        });
-
-        // Change button to error state
-        setSVGColor(svg, "red");
-
-        // Open token config page
-        setTimeout(() => {
-          openTokenConfigPage();
-        }, 500);
-
-        return;
-      }
-
       const isAlreadyMonitored = await isIdAlreadyMonitored({
         runId,
         jobId,
@@ -186,23 +160,6 @@ export function createMonitorToggleHandler({
       });
 
       if (!isAlreadyMonitored) {
-        // Check if we're at the alarm limit before starting
-        const alarmCount = await getActiveAlarmCount();
-
-        if (alarmCount >= MAX_ALARMS) {
-          // Show limit notification
-          browser.notifications.create("alarm-limit-reached", {
-            type: "basic",
-            title: "Monitoring Limit Reached",
-            message: `You've reached the maximum number of workflows that can be monitored (${MAX_ALARMS}).`,
-            iconUrl: browser.runtime.getURL("images/icon-128.png"),
-          });
-
-          // Change button to error state
-          setSVGColor(svg, "red");
-          return;
-        }
-
         // Start monitoring
         const startResponse = await sendMessageAsync(startMonitorPayload);
 

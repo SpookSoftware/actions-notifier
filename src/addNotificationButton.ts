@@ -41,6 +41,20 @@ import {
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
 
+// The global on/off switch. If false, the extension won't do anything.
+// What makes it false? The lack of a github token or the number of alarms exceeding the limit
+let canRun = true;
+
+// Listen for messages from the background script or other parts of the extension
+// POC
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log("received message!!!");
+  if (message.action === "refresh") {
+    console.debug("Received refresh message, running main()");
+  }
+  return true;
+});
+
 declare global {
   interface History {
     _patchedByNotifier?: boolean;
@@ -57,12 +71,6 @@ let checksObserver: URLAwareMutationObserver | null = null;
 let currentUrl = window.location.href;
 let isInitialized = false;
 let pendingMainExecution = false;
-
-// Token and limit tracking
-let hasValidToken = false;
-let hasCheckedTokenStatus = false;
-let currentAlarmCount = 0;
-let isApproachingAlarmLimit = false;
 
 // Debounce helper
 function debounce(func: Function, wait: number) {
@@ -81,39 +89,6 @@ function debounce(func: Function, wait: number) {
   };
 }
 
-// Check token and alarm status
-async function checkTokenAndAlarmStatus() {
-  try {
-    // Check token status
-    const tokenStatus = await validateGitHubToken();
-    hasValidToken = tokenStatus.isValid;
-    hasCheckedTokenStatus = true;
-
-    // Check alarm count
-    currentAlarmCount = await getActiveAlarmCount();
-    isApproachingAlarmLimit = currentAlarmCount >= MAX_ALARMS * 0.8; // 80% of limit
-
-    console.debug(
-      `Token status: ${
-        hasValidToken ? "Valid" : "Invalid"
-      }, Alarm count: ${currentAlarmCount}/${MAX_ALARMS}`
-    );
-
-    return {
-      hasValidToken,
-      currentAlarmCount,
-      isApproachingAlarmLimit,
-    };
-  } catch (error) {
-    console.error("Error checking token and alarm status:", error);
-    return {
-      hasValidToken: false,
-      currentAlarmCount: 0,
-      isApproachingAlarmLimit: false,
-    };
-  }
-}
-
 async function processElementsForActionRunPages() {
   const actionRunElements = document.querySelectorAll(ACTION_RUNS_SELECTOR);
 
@@ -125,11 +100,6 @@ async function processElementsForActionRunPages() {
         ensureButtonHasHandler(button);
       }
     });
-
-  // Check token status if not already done
-  if (!hasCheckedTokenStatus) {
-    await checkTokenAndAlarmStatus();
-  }
 
   const currentlyRunningOrQueuedElements = getTargetElements(actionRunElements);
 
@@ -159,23 +129,6 @@ async function processElementsForActionRunPages() {
     });
 
     button.onclick = handleMonitoringClickFn;
-
-    // Visual indicators for token/alarm status
-    if (!hasValidToken) {
-      // Add a subtle indicator that token is missing
-      svg.style.opacity = "0.6";
-      button.title = "GitHub token required for notifications";
-    } else if (isApproachingAlarmLimit) {
-      // Add a subtle indicator for approaching limit
-      button.title = `Monitor limit: ${currentAlarmCount}/${MAX_ALARMS}`;
-
-      if (currentAlarmCount >= MAX_ALARMS) {
-        // Disabled style if at limit
-        svg.style.opacity = "0.5";
-        button.style.cursor = "not-allowed";
-        button.title = `Monitor limit reached (${MAX_ALARMS}/${MAX_ALARMS})`;
-      }
-    }
 
     // Check if already monitored
     const encoded = encode({ runId, owner, repository });
@@ -207,11 +160,6 @@ async function processElementsForJobPages() {
         ensureButtonHasHandler(button);
       }
     });
-
-  // Check token status if not already done
-  if (!hasCheckedTokenStatus) {
-    await checkTokenAndAlarmStatus();
-  }
 
   const currentlyRunningOrQueued = getTargetElements(jobElements);
 
@@ -251,23 +199,6 @@ async function processElementsForJobPages() {
       svg,
     });
     button.onclick = handleMonitoringClickFn;
-
-    // Visual indicators for token/alarm status
-    if (!hasValidToken) {
-      // Add a subtle indicator that token is missing
-      svg.style.opacity = "0.6";
-      button.title = "GitHub token required for notifications";
-    } else if (isApproachingAlarmLimit) {
-      // Add a subtle indicator for approaching limit
-      button.title = `Monitor limit: ${currentAlarmCount}/${MAX_ALARMS}`;
-
-      if (currentAlarmCount >= MAX_ALARMS) {
-        // Disabled style if at limit
-        svg.style.opacity = "0.5";
-        button.style.cursor = "not-allowed";
-        button.title = `Monitor limit reached (${MAX_ALARMS}/${MAX_ALARMS})`;
-      }
-    }
 
     const encoded = encode({ runId, jobId, owner, repository });
     const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
@@ -437,9 +368,6 @@ async function main(): Promise<void> {
     // First clean up any existing observers
     cleanupObservers();
 
-    // Check token and alarm status
-    await checkTokenAndAlarmStatus();
-
     if (shouldMonitorActions(window.location.href)) {
       console.debug("Determined we are in the action monitoring path");
       await processElementsForActionRunPages();
@@ -523,56 +451,10 @@ async function main(): Promise<void> {
       console.debug("Current URL doesn't match any monitoring paths");
     }
 
-    // Set up periodical token and alarm status check
-    setupStatusChecks();
-
     isInitialized = true;
   } finally {
     pendingMainExecution = false;
   }
-}
-
-// Set up periodic status checks
-function setupStatusChecks() {
-  // Check token and alarm status every 5 minutes
-  setInterval(async () => {
-    console.debug("Running periodic token and alarm status check");
-    await checkTokenAndAlarmStatus();
-
-    // Update visual indicators for all buttons based on new status
-    updateAllButtonsStatus();
-  }, 5 * 60 * 1000); // 5 minutes
-}
-
-// Update visual indicators for all buttons
-function updateAllButtonsStatus() {
-  document
-    .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
-    .forEach((button) => {
-      if (button instanceof HTMLElement) {
-        const svg = button.querySelector("svg");
-        if (svg instanceof SVGElement) {
-          // Update based on token status
-          if (!hasValidToken) {
-            svg.style.opacity = "0.6";
-            button.title = "GitHub token required for notifications";
-          } else if (isApproachingAlarmLimit) {
-            button.title = `Monitor limit: ${currentAlarmCount}/${MAX_ALARMS}`;
-
-            if (currentAlarmCount >= MAX_ALARMS) {
-              svg.style.opacity = "0.5";
-              button.style.cursor = "not-allowed";
-              button.title = `Monitor limit reached (${MAX_ALARMS}/${MAX_ALARMS})`;
-            }
-          } else {
-            // Reset to normal if conditions have improved
-            svg.style.opacity = "";
-            button.style.cursor = "";
-            button.title = "";
-          }
-        }
-      }
-    });
 }
 
 // Clean up all observers

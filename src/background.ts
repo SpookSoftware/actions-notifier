@@ -24,6 +24,9 @@ self.addEventListener("activate", async (_event: Event) => {
   await browser.alarms.clearAll();
   console.log("Cleared all old alarms.");
 
+  // Todo, probably every time the extension is activated, we should check if the user has a token
+  // and if not, tell them to add one and turn the notification off.
+
   // Schedule a welcome notification check
   setTimeout(checkFirstRunAndShowWelcome, 2000);
 });
@@ -62,6 +65,8 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
       const alarms = await browser.alarms.getAll();
       if (alarms.length >= MAX_ALARMS) {
         console.warn(`Alarm limit reached (${alarms.length}/${MAX_ALARMS})`);
+
+        // todo: send a message here turning the extension off.
 
         // Show a notification about the alarm limit
         browser.notifications.create("alarm-limit-reached", {
@@ -143,7 +148,31 @@ browser.runtime.onInstalled.addListener((details) => {
     // Set first run flag
     browser.storage.local.set({ hasSeenOnboarding: false });
 
-    // Open options page on install to guide token setup
-    browser.runtime.openOptionsPage();
+    browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
   }
 });
+
+// POC
+setTimeout(async () => {
+  try {
+    const githubTabs = await browser.tabs.query({
+      url: "https://github.com/*",
+    });
+
+    console.log(`Found ${githubTabs.length} GitHub tabs to refresh`);
+
+    // Send messages to each tab with error handling
+    for (const tab of githubTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, { action: "refresh" });
+          console.log(`Refresh message sent to tab ${tab.id}`);
+        } catch (error) {
+          console.error(`Error sending message to tab ${tab.id}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error querying tabs:", error);
+  }
+}, 1500);
