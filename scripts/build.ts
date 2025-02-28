@@ -13,6 +13,7 @@ import { rm } from "node:fs/promises";
       "./src/background.ts",
       "./src/popup.html",
       "./src/manage.html",
+      "./src/onboarding.html",
     ],
     outdir: outputDir,
     target: "browser",
