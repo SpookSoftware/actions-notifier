@@ -49,6 +49,7 @@ export type StopMonitorActionRequest = Omit<
 export type MonitorResponse =
   | {
       status: "ok";
+      data?: Record<string, any>;
     }
   | {
       status: "error";

@@ -16,6 +16,8 @@ document.addEventListener("DOMContentLoaded", async function () {
   const alarmCountWarning = document.getElementById("alarm-count-warning");
   const alarmCountError = document.getElementById("alarm-count-error");
   const manageSection = document.getElementById("manage-section");
+  const extensionToggle = document.getElementById("extension-toggle");
+  const extensionStatus = document.getElementById("extension-status");
 
   // Check if this is first run
   const firstRun = await checkFirstRun();
@@ -28,6 +30,9 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Load and validate existing token (if any)
   await loadAndValidateToken();
 
+  // Load extension enabled state
+  await loadExtensionEnabledState();
+
   // Update alarm count
   await updateAlarmCount();
 
@@ -35,6 +40,48 @@ document.addEventListener("DOMContentLoaded", async function () {
   tokenForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await saveAndValidateToken();
+  });
+
+  // Create a direct click handler function to avoid code duplication
+  const handleToggleClick = async (event) => {
+    // Don't handle clicks on the checkbox itself or if event already handled
+    if (event.target === extensionToggle || event.defaultPrevented) {
+      return;
+    }
+    
+    // Prevent double handling
+    event.preventDefault();
+    
+    console.debug(`Toggle clicked: ${event.currentTarget.className}`);
+    const newState = !extensionToggle.checked;
+    extensionToggle.checked = newState;
+    
+    // Update UI
+    updateExtensionStatusText(newState);
+    
+    // Update state
+    await setExtensionEnabled(newState);
+  };
+  
+  // Add handlers for all toggle-related elements to ensure it works
+  document.querySelector('.toggle-container').addEventListener('click', handleToggleClick);
+  document.querySelector('.toggle-switch').addEventListener('click', handleToggleClick);
+  document.querySelector('.toggle-label').addEventListener('click', handleToggleClick);
+  document.getElementById('extension-status').addEventListener('click', handleToggleClick);
+  document.querySelector('.toggle-slider').addEventListener('click', handleToggleClick);
+  
+  // Change handler for the checkbox
+  extensionToggle.addEventListener("change", async (event) => {
+    console.debug("Toggle changed:", extensionToggle.checked);
+    
+    // Get the new state
+    const newState = extensionToggle.checked;
+    
+    // Update UI
+    updateExtensionStatusText(newState);
+    
+    // Update state
+    await setExtensionEnabled(newState);
   });
 
   // Manage button click
@@ -237,10 +284,77 @@ document.addEventListener("DOMContentLoaded", async function () {
       // Show manage section if there are active alarms
       manageSection.classList.toggle("hidden", count === 0);
 
+      // Automatically disable extension if count is at or above the limit
+      if (count >= 500 && extensionToggle.checked) {
+        extensionToggle.checked = false;
+        await setExtensionEnabled(false);
+        updateExtensionStatusText(false);
+      }
+
       return count;
     } catch (error) {
       console.error("Error getting alarm count:", error);
       return 0;
     }
+  }
+  
+  /**
+   * Load the extension enabled state
+   */
+  async function loadExtensionEnabledState() {
+    try {
+      const response = await browser.runtime.sendMessage({ action: "getExtensionEnabled" });
+      
+      if (response.status === "ok" && response.data) {
+        extensionToggle.checked = response.data.enabled;
+        updateExtensionStatusText(response.data.enabled);
+      }
+    } catch (error) {
+      console.error("Error loading extension state:", error);
+      // Default to enabled
+      extensionToggle.checked = true;
+      updateExtensionStatusText(true);
+    }
+  }
+  
+  /**
+   * Set the extension enabled state
+   */
+  async function setExtensionEnabled(enabled) {
+    try {
+      console.debug(`Sending request to set extension state to: ${enabled}`);
+      
+      const response = await browser.runtime.sendMessage({ 
+        action: "setExtensionEnabled", 
+        enabled: enabled 
+      });
+      
+      console.debug("Response from setting extension state:", response);
+      
+      // If token is valid and we're enabling, trigger a check for any issues
+      if (enabled) {
+        await browser.runtime.sendMessage({ action: "checkAndUpdateExtensionState" });
+        // Refresh the state again to be sure
+        await loadExtensionEnabledState();
+      }
+      
+      console.debug(`Extension enabled state set to: ${enabled}`);
+      
+      // Force UI update regardless of backend response
+      extensionToggle.checked = enabled;
+      updateExtensionStatusText(enabled);
+    } catch (error) {
+      console.error("Error setting extension state:", error);
+      // Reset UI to match the actual state
+      await loadExtensionEnabledState();
+    }
+  }
+  
+  /**
+   * Update the extension status text
+   */
+  function updateExtensionStatusText(enabled) {
+    extensionStatus.textContent = enabled ? "Enabled" : "Disabled";
+    extensionStatus.style.color = enabled ? "#28a745" : "#cb2431";
   }
 });

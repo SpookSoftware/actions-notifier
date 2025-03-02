@@ -34,6 +34,7 @@ export type TokenStatus = {
 // Constants
 export const MAX_ALARMS = 500;
 const TOKEN_NOTIFICATION_ID = "github-token-required";
+const EXTENSION_ENABLED_KEY = "extensionEnabled";
 
 /**
  * Sends a message to the background script
@@ -47,8 +48,90 @@ export async function sendStructuredMessage(
 /**
  * Validates if a token exists and has proper permissions
  */
+// Cache for extension enabled state to reduce storage reads
+let enabledStateCache: boolean | null = null;
+
+/**
+ * Get the current extension enabled state
+ */
+export async function isExtensionEnabled(): Promise<boolean> {
+  try {
+    // Use cache if available for better performance
+    if (enabledStateCache !== null) {
+      return enabledStateCache;
+    }
+    
+    const data = await browser.storage.local.get(EXTENSION_ENABLED_KEY);
+    // Default to true if not set
+    enabledStateCache = data[EXTENSION_ENABLED_KEY] !== false;
+    return enabledStateCache;
+  } catch (error) {
+    console.error("Error checking extension enabled state:", error);
+    return true; // Default to enabled on error
+  }
+}
+
+/**
+ * Set the extension enabled state
+ */
+export async function setExtensionEnabled(enabled: boolean): Promise<void> {
+  try {
+    // Update cache immediately
+    enabledStateCache = enabled;
+    
+    // Persist to storage
+    await browser.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled });
+    console.debug(`Extension enabled state set to: ${enabled}`);
+    
+    // Broadcast this change to all tabs
+    await broadcastExtensionState(enabled);
+  } catch (error) {
+    console.error("Error setting extension enabled state:", error);
+    // Reset cache on error
+    enabledStateCache = null;
+  }
+}
+
+/**
+ * Broadcast extension state to all GitHub tabs
+ */
+export async function broadcastExtensionState(enabled: boolean): Promise<void> {
+  try {
+    const githubTabs = await browser.tabs.query({
+      url: "https://github.com/*",
+    });
+
+    console.debug(`Broadcasting extension state (${enabled}) to ${githubTabs.length} GitHub tabs`);
+
+    for (const tab of githubTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, { 
+            action: "extensionStateChanged", 
+            enabled 
+          });
+        } catch (error) {
+          console.error(`Error broadcasting to tab ${tab.id}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error broadcasting extension state:", error);
+  }
+}
+
 export async function validateGitHubToken(): Promise<TokenStatus> {
   try {
+    // First check if extension is enabled
+    const enabled = await isExtensionEnabled();
+    if (!enabled) {
+      return {
+        isValid: false,
+        errorType: "NO_TOKEN_FOUND",
+        errorMessage: "Extension is disabled",
+      };
+    }
+    
     // Check if token exists
     const data = await browser.storage.sync.get("githubToken");
 
@@ -333,6 +416,33 @@ export async function onMessageCallback(
   request: unknown,
   _sender: browser.Runtime.MessageSender
 ): Promise<MonitorResponse> {
+  // Handle extension state change requests
+  if (request && typeof request === 'object' && 'action' in request) {
+    const req = request as { action: string; enabled?: boolean };
+    
+    if (req.action === 'setExtensionEnabled' && req.enabled !== undefined) {
+      console.debug(`Setting extension enabled state to: ${req.enabled}`);
+      await setExtensionEnabled(req.enabled);
+      return { status: "ok" };
+    }
+    
+    if (req.action === 'getExtensionEnabled') {
+      const enabled = await isExtensionEnabled();
+      console.debug(`Getting extension enabled state: ${enabled}`);
+      return { status: "ok", data: { enabled } };
+    }
+  }
+
+  // First check if the extension is enabled
+  const enabled = await isExtensionEnabled();
+  if (!enabled) {
+    console.debug("Extension is disabled, ignoring request");
+    return {
+      status: "error",
+      error: new Error("Extension is disabled"),
+    };
+  }
+
   if (isStartMonitoringRequest(request)) {
     const encoded = encodeRequest(request);
 
@@ -354,6 +464,8 @@ export async function onMessageCallback(
       console.error(
         `Monitoring setup failed: Alarm limit reached (${alarmCount}/${MAX_ALARMS})`
       );
+      // Automatically disable the extension when alarm limit is reached
+      await setExtensionEnabled(false);
       return {
         status: "error",
         error: new Error(`Alarm limit reached (${alarmCount}/${MAX_ALARMS})`),
@@ -389,6 +501,13 @@ export async function onMessageCallback(
 export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
   if (!isProperlyEncoded(alarm.name)) {
     throw Error("Unexpected alarm name format: " + alarm.name);
+  }
+
+  // First check if the extension is enabled
+  const enabled = await isExtensionEnabled();
+  if (!enabled) {
+    console.debug("Extension is disabled, ignoring alarm callback");
+    return;
   }
 
   try {

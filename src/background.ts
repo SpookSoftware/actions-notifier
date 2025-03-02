@@ -5,6 +5,11 @@ import {
   onMessageCallback,
   onNotificationClickedCallback,
   sendStructuredMessage,
+  validateGitHubToken,
+  setExtensionEnabled,
+  MAX_ALARMS,
+  getActiveAlarmCount,
+  isExtensionEnabled,
 } from "@/helpers/browser";
 
 let extpay = ExtPay("cicd-workflow-notifications");
@@ -12,7 +17,6 @@ extpay.startBackground();
 
 // Constants
 const TOKEN_NOTIFICATION_ID = "github-token-required";
-const MAX_ALARMS = 500; // Chrome's limit
 
 // Flag to track if we've already shown the welcome notification
 let hasShownWelcomeNotification = false;
@@ -25,68 +29,76 @@ self.addEventListener("activate", async (_event: Event) => {
   await browser.alarms.clearAll();
   console.log("Cleared all old alarms.");
 
-  // Todo, probably every time the extension is activated, we should check if the user has a token
-  // and if not, tell them to add one and turn the notification off.
+  // Check the extension's validation state and enable/disable accordingly
+  await checkAndUpdateExtensionState();
 
   // Schedule a welcome notification check
   setTimeout(checkFirstRunAndShowWelcome, 2000);
 });
 
-// Modified message handler
-browser.runtime.onMessage.addListener(async (request, sender) => {
-  // Check if this is a monitoring request that requires a token
-  if (
-    request &&
-    (request.task === "start-monitoring" || request.task === "stop-monitoring")
-  ) {
-    // Verify token exists before proceeding
-    const tokenData = await browser.storage.sync.get("githubToken");
+/**
+ * Check token validity and alarm count, update extension state if needed
+ */
+async function checkAndUpdateExtensionState() {
+  // Check token validity
+  const tokenStatus = await validateGitHubToken();
 
-    if (!tokenData.githubToken) {
-      console.warn(
-        "Monitoring request received but no GitHub token is configured"
-      );
+  // Check alarm count
+  const alarmCount = await getActiveAlarmCount();
 
-      // Show a notification to inform the user
-      browser.notifications.create(TOKEN_NOTIFICATION_ID, {
-        type: "basic",
-        title: "GitHub Token Required",
-        message: "Please add a GitHub token to enable workflow monitoring.",
-        iconUrl: "images/icon-128.png",
-      });
-
-      return {
-        status: "error",
-        error: { message: "GitHub token not configured" },
-      };
-    }
-
-    // If we have too many alarms, reject the request
-    if (request.task === "start-monitoring") {
-      const alarms = await browser.alarms.getAll();
-      if (alarms.length >= MAX_ALARMS) {
-        console.warn(`Alarm limit reached (${alarms.length}/${MAX_ALARMS})`);
-
-        // todo: send a message here turning the extension off.
-
-        // Show a notification about the alarm limit
-        browser.notifications.create("alarm-limit-reached", {
-          type: "basic",
-          title: "Alarm Limit Reached",
-          message:
-            "You've reached the maximum number of workflows that can be monitored (500). Please remove some existing monitors.",
-          iconUrl: "images/icon-128.png",
-        });
-
-        return { status: "error", error: { message: "Alarm limit reached" } };
-      }
-    }
-
-    // Pass to original handler if all checks pass
-    return onMessageCallback(request, sender);
+  // If token is invalid or we're at alarm limit, disable the extension
+  if (!tokenStatus.isValid || alarmCount >= MAX_ALARMS) {
+    console.debug(
+      `Automatically disabling extension due to: ${
+        !tokenStatus.isValid ? "Invalid token" : "Alarm limit reached"
+      }`
+    );
+    await setExtensionEnabled(false);
+    return false;
   }
 
-  // Handle other message types
+  // Otherwise ensure it's enabled
+  await setExtensionEnabled(true);
+  return true;
+}
+
+// Modified message handler
+browser.runtime.onMessage.addListener(async (request, sender) => {
+  console.debug("Background script received message:", request);
+
+  // Special case for extension management
+  if (request && typeof request === "object" && "action" in request) {
+    // Handle direct background script actions
+    if (request.action === "openOptionsPage") {
+      browser.runtime.openOptionsPage();
+      return { status: "ok" };
+    }
+
+    if (request.action === "checkAndUpdateExtensionState") {
+      const result = await checkAndUpdateExtensionState();
+      return { status: "ok", data: { enabled: result } };
+    }
+
+    // Handle extension state management
+    if (
+      request.action === "setExtensionEnabled" &&
+      request.enabled !== undefined
+    ) {
+      console.debug(
+        `Background received request to set extension state to: ${request.enabled}`
+      );
+      await setExtensionEnabled(request.enabled);
+      return { status: "ok" };
+    }
+
+    if (request.action === "getExtensionEnabled") {
+      const enabled = await isExtensionEnabled();
+      console.debug(`Background returning extension state: ${enabled}`);
+      return { status: "ok", data: { enabled } };
+    }
+  }
+
+  // Use our enhanced onMessageCallback for other message types
   return onMessageCallback(request, sender);
 });
 

@@ -41,18 +41,24 @@ import {
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
 
-// The global on/off switch. If false, the extension won't do anything.
-// What makes it false? The lack of a github token or the number of alarms exceeding the limit
-// In the future, nonpayment will also make it false.
-let canRun = true;
-
 // Listen for messages from the background script or other parts of the extension
-// POC
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log("received message!!!");
-  if (message.action === "invalidate") {
-    console.debug("Received invalidate message");
+  console.debug("Content script received message:", message);
+
+  if (message.action === "extensionStateChanged") {
+    console.debug(`Extension state changed to: ${message.enabled}`);
+
+    if (!message.enabled) {
+      // If extension is disabled, clean up all UI elements
+      cleanupObservers();
+      console.debug("Extension disabled, observers cleaned up");
+    } else {
+      // If extension is re-enabled, restart the main process
+      console.debug("Extension enabled, restarting main process");
+      debouncedMain();
+    }
   }
+
   return true;
 });
 
@@ -362,6 +368,24 @@ async function main(): Promise<void> {
 
   try {
     console.debug(`Running main() for URL: ${window.location.href}`);
+
+    // First check if the extension is enabled
+    try {
+      const response = await browser.runtime.sendMessage({
+        action: "getExtensionEnabled",
+      });
+      if (
+        response.status === "ok" &&
+        response.data &&
+        response.data.enabled === false
+      ) {
+        console.debug("Extension is disabled, not attaching observers");
+        return;
+      }
+    } catch (error) {
+      console.error("Error checking extension state:", error);
+      // Continue anyway in case of error
+    }
 
     // Track current URL
     currentUrl = window.location.href;
