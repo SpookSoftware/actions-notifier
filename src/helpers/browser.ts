@@ -38,8 +38,8 @@ const TOKEN_NOTIFICATION_ID = "github-token-required";
 /**
  * Sends a message to the background script
  */
-export async function sendMessageAsync(
-  payload: unknown
+export async function sendStructuredMessage(
+  payload: MonitorRequest
 ): Promise<MonitorResponse> {
   return await browser.runtime.sendMessage(payload);
 }
@@ -161,7 +161,7 @@ export function createMonitorToggleHandler({
 
       if (!isAlreadyMonitored) {
         // Start monitoring
-        const startResponse = await sendMessageAsync(startMonitorPayload);
+        const startResponse = await sendStructuredMessage(startMonitorPayload);
 
         if (startResponse.status === "ok") {
           setSVGColor(svg, "yellow");
@@ -176,7 +176,7 @@ export function createMonitorToggleHandler({
         }
       } else {
         // Stop monitoring
-        const stopResponse = await sendMessageAsync(stopMonitorPayload);
+        const stopResponse = await sendStructuredMessage(stopMonitorPayload);
 
         if (stopResponse.status === "ok") {
           resetSVGColor(svg);

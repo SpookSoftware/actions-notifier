@@ -43,14 +43,15 @@ import browser from "webextension-polyfill";
 
 // The global on/off switch. If false, the extension won't do anything.
 // What makes it false? The lack of a github token or the number of alarms exceeding the limit
+// In the future, nonpayment will also make it false.
 let canRun = true;
 
 // Listen for messages from the background script or other parts of the extension
 // POC
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("received message!!!");
-  if (message.action === "refresh") {
-    console.debug("Received refresh message, running main()");
+  if (message.action === "invalidate") {
+    console.debug("Received invalidate message");
   }
   return true;
 });

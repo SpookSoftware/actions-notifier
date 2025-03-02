@@ -4,6 +4,7 @@ import {
   onAlarmCallback,
   onMessageCallback,
   onNotificationClickedCallback,
+  sendStructuredMessage,
 } from "@/helpers/browser";
 
 let extpay = ExtPay("cicd-workflow-notifications");
@@ -152,6 +153,29 @@ browser.runtime.onInstalled.addListener((details) => {
   }
 });
 
+async function sendInvalidateSignal() {
+  try {
+    const githubTabs = await browser.tabs.query({
+      url: "https://github.com/*",
+    });
+
+    console.log(`Found ${githubTabs.length} GitHub tabs to refresh`);
+
+    for (const tab of githubTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, { action: "invalidate" });
+          console.log(`Refresh message sent to tab ${tab.id}`);
+        } catch (error) {
+          console.error(`Error sending message to tab ${tab.id}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error querying tabs:", error);
+  }
+}
+
 // POC
 setTimeout(async () => {
   try {
@@ -165,7 +189,7 @@ setTimeout(async () => {
     for (const tab of githubTabs) {
       if (tab.id) {
         try {
-          await browser.tabs.sendMessage(tab.id, { action: "refresh" });
+          await browser.tabs.sendMessage(tab.id, { action: "invalidate" });
           console.log(`Refresh message sent to tab ${tab.id}`);
         } catch (error) {
           console.error(`Error sending message to tab ${tab.id}:`, error);
