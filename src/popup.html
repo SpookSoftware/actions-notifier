@@ -275,6 +275,10 @@
         </div>
       </form>
 
+      <button class="secondary" id="debug-onboarding-button">
+        Debug Onboarding
+      </button>
+
       <!-- Active monitors counter (hidden until token is valid) -->
       <div class="monitors-count hidden" id="monitors-section">
         <div class="flex-row">
@@ -287,9 +291,11 @@
           <span id="alarm-count-error" class="hidden">⚠️ At limit</span>
         </div>
         <div class="manage-section hidden" id="manage-section">
-          <button class="secondary" id="manage-button">
-            Manage Active Monitors
-          </button>
+          <div class="flex-row">
+            <button class="secondary" id="manage-button">
+              Manage Active Monitors
+            </button>
+          </div>
         </div>
       </div>
     </div>

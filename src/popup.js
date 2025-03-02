@@ -44,6 +44,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   }
 
+  // Debug onboarding button click
+  if (document.getElementById("debug-onboarding-button")) {
+    document
+      .getElementById("debug-onboarding-button")
+      .addEventListener("click", () => {
+        browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
+      });
+  }
+
   /**
    * Save and validate the GitHub token
    */
