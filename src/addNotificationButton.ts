@@ -38,6 +38,8 @@ import {
   createPRRunCallback,
   shouldMonitorChecks,
   NOTIFICATION_BUTTON_CLASS,
+  messageIsEnabledStatusChange,
+  isGetExtensionEnabledResponse,
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
 
@@ -45,11 +47,11 @@ import browser from "webextension-polyfill";
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.debug("Content script received message:", message);
 
-  if (message.action === "extensionStateChanged") {
+  if (messageIsEnabledStatusChange(message)) {
     console.debug(`Extension state changed to: ${message.enabled}`);
 
     if (!message.enabled) {
-      // If extension is disabled, clean up all UI elements
+      // If extension is disabled, don't add more buttons.
       cleanupObservers();
       console.debug("Extension disabled, observers cleaned up");
     } else {
@@ -375,6 +377,7 @@ async function main(): Promise<void> {
         action: "getExtensionEnabled",
       });
       if (
+        isGetExtensionEnabledResponse(response) &&
         response.status === "ok" &&
         response.data &&
         response.data.enabled === false

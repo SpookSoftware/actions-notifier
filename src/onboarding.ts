@@ -242,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const data = await browser.storage.sync.get("githubToken");
 
-      if (data.githubToken) {
+      if (typeof data.githubToken === "string") {
         // Test the existing token
         const isValid = await testGitHubToken(data.githubToken);
 

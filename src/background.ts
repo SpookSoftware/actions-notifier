@@ -11,6 +11,7 @@ import {
   getActiveAlarmCount,
   isExtensionEnabled,
 } from "@/helpers/browser";
+import { isSetExtensionEnabledRequest } from "./helpers/pure";
 
 let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
@@ -81,6 +82,7 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
 
     // Handle extension state management
     if (
+      isSetExtensionEnabledRequest(request) &&
       request.action === "setExtensionEnabled" &&
       request.enabled !== undefined
     ) {

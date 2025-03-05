@@ -638,3 +638,41 @@ export function insertButtonBetweenStatusAndDetails(
     element.appendChild(buttonContainer);
   }
 }
+
+export function isSetExtensionEnabledRequest(
+  request: unknown
+): request is { action: "setExtensionEnabled"; enabled: boolean } {
+  return (
+    typeof request === "object" &&
+    request !== null &&
+    "action" in request &&
+    request.action === "setExtensionEnabled" &&
+    "enabled" in request
+  );
+}
+
+export function messageIsEnabledStatusChange(
+  message: any
+): message is { action: "extensionStateChanged"; enabled: boolean } {
+  return (
+    message.action === "extensionStateChanged" &&
+    typeof message.enabled === "boolean"
+  );
+}
+
+export function isGetExtensionEnabledResponse(response: unknown): response is {
+  status: "ok";
+  data: { enabled: boolean };
+} {
+  return Boolean(
+    typeof response === "object" &&
+      response !== null &&
+      "status" in response &&
+      response.status === "ok" &&
+      "data" in response &&
+      response.data !== null &&
+      response.data &&
+      typeof response.data === "object" &&
+      "enabled" in response.data
+  );
+}
