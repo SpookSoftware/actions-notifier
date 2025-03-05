@@ -41,7 +41,10 @@ import {
 import browser from "webextension-polyfill";
 
 // Import the notification component
-import { NotificationType, showInPageNotification } from "./components/InPageNotification";
+import {
+  NotificationType,
+  showInPageNotification,
+} from "./components/InPageNotification";
 
 // Listen for messages from the background script or other parts of the extension
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -59,10 +62,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       console.debug("Extension enabled, restarting main process");
       debouncedMain();
     }
-  } else if (message && typeof message === "object" && message.action === "showNotification" && message.type) {
+  } else if (
+    message &&
+    typeof message === "object" &&
+    "action" in message &&
+    message.action === "showNotification" &&
+    "type" in message &&
+    message.type
+  ) {
     // Handle notification requests
     console.debug(`Showing in-page notification: ${message.type}`);
-    
+
     if (message.type === "token-expired") {
       showInPageNotification(NotificationType.TOKEN_EXPIRED);
     } else if (message.type === "alarm-limit-reached") {
@@ -425,7 +435,10 @@ async function main(): Promise<void> {
           "debug"
         );
         actionObserver.observe(actionRunsContainer);
-      }
+      } else
+        console.debug(
+          "No action runs container found. This likely indicates an error"
+        );
     } else if (shouldMonitorJobs(window.location.href)) {
       console.debug("Determined we are in the jobs monitoring path");
       await processElementsForJobPages();
@@ -443,6 +456,10 @@ async function main(): Promise<void> {
 
         jobObserver = new URLAwareMutationObserver(jobRunCallback, "debug");
         jobObserver.observe(jobRunsContainer);
+      } else {
+        console.debug(
+          "No job runs container found. This likely indicates an error"
+        );
       }
     } else if (shouldMonitorPRs(window.location.href)) {
       console.debug("Determined we are in the PR monitoring path");
@@ -462,6 +479,10 @@ async function main(): Promise<void> {
 
         prObserver = new URLAwareMutationObserver(prRunCallback, "debug");
         prObserver.observe(prRunsContainer);
+      } else {
+        console.debug(
+          "No PR runs container found. This likely indicates an error"
+        );
       }
     } else if (shouldMonitorChecks(window.location.href)) {
       console.debug("Determined we are in the checks monitoring path");
@@ -483,6 +504,10 @@ async function main(): Promise<void> {
           "debug"
         );
         checksObserver.observe(checksContainer);
+      } else {
+        console.debug(
+          "No checks container found. This likely indicates an error"
+        );
       }
     } else {
       console.debug("Current URL doesn't match any monitoring paths");

@@ -5,20 +5,24 @@ import browser from "webextension-polyfill";
 /**
  * Notifies all GitHub tabs about an issue
  */
-export async function notifyGitHubTabsAboutIssue(type: "token-expired" | "alarm-limit-reached"): Promise<void> {
+export async function notifyGitHubTabsAboutIssue(
+  type: "token-expired" | "alarm-limit-reached"
+): Promise<void> {
   try {
     const githubTabs = await browser.tabs.query({
       url: "https://github.com/*",
     });
 
-    console.debug(`Sending ${type} notification to ${githubTabs.length} GitHub tabs`);
+    console.debug(
+      `Sending ${type} notification to ${githubTabs.length} GitHub tabs`
+    );
 
     for (const tab of githubTabs) {
       if (tab.id) {
         try {
-          await browser.tabs.sendMessage(tab.id, { 
-            action: "showNotification", 
-            type: type 
+          await browser.tabs.sendMessage(tab.id, {
+            action: "showNotification",
+            type: type,
           });
           console.debug(`Notification sent to tab ${tab.id}`);
         } catch (error) {
@@ -89,7 +93,7 @@ export async function isExtensionEnabled(): Promise<boolean> {
     if (enabledStateCache !== null) {
       return enabledStateCache;
     }
-    
+
     const data = await browser.storage.local.get(EXTENSION_ENABLED_KEY);
     // Default to true if not set
     enabledStateCache = data[EXTENSION_ENABLED_KEY] !== false;
@@ -107,11 +111,11 @@ export async function setExtensionEnabled(enabled: boolean): Promise<void> {
   try {
     // Update cache immediately
     enabledStateCache = enabled;
-    
+
     // Persist to storage
     await browser.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled });
     console.debug(`Extension enabled state set to: ${enabled}`);
-    
+
     // Broadcast this change to all tabs
     await broadcastExtensionState(enabled);
   } catch (error) {
@@ -130,14 +134,16 @@ export async function broadcastExtensionState(enabled: boolean): Promise<void> {
       url: "https://github.com/*",
     });
 
-    console.debug(`Broadcasting extension state (${enabled}) to ${githubTabs.length} GitHub tabs`);
+    console.debug(
+      `Broadcasting extension state (${enabled}) to ${githubTabs.length} GitHub tabs`
+    );
 
     for (const tab of githubTabs) {
       if (tab.id) {
         try {
-          await browser.tabs.sendMessage(tab.id, { 
-            action: "extensionStateChanged", 
-            enabled 
+          await browser.tabs.sendMessage(tab.id, {
+            action: "extensionStateChanged",
+            enabled,
           });
         } catch (error) {
           console.error(`Error broadcasting to tab ${tab.id}:`, error);
@@ -160,7 +166,7 @@ export async function validateGitHubToken(): Promise<TokenStatus> {
         errorMessage: "Extension is disabled",
       };
     }
-    
+
     // Check if token exists
     const data = await browser.storage.sync.get("githubToken");
 
@@ -446,16 +452,16 @@ export async function onMessageCallback(
   _sender: browser.Runtime.MessageSender
 ): Promise<MonitorResponse> {
   // Handle extension state change requests
-  if (request && typeof request === 'object' && 'action' in request) {
+  if (request && typeof request === "object" && "action" in request) {
     const req = request as { action: string; enabled?: boolean };
-    
-    if (req.action === 'setExtensionEnabled' && req.enabled !== undefined) {
+
+    if (req.action === "setExtensionEnabled" && req.enabled !== undefined) {
       console.debug(`Setting extension enabled state to: ${req.enabled}`);
       await setExtensionEnabled(req.enabled);
       return { status: "ok" };
     }
-    
-    if (req.action === 'getExtensionEnabled') {
+
+    if (req.action === "getExtensionEnabled") {
       const enabled = await isExtensionEnabled();
       console.debug(`Getting extension enabled state: ${enabled}`);
       return { status: "ok", data: { enabled } };
@@ -481,13 +487,13 @@ export async function onMessageCallback(
     const tokenStatus = await validateGitHubToken();
     if (!tokenStatus.isValid) {
       console.error(`Monitoring setup failed: ${tokenStatus.errorMessage}`);
-      
+
       // Automatically disable the extension on token issues
       await setExtensionEnabled(false);
-      
+
       // Notify GitHub tabs about token issue
       await notifyGitHubTabsAboutIssue("token-expired");
-      
+
       return {
         status: "error",
         error: new Error(tokenStatus.errorMessage || "Token validation failed"),
@@ -502,10 +508,10 @@ export async function onMessageCallback(
       );
       // Automatically disable the extension when alarm limit is reached
       await setExtensionEnabled(false);
-      
+
       // Notify GitHub tabs about alarm limit
       await notifyGitHubTabsAboutIssue("alarm-limit-reached");
-      
+
       return {
         status: "error",
         error: new Error(`Alarm limit reached (${alarmCount}/${MAX_ALARMS})`),
@@ -561,10 +567,10 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
     const tokenStatus = await validateGitHubToken();
     if (!tokenStatus.isValid) {
       console.error(`Alarm callback failed: ${tokenStatus.errorMessage}`);
-      
+
       // Show the in-page notification about token issues
       await notifyGitHubTabsAboutIssue("token-expired");
-      
+
       // Don't cancel monitoring yet - the user might fix their token
       return;
     }
@@ -599,13 +605,25 @@ export async function createCompletionNotification(
   alarmName: string,
   taskName: string
 ) {
-  await browser.notifications.create(alarmName, {
-    type: "basic",
-    title: "Workflow Completed",
-    message: `${taskName} has completed. Click to view the results.`,
-    iconUrl: browser.runtime.getURL("images/icon-128.png"),
-  });
-  console.debug(`Successfully created notification with id ${alarmName}`);
+  // Determine if this is a job or an action based on the alarm name
+  if (isProperlyEncoded(alarmName)) {
+    const decoded = decode(alarmName);
+    const isJob = !!decoded.jobId;
+
+    await browser.notifications.create(alarmName, {
+      type: "basic",
+      title: isJob ? "Job Completed" : "Action Completed",
+      message: `${taskName} has completed. Click to view the results.`,
+      iconUrl: browser.runtime.getURL("images/icon-128.png"),
+    });
+    console.debug(
+      `Successfully created notification for ${
+        isJob ? "job" : "action"
+      } with id ${alarmName}`
+    );
+  } else {
+    console.error(`Unexpected alarm name format: ${alarmName}`);
+  }
 }
 
 export async function onNotificationClickedCallback(notificationId: string) {
