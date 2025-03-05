@@ -22,15 +22,8 @@ export default defineConfig({
       testMatch: /selectors\.spec\.ts/,
     },
     {
-      name: "extension-basic",
-      testMatch: /extension\.spec\.ts/,
-      use: {
-        headless: false, // Extension tests require head
-      },
-    },
-    {
-      name: "extension-functionality",
-      testMatch: /functionality\.spec\.ts/,
+      name: "extension",
+      testMatch: /^(?!.*selectors\.spec\.ts$).*\.spec\.ts$/,
       use: {
         headless: false, // Extension tests require head
       },
