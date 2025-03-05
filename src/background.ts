@@ -22,6 +22,35 @@ const TOKEN_NOTIFICATION_ID = "github-token-required";
 // Flag to track if we've already shown the welcome notification
 let hasShownWelcomeNotification = false;
 
+/**
+ * Send issue notification to all GitHub tabs
+ */
+async function sendIssueNotificationToTabs(type: "token-expired" | "alarm-limit-reached"): Promise<void> {
+  try {
+    const githubTabs = await browser.tabs.query({
+      url: "https://github.com/*",
+    });
+
+    console.log(`Sending ${type} notification to ${githubTabs.length} GitHub tabs`);
+
+    for (const tab of githubTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, { 
+            action: "showNotification", 
+            type: type 
+          });
+          console.log(`Notification sent to tab ${tab.id}`);
+        } catch (error) {
+          console.error(`Error sending notification to tab ${tab.id}:`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error sending notifications to tabs:", error);
+  }
+}
+
 // On extension activation
 self.addEventListener("activate", async (_event: Event) => {
   console.log("Extension activated");
@@ -55,6 +84,12 @@ async function checkAndUpdateExtensionState() {
       }`
     );
     await setExtensionEnabled(false);
+    
+    // Send notification message to all GitHub tabs
+    await sendIssueNotificationToTabs(
+      !tokenStatus.isValid ? "token-expired" : "alarm-limit-reached"
+    );
+    
     return false;
   }
 
@@ -72,6 +107,11 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
     // Handle direct background script actions
     if (request.action === "openOptionsPage") {
       browser.runtime.openOptionsPage();
+      return { status: "ok" };
+    }
+    
+    if (request.action === "openManagePage") {
+      browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
       return { status: "ok" };
     }
 
@@ -119,12 +159,6 @@ browser.notifications.onClicked.addListener((notificationId) => {
   if (notificationId === "welcome-notification") {
     // Open extension popup on welcome notification click
     browser.runtime.openOptionsPage();
-    return;
-  }
-
-  if (notificationId === "alarm-limit-reached") {
-    // Open management page when alarm limit notification is clicked
-    browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
     return;
   }
 

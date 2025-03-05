@@ -99,6 +99,92 @@ document.addEventListener("DOMContentLoaded", async function () {
         browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
       });
   }
+  
+  // Debug token notification button
+  if (document.getElementById("debug-token-notification")) {
+    document
+      .getElementById("debug-token-notification")
+      .addEventListener("click", async () => {
+        // Find any open GitHub tabs
+        const githubTabs = await browser.tabs.query({
+          url: "https://github.com/*"
+        });
+        
+        if (githubTabs.length > 0) {
+          // Send notification message to the first GitHub tab
+          const tab = githubTabs[0];
+          await browser.tabs.sendMessage(tab.id, { 
+            action: "showNotification", 
+            type: "token-expired" 
+          });
+          
+          // Focus the tab to see the notification
+          await browser.tabs.update(tab.id, { active: true });
+          
+          // Show feedback
+          showTokenStatus("Token alert sent to GitHub tab", true);
+        } else {
+          // If no GitHub tab is open, open one and then show notification
+          const newTab = await browser.tabs.create({ url: "https://github.com" });
+          
+          // Wait a bit for the page and content script to load
+          setTimeout(async () => {
+            try {
+              await browser.tabs.sendMessage(newTab.id, { 
+                action: "showNotification", 
+                type: "token-expired" 
+              });
+              showTokenStatus("Token alert sent to new GitHub tab", true);
+            } catch (error) {
+              showTokenStatus("Error: Tab not ready yet. Please try again in a few seconds.", false);
+            }
+          }, 2000);
+        }
+      });
+  }
+  
+  // Debug alarm limit notification button
+  if (document.getElementById("debug-alarm-notification")) {
+    document
+      .getElementById("debug-alarm-notification")
+      .addEventListener("click", async () => {
+        // Find any open GitHub tabs
+        const githubTabs = await browser.tabs.query({
+          url: "https://github.com/*"
+        });
+        
+        if (githubTabs.length > 0) {
+          // Send notification message to the first GitHub tab
+          const tab = githubTabs[0];
+          await browser.tabs.sendMessage(tab.id, { 
+            action: "showNotification", 
+            type: "alarm-limit-reached" 
+          });
+          
+          // Focus the tab to see the notification
+          await browser.tabs.update(tab.id, { active: true });
+          
+          // Show feedback
+          showTokenStatus("Alarm limit alert sent to GitHub tab", true);
+        } else {
+          // If no GitHub tab is open, open one and then show notification
+          const newTab = await browser.tabs.create({ url: "https://github.com" });
+          
+          // Wait a bit for the page and content script to load
+          setTimeout(async () => {
+            try {
+              await browser.tabs.sendMessage(newTab.id, { 
+                action: "showNotification", 
+                type: "alarm-limit-reached" 
+              });
+              showTokenStatus("Alarm limit alert sent to new GitHub tab", true);
+            } catch (error) {
+              showTokenStatus("Error: Tab not ready yet. Please try again in a few seconds.", false);
+            }
+          }, 2000);
+        }
+      });
+  }
 
   /**
    * Save and validate the GitHub token

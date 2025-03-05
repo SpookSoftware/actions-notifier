@@ -31,6 +31,7 @@ test.beforeAll(async () => {
 Test case ideas
 - When you click a yellow link, it turns back to grey
 - When you go back and forth on the page, only one button is created.
+- Test in-page notifications for token expiration and alarm limit
  */
 
 test.describe("Action Functionality", () => {

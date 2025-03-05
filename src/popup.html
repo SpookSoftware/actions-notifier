@@ -345,9 +345,20 @@
         </div>
       </form>
 
-      <button class="secondary" id="debug-onboarding-button">
-        Debug Onboarding
-      </button>
+      <div class="debug-buttons">
+        <h3 style="font-size: 14px; margin-top: 16px; margin-bottom: 10px;">Debug Tools:</h3>
+        <div class="flex-row" style="flex-wrap: wrap; gap: 8px; justify-content: space-between;">
+          <button class="secondary" id="debug-onboarding-button" style="flex: 1;">
+            Debug Onboarding
+          </button>
+          <button class="secondary" id="debug-token-notification" style="flex: 1; background-color: #ffeef0; border-color: #f97583;">
+            Test Token Alert
+          </button>
+          <button class="secondary" id="debug-alarm-notification" style="flex: 1; background-color: #fffbdd; border-color: #f9c513;">
+            Test Alarm Alert
+          </button>
+        </div>
+      </div>
 
       <!-- Extension on/off switch -->
       <div class="extension-toggle-section">

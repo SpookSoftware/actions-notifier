@@ -40,6 +40,9 @@ import {
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
 
+// Import the notification component
+import { NotificationType, showInPageNotification } from "./components/InPageNotification";
+
 // Listen for messages from the background script or other parts of the extension
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.debug("Content script received message:", message);
@@ -55,6 +58,15 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       // If extension is re-enabled, restart the main process
       console.debug("Extension enabled, restarting main process");
       debouncedMain();
+    }
+  } else if (message && typeof message === "object" && message.action === "showNotification" && message.type) {
+    // Handle notification requests
+    console.debug(`Showing in-page notification: ${message.type}`);
+    
+    if (message.type === "token-expired") {
+      showInPageNotification(NotificationType.TOKEN_EXPIRED);
+    } else if (message.type === "alarm-limit-reached") {
+      showInPageNotification(NotificationType.ALARM_LIMIT_REACHED);
     }
   }
 
