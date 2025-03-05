@@ -14,9 +14,6 @@ import {
   ensureButtonHasHandler,
   isIdAlreadyMonitored,
   URLAwareMutationObserver,
-  validateGitHubToken,
-  getActiveAlarmCount,
-  MAX_ALARMS,
 } from "./helpers/browser";
 import {
   shouldMonitorActions,
