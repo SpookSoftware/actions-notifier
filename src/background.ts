@@ -11,7 +11,7 @@ import {
   getActiveAlarmCount,
   isExtensionEnabled,
 } from "@/helpers/browser";
-import { isSetExtensionEnabledRequest } from "./helpers/pure";
+import { isSetExtensionEnabledRequest, trialIsValid } from "./helpers/pure";
 
 let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
@@ -93,10 +93,8 @@ async function sendPaymentStatusUpdateToTabs(): Promise<void> {
             action: "paymentStatusChanged",
             data: {
               paid: user.paid,
-              trialActive: user.trialStarted && !user.trialExpired,
-              trialStarted: user.trialStarted,
-              trialExpired: user.trialExpired,
-              trialEndDate: user.trialStarted ? user.trialEndDate : null,
+              trialActive: trialIsValid(user.trialStartedAt),
+              trialStarted: user.trialStartedAt,
             },
           });
           console.log(`Payment update sent to tab ${tab.id}`);
@@ -140,8 +138,7 @@ async function checkAndUpdateExtensionState() {
 
   // Check payment status using ExtPay's built-in methods
   const user = await extpay.getUser();
-  const hasValidPayment =
-    user.paid || (user.trialStarted && !user.trialExpired);
+  const hasValidPayment = user.paid || trialIsValid(user.trialStartedAt);
 
   // If token is invalid, alarm limit reached, or no valid payment, disable extension
   if (!tokenStatus.isValid || alarmCount >= MAX_ALARMS || !hasValidPayment) {
@@ -221,10 +218,8 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
           status: "ok",
           data: {
             paid: user.paid,
-            trialActive: user.trialStarted && !user.trialExpired,
-            trialStarted: user.trialStarted,
-            trialExpired: user.trialExpired,
-            trialEndDate: user.trialStarted ? user.trialEndDate : null,
+            trialActive: trialIsValid(user.trialStartedAt),
+            trialStarted: user.trialStartedAt,
           },
         };
       } catch (error) {
