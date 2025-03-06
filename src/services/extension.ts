@@ -1,6 +1,7 @@
 /**
  * Service for handling extension-specific operations
  */
+import { isGetExtensionEnabledResponse } from "@/helpers/pure";
 import browser from "webextension-polyfill";
 
 /**
@@ -13,7 +14,7 @@ export async function getExtensionEnabledState(): Promise<boolean> {
       action: "getExtensionEnabled",
     });
 
-    if (response.status === "ok" && response.data) {
+    if (isGetExtensionEnabledResponse(response)) {
       return response.data.enabled;
     }
     return true; // Default to enabled if there's an issue

@@ -1,8 +1,8 @@
 /**
  * Service for handling trial-related operations
  */
-import browser from 'webextension-polyfill';
-import ExtPay from 'extpay';
+import browser from "webextension-polyfill";
+import ExtPay from "extpay";
 
 // Initialize ExtPay
 const extpay = ExtPay("cicd-workflow-notifications");
@@ -12,7 +12,7 @@ const extpay = ExtPay("cicd-workflow-notifications");
  * @param trialStart Date when trial started
  * @returns Boolean indicating if trial is still active
  */
-export function trialIsValid(trialStart: Date | null): boolean {
+export function trialIsValid(trialStart: Date | null | false): boolean {
   if (!trialStart) {
     return false;
   }
@@ -50,7 +50,7 @@ export function startTrialStatusPolling(
         // Continue checking if max attempts not reached
         attempts++;
         onTrialPending(attempts, maxAttempts);
-        
+
         if (attempts >= maxAttempts) {
           // Max attempts reached
           onError();
@@ -113,7 +113,7 @@ export async function finishOnboarding(): Promise<void> {
   try {
     // Mark onboarding as completed
     await browser.storage.local.set({ hasCompletedOnboarding: true });
-    
+
     // Navigate to GitHub
     window.location.href = "https://github.com";
   } catch (error) {

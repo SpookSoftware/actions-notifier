@@ -17,13 +17,9 @@ import {
   getAlarmCount,
   getExtensionEnabledState,
   sendTestNotification,
-  setExtensionEnabledState,
 } from "../../services/extension";
-import {
-  PaymentStatus,
-  getPaymentStatus,
-  openPaymentPage,
-} from "../../services/payment";
+import { getPaymentStatus, openPaymentPage } from "../../services/payment";
+import { PaymentStatus } from "@/types";
 
 const Popup: React.FC = () => {
   const [token, setToken] = useState("");
@@ -42,9 +38,8 @@ const Popup: React.FC = () => {
     useState<string>("");
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({
     paid: false,
-    trialStarted: false,
-    trialExpired: false,
-    trialEndDate: undefined,
+    trialIsValid: false,
+    trialStartedAt: null,
   });
 
   // Load data on component mount
@@ -91,7 +86,7 @@ const Popup: React.FC = () => {
       setPaymentStatus(status);
 
       // Set extension status reason if trial expired and not paid
-      if (status.trialExpired && !status.paid) {
+      if (!status.trialIsValid && !status.paid) {
         setExtensionEnabled(false);
         setExtensionStatusReason("Disabled because trial period has expired.");
       }

@@ -1,16 +1,15 @@
-import React from "react";
-import { NotificationType } from "../../../types";
+import { NotificationType } from "@/types";
 import browser from "webextension-polyfill";
 
-interface NotificationContentProps {
+interface getNotificationContentProps {
   type: NotificationType;
   onClose: () => void;
 }
 
-const NotificationContent: React.FC<NotificationContentProps> = ({
+const getNotificationContent = ({
   type,
   onClose,
-}) => {
+}: getNotificationContentProps) => {
   // Configure notification content based on type
   let title = "";
   let content = "";
@@ -98,4 +97,4 @@ const NotificationContent: React.FC<NotificationContentProps> = ({
   };
 };
 
-export default NotificationContent;
+export default getNotificationContent;

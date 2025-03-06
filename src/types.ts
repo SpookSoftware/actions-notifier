@@ -72,17 +72,15 @@ export interface Monitor {
   url: string;
 }
 
-// Interface for payment status
 export interface PaymentStatus {
   paid: boolean;
-  trialStarted: boolean;
-  trialExpired: boolean;
-  trialEndDate?: number;
+  trialStartedAt: Date | null;
+  trialIsValid: boolean;
 }
 
 // Notification types
 export enum NotificationType {
   TOKEN_EXPIRED = "token-expired",
   ALARM_LIMIT_REACHED = "alarm-limit-reached",
-  TRIAL_EXPIRED = "trial-expired"
+  TRIAL_EXPIRED = "trial-expired",
 }

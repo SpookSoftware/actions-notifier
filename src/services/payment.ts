@@ -1,18 +1,14 @@
 /**
  * Service for handling payment-related operations
  */
-import browser from 'webextension-polyfill';
-import ExtPay from 'extpay';
+import browser from "webextension-polyfill";
+import ExtPay from "extpay";
+import { trialIsValid } from "./trial";
+import { isPaymentStatusResponse } from "@/helpers/pure";
+import { PaymentStatus } from "@/types";
 
 // Initialize ExtPay
 const extpay = ExtPay("cicd-workflow-notifications");
-
-export interface PaymentStatus {
-  paid: boolean;
-  trialStarted: boolean;
-  trialExpired: boolean;
-  trialEndDate?: number;
-}
 
 /**
  * Gets the current payment status
@@ -25,22 +21,21 @@ export async function getPaymentStatus(): Promise<PaymentStatus> {
       const user = await extpay.getUser();
       return {
         paid: user.paid,
-        trialStarted: user.trialStarted,
-        trialExpired: user.trialExpired,
-        trialEndDate: user.trialEndDate
+        trialStartedAt: user?.trialStartedAt,
+        trialIsValid: trialIsValid(user.trialStartedAt),
       };
     } catch (error) {
       console.error("Error getting ExtPay user:", error);
-      
+
       // Fall back to background script
       const response = await browser.runtime.sendMessage({
         action: "getPaymentStatus",
       });
 
-      if (response.status === "ok") {
+      if (isPaymentStatusResponse(response)) {
         return response.data;
       }
-      
+
       throw new Error("Failed to get payment status");
     }
   } catch (error) {
@@ -48,8 +43,8 @@ export async function getPaymentStatus(): Promise<PaymentStatus> {
     // Return a default status
     return {
       paid: false,
-      trialStarted: false,
-      trialExpired: false
+      trialStartedAt: null,
+      trialIsValid: false,
     };
   }
 }
@@ -61,10 +56,14 @@ export async function getPaymentStatus(): Promise<PaymentStatus> {
 export async function openPaymentPage(): Promise<void> {
   try {
     const user = await extpay.getUser();
-    
+
     // If trial hasn't started yet, start trial first
-    if (!user.paid && !user.trialStarted) {
+    if (!user.paid && !user.trialStartedAt) {
       await extpay.openTrialPage("start");
+    }
+    // If trial expired, open trial expired page
+    else if (user.trialStartedAt && !trialIsValid(user.trialStartedAt)) {
+      await extpay.openTrialPage("expired");
     }
     // If trial expired or user wants to purchase, open payment page
     else if (!user.paid) {

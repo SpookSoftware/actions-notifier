@@ -11,7 +11,7 @@ import type {
   Encoded,
   MonitorRequest,
   MonitorRequestType,
-  MonitorResponse,
+  PaymentStatus,
   StartMonitorRequest,
   StopMonitorRequest,
 } from "@/types";
@@ -639,8 +639,6 @@ export function insertButtonBetweenStatusAndDetails(
   }
 }
 
-// Extension can no longer be manually enabled/disabled
-
 export function messageIsEnabledStatusChange(
   message: any
 ): message is { action: "extensionStateChanged"; enabled: boolean } {
@@ -665,4 +663,10 @@ export function isGetExtensionEnabledResponse(response: unknown): response is {
       typeof response.data === "object" &&
       "enabled" in response.data
   );
+}
+
+export function isPaymentStatusResponse(
+  response: any
+): response is { status: "ok"; data: PaymentStatus } {
+  return response && response.status === "ok";
 }

@@ -1,9 +1,9 @@
 /**
  * Service for handling monitors (tracked workflows)
  */
-import browser from 'webextension-polyfill';
+import browser from "webextension-polyfill";
 import { decode, createURL } from "../helpers/pure";
-import { Monitor } from '../types';
+import { Encoded, Monitor } from "../types";
 
 /**
  * Loads monitors from browser alarms and storage
@@ -21,14 +21,18 @@ export async function loadMonitors(): Promise<Monitor[]> {
       try {
         // Get alarm details
         const encodedId = alarm.name;
-        const decodedData = decode(encodedId);
+        const decodedData = decode(encodedId as Encoded);
 
         // Get time when monitor was created
         const storageData = await browser.storage.local.get(encodedId);
+        if (storageData[encodedId]) {
+          console.error(`No data found for alarm ${alarm.name}`);
+          continue;
+        }
         const createdTime =
           storageData[encodedId] === true
             ? new Date().toLocaleString() // fallback if no timestamp stored
-            : new Date(storageData[encodedId]).toLocaleString();
+            : new Date(storageData[encodedId] as string).toLocaleString();
 
         monitorDetails.push({
           id: encodedId,
@@ -90,7 +94,7 @@ export async function clearAllMonitors(): Promise<boolean> {
     try {
       // Get current monitors
       const monitors = await loadMonitors();
-      
+
       // Clear all alarms
       await browser.alarms.clearAll();
 

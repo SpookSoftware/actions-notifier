@@ -1,7 +1,7 @@
 /**
  * Service for handling browser storage operations
  */
-import browser from 'webextension-polyfill';
+import browser from "webextension-polyfill";
 
 /**
  * Loads the GitHub token from browser storage
@@ -10,7 +10,7 @@ import browser from 'webextension-polyfill';
 export async function loadGitHubToken(): Promise<string | null> {
   try {
     const data = await browser.storage.sync.get("githubToken");
-    return data.githubToken || null;
+    return String(data.githubToken) || null;
   } catch (error) {
     console.error("Error loading GitHub token:", error);
     return null;

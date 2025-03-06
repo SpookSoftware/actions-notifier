@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { NotificationType } from "../../types";
 import NotificationContainer from "./inpage/NotificationContainer";
-import NotificationContent from "./inpage/NotificationContent";
+import getNotificationContent from "./inpage/getNotificationContent";
 
 interface NotificationProps {
   type: NotificationType;
@@ -21,7 +21,7 @@ const InPageNotification: React.FC<NotificationProps> = ({ type, onClose }) => {
 
   // Get notification content configuration
   const { title, content, buttonText, borderColor, handleButtonClick } =
-    NotificationContent({ type, onClose });
+    getNotificationContent({ type, onClose });
 
   return (
     <NotificationContainer
