@@ -62,22 +62,25 @@
         background-color: #e1e4e8;
         border-radius: 4px;
         position: relative;
-        margin-bottom: 16px;
+        margin-bottom: 24px; /* Increase bottom margin to make room for text */
       }
 
       .trial-progress-bar {
         height: 100%;
         background-color: #6f42c1;
         border-radius: 4px;
-        width: 50%;
+        width: 0%; /* This will be dynamically set */
       }
 
       .trial-days-left {
         position: absolute;
-        top: -20px;
+        top: -20px; /* Position above the progress bar */
         right: 0;
         font-size: 12px;
         color: #586069;
+        background-color: white; /* Optional: add background to ensure readability */
+        padding: 0 4px; /* Optional: add some padding */
+        z-index: 1; /* Ensure it's above the progress bar */
       }
 
       .payment-button {
@@ -484,13 +487,10 @@
         </div>
         <div class="payment-info">
           <p id="payment-status-message">Your 7-day free trial is active.</p>
-          <div id="trial-progress-container" class="trial-progress-container">
-            <div class="trial-progress-bar" id="trial-progress-bar"></div>
-            <span class="trial-days-left" id="trial-days-left"
-              >7 days left</span
-            >
+          <div class="trial-progress-container">
+            <div class="trial-progress-bar"></div>
+            <span class="trial-days-left">7 days available</span>
           </div>
-        </div>
         <button id="payment-button" class="payment-button">
           Purchase License ($4.99/lifetime)
         </button>

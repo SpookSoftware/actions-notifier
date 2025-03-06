@@ -13,8 +13,7 @@ import {
 } from "@/helpers/browser";
 import { isSetExtensionEnabledRequest } from "./helpers/pure";
 
-// Initialize ExtensionPay with appropriate trial options
-const extpay = ExtPay("cicd-workflow-notifications");
+let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
 
 // Set up payment listeners
@@ -183,6 +182,7 @@ async function checkAndUpdateExtensionState() {
 
 // Modified message handler
 browser.runtime.onMessage.addListener(async (request, sender) => {
+  let extpay = ExtPay("cicd-workflow-notifications");
   console.debug("Background script received message:", request);
 
   // Special case for extension management
