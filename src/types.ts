@@ -59,3 +59,30 @@ export type MonitorResponse =
 export type Encoded =
   | `${string}|${string}|${string}|${string}`
   | `${string}|${string}|${string}`;
+
+// Interface for the Monitor object used in the ManagePage
+export interface Monitor {
+  id: string;
+  owner: string;
+  repository: string;
+  runId: string;
+  jobId?: string;
+  type: "Job" | "Workflow";
+  createdAt: string;
+  url: string;
+}
+
+// Interface for payment status
+export interface PaymentStatus {
+  paid: boolean;
+  trialStarted: boolean;
+  trialExpired: boolean;
+  trialEndDate?: number;
+}
+
+// Notification types
+export enum NotificationType {
+  TOKEN_EXPIRED = "token-expired",
+  ALARM_LIMIT_REACHED = "alarm-limit-reached",
+  TRIAL_EXPIRED = "trial-expired"
+}
