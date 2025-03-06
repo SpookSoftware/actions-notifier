@@ -615,102 +615,10 @@ function setupURLChangeTracking() {
   console.debug("URL change tracking initialized");
 }
 
-// Check if first run and show welcome notification if needed
-async function checkFirstRun() {
-  try {
-    const data = await browser.storage.local.get("hasSeenOnboarding");
-
-    if (!data.hasSeenOnboarding) {
-      console.debug("First run detected, showing welcome message");
-
-      // Subtle notification at the bottom of the page
-      const welcomeMessage = document.createElement("div");
-      welcomeMessage.style.position = "fixed";
-      welcomeMessage.style.bottom = "20px";
-      welcomeMessage.style.right = "20px";
-      welcomeMessage.style.backgroundColor = "#0366d6";
-      welcomeMessage.style.color = "white";
-      welcomeMessage.style.padding = "12px 16px";
-      welcomeMessage.style.borderRadius = "6px";
-      welcomeMessage.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)";
-      welcomeMessage.style.zIndex = "9999";
-      welcomeMessage.style.maxWidth = "320px";
-      welcomeMessage.style.display = "flex";
-      welcomeMessage.style.alignItems = "center";
-      welcomeMessage.style.gap = "12px";
-
-      // Icon
-      const icon = document.createElement("img");
-      icon.src = browser.runtime.getURL("images/icon-48.png");
-      icon.style.width = "24px";
-      icon.style.height = "24px";
-
-      // Message text
-      const text = document.createElement("div");
-      text.innerHTML = `<b>CI/CD Workflow Notifications</b><br>Please configure your GitHub token to enable notifications.`;
-
-      // Close button
-      const closeBtn = document.createElement("button");
-      closeBtn.innerHTML = "×";
-      closeBtn.style.background = "none";
-      closeBtn.style.border = "none";
-      closeBtn.style.color = "white";
-      closeBtn.style.fontSize = "20px";
-      closeBtn.style.padding = "0";
-      closeBtn.style.cursor = "pointer";
-      closeBtn.style.marginLeft = "auto";
-      closeBtn.style.lineHeight = "1";
-
-      // Configure button
-      const configBtn = document.createElement("button");
-      configBtn.textContent = "Configure";
-      configBtn.style.background = "white";
-      configBtn.style.color = "#0366d6";
-      configBtn.style.border = "none";
-      configBtn.style.borderRadius = "4px";
-      configBtn.style.padding = "4px 8px";
-      configBtn.style.cursor = "pointer";
-      configBtn.style.fontWeight = "bold";
-      configBtn.style.fontSize = "12px";
-
-      welcomeMessage.appendChild(icon);
-      welcomeMessage.appendChild(text);
-      welcomeMessage.appendChild(configBtn);
-      welcomeMessage.appendChild(closeBtn);
-
-      // Event listeners
-      closeBtn.addEventListener("click", () => {
-        document.body.removeChild(welcomeMessage);
-      });
-
-      configBtn.addEventListener("click", () => {
-        browser.runtime.sendMessage({ action: "openOptionsPage" });
-        document.body.removeChild(welcomeMessage);
-      });
-
-      // Add to page
-      document.body.appendChild(welcomeMessage);
-
-      // Auto-close after 15 seconds
-      setTimeout(() => {
-        if (document.body.contains(welcomeMessage)) {
-          document.body.removeChild(welcomeMessage);
-        }
-      }, 15000);
-
-      // Mark as seen
-      await browser.storage.local.set({ hasSeenOnboarding: true });
-    }
-  } catch (error) {
-    console.error("Error checking first run:", error);
-  }
-}
-
 // Initialize if this hasn't been done already
 if (!isInitialized) {
   console.debug("Initializing extension");
   setupURLChangeTracking();
-  checkFirstRun(); // Check if this is first run
   main();
 }
 
