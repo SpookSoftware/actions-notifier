@@ -9,15 +9,12 @@ export const QUEUED_SELECTOR = "svg[aria-label*='queued']";
 export const SUCCESSFUL_SELECTOR = "svg[aria-label*='completed successfully']";
 
 // Ripped from the DOM "copy selector" option
-// todo: fix
-export const ACTION_RUNS_CONTAINER_SELECTOR =
-  "#repo-content-pjax-container > split-page-layout > div > div > div.PageLayout-region.PageLayout-content > div > div > div.Box.Box--responsive.mt-3";
+export const ACTION_RUNS_CONTAINER_SELECTOR = "div.Box.Box--responsive.mt-3";
 
 // Job stuff
 export const JOB_RUN_SELECTOR = "li[data-item-id^='job']";
-// todo: fix
 export const JOB_RUNS_CONTAINER_SELECTOR =
-  "#repo-content-turbo-frame > div > div > split-page-layout > div > div.PageLayout-columns > div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0";
+  "div.PageLayout-region.PageLayout-pane.PageLayout-region--dividerNarrow-none-after.PageLayout-pane--sticky.border-right-0";
 export const SUCCESSFUL_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='completed successfully']`;
 export const CURRENTLY_RUNNING_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='currently running']`;
 export const QUEUED_JOB_RUN_SELECTOR = `${JOB_RUN_SELECTOR} svg[aria-label*='queued']`;
