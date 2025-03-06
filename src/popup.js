@@ -1,0 +1,587 @@
+import browser from "webextension-polyfill";
+
+import ExtPay from "extpay";
+
+// Initialize ExtPay
+const extpay = ExtPay("cicd-workflow-notifications");
+
+document.addEventListener("DOMContentLoaded", async function () {
+  // Elements
+  const tokenForm = document.getElementById("tokenForm");
+  const tokenInput = document.getElementById("githubToken");
+  const saveButton = document.getElementById("saveButton");
+  const spinner = document.getElementById("spinner");
+  const tokenStatus = document.getElementById("token-status");
+  const authSuccess = document.getElementById("auth-success");
+  const authWarning = document.getElementById("auth-warning");
+  const authError = document.getElementById("auth-error");
+  const welcomeMessage = document.getElementById("welcome-message");
+  const monitorsSection = document.getElementById("monitors-section");
+  const alarmCountElement = document.getElementById("alarm-count");
+  const alarmCountWarning = document.getElementById("alarm-count-warning");
+  const alarmCountError = document.getElementById("alarm-count-error");
+  const manageSection = document.getElementById("manage-section");
+  const extensionToggle = document.getElementById("extension-toggle");
+  const extensionStatus = document.getElementById("extension-status");
+
+  // Payment elements
+  const paymentSection = document.getElementById("payment-section");
+  const paymentBadge = document.getElementById("payment-badge");
+  const paymentStatusMessage = document.getElementById(
+    "payment-status-message"
+  );
+  const trialProgressBar = document.getElementById("trial-progress-bar");
+  const trialDaysLeft = document.getElementById("trial-days-left");
+  const paymentButton = document.getElementById("payment-button");
+
+  // Check if this is first run
+  const firstRun = await checkFirstRun();
+  if (firstRun) {
+    welcomeMessage.style.display = "block";
+    // Mark as no longer first run
+    await browser.storage.local.set({ hasSeenOnboarding: true });
+  }
+
+  // Load and validate existing token (if any)
+  await loadAndValidateToken();
+
+  // Load extension enabled state
+  await loadExtensionEnabledState();
+
+  // Update alarm count
+  await updateAlarmCount();
+
+  // Load payment status
+  await updatePaymentStatus();
+
+  // Form submission
+  tokenForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await saveAndValidateToken();
+  });
+
+  // Create a direct click handler function to avoid code duplication
+  const handleToggleClick = async (event) => {
+    // Don't handle clicks on the checkbox itself or if event already handled
+    if (event.target === extensionToggle || event.defaultPrevented) {
+      return;
+    }
+
+    // Prevent double handling
+    event.preventDefault();
+
+    console.debug(`Toggle clicked: ${event.currentTarget.className}`);
+    const newState = !extensionToggle.checked;
+    extensionToggle.checked = newState;
+
+    // Update UI
+    updateExtensionStatusText(newState);
+
+    // Update state
+    await setExtensionEnabled(newState);
+  };
+
+  // Add handlers for all toggle-related elements to ensure it works
+  document
+    .querySelector(".toggle-container")
+    .addEventListener("click", handleToggleClick);
+  document
+    .querySelector(".toggle-switch")
+    .addEventListener("click", handleToggleClick);
+  document
+    .querySelector(".toggle-label")
+    .addEventListener("click", handleToggleClick);
+  document
+    .getElementById("extension-status")
+    .addEventListener("click", handleToggleClick);
+  document
+    .querySelector(".toggle-slider")
+    .addEventListener("click", handleToggleClick);
+
+  // Change handler for the checkbox
+  extensionToggle.addEventListener("change", async (event) => {
+    console.debug("Toggle changed:", extensionToggle.checked);
+
+    // Get the new state
+    const newState = extensionToggle.checked;
+
+    // Update UI
+    updateExtensionStatusText(newState);
+
+    // Update state
+    await setExtensionEnabled(newState);
+  });
+
+  // Manage button click
+  if (document.getElementById("manage-button")) {
+    document.getElementById("manage-button").addEventListener("click", () => {
+      browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
+    });
+  }
+
+  // Debug onboarding button click
+  if (document.getElementById("debug-onboarding-button")) {
+    document
+      .getElementById("debug-onboarding-button")
+      .addEventListener("click", () => {
+        browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
+      });
+  }
+
+  // Payment button click
+  paymentButton.addEventListener("click", async () => {
+    try {
+      const user = await extpay.getUser();
+      console.log({ user });
+
+      // If trial hasn't started yet, start trial first
+      if (!user.paid && !user.trialStarted) {
+        await extpay.openTrialPage("start");
+      }
+      // If trial expired or user wants to purchase, open payment page
+      else if (!user.paid) {
+        await extpay.openPaymentPage();
+      }
+    } catch (error) {
+      console.error("Error with payment action:", error);
+      // Fallback using the background script
+      await browser.runtime.sendMessage({ action: "openPaymentPage" });
+    }
+  });
+
+  // Debug token notification button
+  if (document.getElementById("debug-token-notification")) {
+    document
+      .getElementById("debug-token-notification")
+      .addEventListener("click", async () => {
+        // Find any open GitHub tabs
+        const githubTabs = await browser.tabs.query({
+          url: "https://github.com/*",
+        });
+
+        if (githubTabs.length > 0) {
+          // Send notification message to the first GitHub tab
+          const tab = githubTabs[0];
+          await browser.tabs.sendMessage(tab.id, {
+            action: "showNotification",
+            type: "token-expired",
+          });
+
+          // Focus the tab to see the notification
+          await browser.tabs.update(tab.id, { active: true });
+
+          // Show feedback
+          showTokenStatus("Token alert sent to GitHub tab", true);
+        } else {
+          // If no GitHub tab is open, open one and then show notification
+          const newTab = await browser.tabs.create({
+            url: "https://github.com",
+          });
+
+          // Wait a bit for the page and content script to load
+          setTimeout(async () => {
+            try {
+              await browser.tabs.sendMessage(newTab.id, {
+                action: "showNotification",
+                type: "token-expired",
+              });
+              showTokenStatus("Token alert sent to new GitHub tab", true);
+            } catch (error) {
+              showTokenStatus(
+                "Error: Tab not ready yet. Please try again in a few seconds.",
+                false
+              );
+            }
+          }, 2000);
+        }
+      });
+  }
+
+  // Debug alarm limit notification button
+  if (document.getElementById("debug-alarm-notification")) {
+    document
+      .getElementById("debug-alarm-notification")
+      .addEventListener("click", async () => {
+        // Find any open GitHub tabs
+        const githubTabs = await browser.tabs.query({
+          url: "https://github.com/*",
+        });
+
+        if (githubTabs.length > 0) {
+          // Send notification message to the first GitHub tab
+          const tab = githubTabs[0];
+          await browser.tabs.sendMessage(tab.id, {
+            action: "showNotification",
+            type: "alarm-limit-reached",
+          });
+
+          // Focus the tab to see the notification
+          await browser.tabs.update(tab.id, { active: true });
+
+          // Show feedback
+          showTokenStatus("Alarm limit alert sent to GitHub tab", true);
+        } else {
+          // If no GitHub tab is open, open one and then show notification
+          const newTab = await browser.tabs.create({
+            url: "https://github.com",
+          });
+
+          // Wait a bit for the page and content script to load
+          setTimeout(async () => {
+            try {
+              await browser.tabs.sendMessage(newTab.id, {
+                action: "showNotification",
+                type: "alarm-limit-reached",
+              });
+              showTokenStatus("Alarm limit alert sent to new GitHub tab", true);
+            } catch (error) {
+              showTokenStatus(
+                "Error: Tab not ready yet. Please try again in a few seconds.",
+                false
+              );
+            }
+          }, 2000);
+        }
+      });
+  }
+
+  /**
+   * Save and validate the GitHub token
+   */
+  async function saveAndValidateToken() {
+    const token = tokenInput.value.trim();
+
+    if (!token) {
+      showTokenStatus("Please enter a GitHub token", false);
+      return;
+    }
+
+    // Show loading state
+    saveButton.disabled = true;
+    spinner.style.display = "inline-block";
+    showTokenStatus("", null);
+
+    try {
+      // Validate token with GitHub API
+      const isValid = await validateGitHubToken(token);
+
+      if (isValid) {
+        // Save valid token
+        await browser.storage.sync.set({ githubToken: token });
+        showTokenStatus("✓ Token validated successfully", true);
+        updateAuthState(true);
+        monitorsSection.classList.remove("hidden");
+        await updateAlarmCount();
+      } else {
+        showTokenStatus("✖ Invalid token or insufficient permissions", false);
+        updateAuthState(false);
+      }
+    } catch (error) {
+      console.error("Error validating token:", error);
+      showTokenStatus(`✖ Error: ${error.message}`, false);
+      updateAuthState(false);
+    } finally {
+      // Reset loading state
+      saveButton.disabled = false;
+      spinner.style.display = "none";
+    }
+  }
+
+  /**
+   * Load and validate any existing token
+   */
+  async function loadAndValidateToken() {
+    try {
+      const data = await browser.storage.sync.get("githubToken");
+
+      if (data.githubToken) {
+        // Set input value
+        tokenInput.value = data.githubToken;
+
+        // Validate token
+        const isValid = await validateGitHubToken(data.githubToken);
+
+        if (isValid) {
+          showTokenStatus("✓ Token valid", true);
+          updateAuthState(true);
+          monitorsSection.classList.remove("hidden");
+        } else {
+          showTokenStatus("✖ Token invalid or expired", false);
+          updateAuthState(false);
+        }
+      } else {
+        // No token exists
+        updateAuthState(null);
+      }
+    } catch (error) {
+      console.error("Error loading GitHub token:", error);
+      updateAuthState(false);
+    }
+  }
+
+  /**
+   * Validate GitHub token against the API
+   */
+  async function validateGitHubToken(token) {
+    try {
+      // Test API call to verify token (user endpoint requires minimal permissions)
+      const response = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      });
+
+      // Check if unauthorized or rate limited
+      if (response.status === 401 || response.status === 403) {
+        return false;
+      }
+
+      // For valid token, test if it has repo scope with a sample repo request
+      const repoResponse = await fetch(
+        "https://api.github.com/repos/octocat/hello-world",
+        {
+          headers: {
+            Authorization: `token ${token}`,
+            Accept: "application/vnd.github.v3+json",
+          },
+        }
+      );
+
+      // Return true if we can access repo API
+      return repoResponse.status !== 403; // 403 would mean insufficient permissions
+    } catch (error) {
+      console.error("Error validating token:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if this is the first run of the extension
+   */
+  async function checkFirstRun() {
+    try {
+      const data = await browser.storage.local.get("hasSeenOnboarding");
+      return !data.hasSeenOnboarding;
+    } catch (error) {
+      console.error("Error checking first run:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Update authentication state UI
+   */
+  function updateAuthState(isValid) {
+    // Hide all auth states first
+    authSuccess.style.display = "none";
+    authWarning.style.display = "none";
+    authError.style.display = "none";
+    welcomeMessage.style.display = "none";
+
+    if (isValid === true) {
+      authSuccess.style.display = "block";
+    } else if (isValid === false) {
+      authError.style.display = "block";
+    } else {
+      // null = no token
+      authWarning.style.display = "block";
+    }
+  }
+
+  /**
+   * Display token validation status
+   */
+  function showTokenStatus(message, isValid) {
+    if (!message) {
+      tokenStatus.textContent = "";
+      tokenStatus.className = "";
+      return;
+    }
+
+    tokenStatus.textContent = message;
+
+    if (isValid === true) {
+      tokenStatus.className = "token-valid";
+    } else if (isValid === false) {
+      tokenStatus.className = "token-invalid";
+    } else {
+      tokenStatus.className = "";
+    }
+  }
+
+  /**
+   * Update alarm count display
+   */
+  async function updateAlarmCount() {
+    try {
+      // Get all active alarms
+      const alarms = await browser.alarms.getAll();
+      const count = alarms.length;
+
+      // Update count display
+      alarmCountElement.textContent = count;
+
+      // Show warnings based on count
+      alarmCountWarning.classList.toggle("hidden", count < 400);
+      alarmCountError.classList.toggle("hidden", count < 475);
+
+      // Show manage section if there are active alarms
+      manageSection.classList.toggle("hidden", count === 0);
+
+      // Automatically disable extension if count is at or above the limit
+      if (count >= 500 && extensionToggle.checked) {
+        extensionToggle.checked = false;
+        await setExtensionEnabled(false);
+        updateExtensionStatusText(false);
+      }
+
+      return count;
+    } catch (error) {
+      console.error("Error getting alarm count:", error);
+      return 0;
+    }
+  }
+
+  /**
+   * Load the extension enabled state
+   */
+  async function loadExtensionEnabledState() {
+    try {
+      const response = await browser.runtime.sendMessage({
+        action: "getExtensionEnabled",
+      });
+
+      if (response.status === "ok" && response.data) {
+        extensionToggle.checked = response.data.enabled;
+        updateExtensionStatusText(response.data.enabled);
+      }
+    } catch (error) {
+      console.error("Error loading extension state:", error);
+      // Default to enabled
+      extensionToggle.checked = true;
+      updateExtensionStatusText(true);
+    }
+  }
+
+  /**
+   * Set the extension enabled state
+   */
+  async function setExtensionEnabled(enabled) {
+    try {
+      console.debug(`Sending request to set extension state to: ${enabled}`);
+
+      const response = await browser.runtime.sendMessage({
+        action: "setExtensionEnabled",
+        enabled: enabled,
+      });
+
+      console.debug("Response from setting extension state:", response);
+
+      // If token is valid and we're enabling, trigger a check for any issues
+      if (enabled) {
+        await browser.runtime.sendMessage({
+          action: "checkAndUpdateExtensionState",
+        });
+        // Refresh the state again to be sure
+        await loadExtensionEnabledState();
+      }
+
+      console.debug(`Extension enabled state set to: ${enabled}`);
+
+      // Force UI update regardless of backend response
+      extensionToggle.checked = enabled;
+      updateExtensionStatusText(enabled);
+    } catch (error) {
+      console.error("Error setting extension state:", error);
+      // Reset UI to match the actual state
+      await loadExtensionEnabledState();
+    }
+  }
+
+  /**
+   * Update the extension status text
+   */
+  function updateExtensionStatusText(enabled) {
+    extensionStatus.textContent = enabled ? "Enabled" : "Disabled";
+    extensionStatus.style.color = enabled ? "#28a745" : "#cb2431";
+  }
+
+  /**
+   * Update payment status UI
+   */
+  async function updatePaymentStatus() {
+    try {
+      // Use ExtPay to get user payment status
+      let user;
+      try {
+        user = await extpay.getUser();
+      } catch (error) {
+        console.error("Error getting ExtPay user:", error);
+        // Fall back to background script
+        const response = await browser.runtime.sendMessage({
+          action: "getPaymentStatus",
+        });
+
+        if (response.status === "ok") {
+          user = response.data;
+        } else {
+          throw new Error("Failed to get payment status");
+        }
+      }
+
+      // Update UI based on payment status
+      if (user.paid) {
+        // Paid user
+        paymentBadge.textContent = "Purchased";
+        paymentBadge.classList.add("paid");
+        paymentStatusMessage.textContent =
+          "Thank you for your purchase! You have lifetime access to this extension.";
+        trialProgressBar.style.display = "none";
+        trialDaysLeft.style.display = "none";
+        paymentButton.style.display = "none";
+      } else if (!user.trialStarted) {
+        // Trial not started
+        paymentBadge.textContent = "Free Trial";
+        paymentStatusMessage.textContent =
+          "Start your free 7-day trial to try all features.";
+        trialProgressBar.style.width = "0%";
+        trialDaysLeft.textContent = "7 days available";
+        paymentButton.textContent = "Start Free Trial";
+      } else if (user.trialStarted && !user.trialExpired) {
+        // Active trial
+        const now = Date.now();
+        const trialEndDate = user.trialEndDate;
+        const daysLeft = Math.ceil(
+          (trialEndDate - now) / (1000 * 60 * 60 * 24)
+        );
+        const progressPercent = Math.max(
+          0,
+          Math.min(100, 100 - (daysLeft / 7) * 100)
+        );
+
+        paymentBadge.textContent = "Free Trial";
+        paymentStatusMessage.textContent = `Your 7-day free trial is active.`;
+        trialProgressBar.style.width = `${progressPercent}%`;
+        trialDaysLeft.textContent = `${daysLeft} day${
+          daysLeft !== 1 ? "s" : ""
+        } left`;
+        paymentButton.textContent = "Purchase License ($2.95/lifetime)";
+      } else {
+        // Expired trial
+        paymentBadge.textContent = "Trial Expired";
+        paymentBadge.style.backgroundColor = "#cb2431";
+        paymentStatusMessage.textContent =
+          "Your free trial has expired. Please purchase to continue using this extension.";
+        trialProgressBar.style.width = "100%";
+        trialDaysLeft.textContent = "0 days left";
+        paymentButton.textContent = "Purchase Now ($2.95/lifetime)";
+      }
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      // Show fallback message
+      paymentStatusMessage.textContent =
+        "Unable to retrieve license status. Please try again later.";
+    }
+  }
+});

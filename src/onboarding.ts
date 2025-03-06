@@ -1,6 +1,5 @@
 import browser from "webextension-polyfill";
 import ExtPay from "extpay";
-import { trialIsValid } from "./helpers/pure";
 
 // Initialize ExtPay
 const extpay = ExtPay("cicd-workflow-notifications");
@@ -288,6 +287,15 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error finishing onboarding:", error);
     }
+  }
+
+  function trialIsValid(trialStart: Date | null): boolean {
+    if (!trialStart) {
+      return false;
+    }
+    const trialStartedLessThanSevenDaysAgo =
+      Date.now() - trialStart.getTime() <= 7 * 24 * 60 * 60 * 1000;
+    return trialStartedLessThanSevenDaysAgo;
   }
 
   /**

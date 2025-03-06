@@ -676,12 +676,3 @@ export function isGetExtensionEnabledResponse(response: unknown): response is {
       "enabled" in response.data
   );
 }
-
-export function trialIsValid(trialStart: Date | null | undefined): boolean {
-  if (!trialStart) {
-    return false;
-  }
-  const trialStartedLessThanSevenDaysAgo =
-    Date.now() - trialStart.getTime() <= 7 * 24 * 60 * 60 * 1000;
-  return trialStartedLessThanSevenDaysAgo;
-}
