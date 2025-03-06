@@ -14,6 +14,88 @@
         color: #24292e;
       }
 
+      /* Payment section styles */
+      .payment-section {
+        padding: 16px;
+        background-color: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        border-radius: 6px;
+        margin-bottom: 16px;
+      }
+
+      .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .payment-header h3 {
+        font-size: 16px;
+        margin: 0;
+      }
+
+      .payment-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        background-color: #6f42c1;
+        color: white;
+      }
+
+      .payment-badge.paid {
+        background-color: #28a745;
+      }
+
+      .payment-info {
+        margin-bottom: 12px;
+      }
+
+      .payment-info p {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+      }
+
+      .trial-progress-container {
+        height: 8px;
+        background-color: #e1e4e8;
+        border-radius: 4px;
+        position: relative;
+        margin-bottom: 16px;
+      }
+
+      .trial-progress-bar {
+        height: 100%;
+        background-color: #6f42c1;
+        border-radius: 4px;
+        width: 50%;
+      }
+
+      .trial-days-left {
+        position: absolute;
+        top: -20px;
+        right: 0;
+        font-size: 12px;
+        color: #586069;
+      }
+
+      .payment-button {
+        width: 100%;
+        background-color: #6f42c1;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+
+      .payment-button:hover {
+        background-color: #5a32a3;
+      }
+
       header {
         display: flex;
         align-items: center;
@@ -216,7 +298,7 @@
         right: 0;
         bottom: 0;
         background-color: #ccc;
-        transition: .4s;
+        transition: 0.4s;
         border-radius: 24px;
       }
 
@@ -228,7 +310,7 @@
         left: 3px;
         bottom: 3px;
         background-color: white;
-        transition: .4s;
+        transition: 0.4s;
         border-radius: 50%;
       }
 
@@ -346,15 +428,32 @@
       </form>
 
       <div class="debug-buttons">
-        <h3 style="font-size: 14px; margin-top: 16px; margin-bottom: 10px;">Debug Tools:</h3>
-        <div class="flex-row" style="flex-wrap: wrap; gap: 8px; justify-content: space-between;">
-          <button class="secondary" id="debug-onboarding-button" style="flex: 1;">
+        <h3 style="font-size: 14px; margin-top: 16px; margin-bottom: 10px">
+          Debug Tools:
+        </h3>
+        <div
+          class="flex-row"
+          style="flex-wrap: wrap; gap: 8px; justify-content: space-between"
+        >
+          <button
+            class="secondary"
+            id="debug-onboarding-button"
+            style="flex: 1"
+          >
             Debug Onboarding
           </button>
-          <button class="secondary" id="debug-token-notification" style="flex: 1; background-color: #ffeef0; border-color: #f97583;">
+          <button
+            class="secondary"
+            id="debug-token-notification"
+            style="flex: 1; background-color: #ffeef0; border-color: #f97583"
+          >
             Test Token Alert
           </button>
-          <button class="secondary" id="debug-alarm-notification" style="flex: 1; background-color: #fffbdd; border-color: #f9c513;">
+          <button
+            class="secondary"
+            id="debug-alarm-notification"
+            style="flex: 1; background-color: #fffbdd; border-color: #f9c513"
+          >
             Test Alarm Alert
           </button>
         </div>
@@ -375,6 +474,26 @@
         <div class="help-text">
           When disabled, the extension won't add buttons or monitor workflows.
         </div>
+      </div>
+
+      <!-- Payment section -->
+      <div class="payment-section" id="payment-section">
+        <div class="flex-row payment-header">
+          <h3>License Status</h3>
+          <span class="payment-badge" id="payment-badge">Free Trial</span>
+        </div>
+        <div class="payment-info">
+          <p id="payment-status-message">Your 7-day free trial is active.</p>
+          <div id="trial-progress-container" class="trial-progress-container">
+            <div class="trial-progress-bar" id="trial-progress-bar"></div>
+            <span class="trial-days-left" id="trial-days-left"
+              >7 days left</span
+            >
+          </div>
+        </div>
+        <button id="payment-button" class="payment-button">
+          Purchase License ($4.99/lifetime)
+        </button>
       </div>
 
       <!-- Active monitors counter (hidden until token is valid) -->

@@ -13,8 +13,24 @@ import {
 } from "@/helpers/browser";
 import { isSetExtensionEnabledRequest } from "./helpers/pure";
 
-let extpay = ExtPay("cicd-workflow-notifications");
+// Initialize ExtensionPay with appropriate trial options
+const extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
+
+// Set up payment listeners
+extpay.onPaid.addListener((user) => {
+  console.log("Purchase completed:", user);
+  // Re-enable extension if it was disabled due to trial expiration
+  checkAndUpdateExtensionState();
+
+  // Broadcast payment status to all GitHub tabs
+  sendPaymentStatusUpdateToTabs();
+});
+
+// Check payment status periodically
+setInterval(() => {
+  checkAndUpdateExtensionState();
+}, 60 * 60 * 1000); // Check every hour
 
 // Constants
 const TOKEN_NOTIFICATION_ID = "github-token-required";
@@ -25,20 +41,24 @@ let hasShownWelcomeNotification = false;
 /**
  * Send issue notification to all GitHub tabs
  */
-async function sendIssueNotificationToTabs(type: "token-expired" | "alarm-limit-reached"): Promise<void> {
+async function sendIssueNotificationToTabs(
+  type: "token-expired" | "alarm-limit-reached" | "trial-expired"
+): Promise<void> {
   try {
     const githubTabs = await browser.tabs.query({
       url: "https://github.com/*",
     });
 
-    console.log(`Sending ${type} notification to ${githubTabs.length} GitHub tabs`);
+    console.log(
+      `Sending ${type} notification to ${githubTabs.length} GitHub tabs`
+    );
 
     for (const tab of githubTabs) {
       if (tab.id) {
         try {
-          await browser.tabs.sendMessage(tab.id, { 
-            action: "showNotification", 
-            type: type 
+          await browser.tabs.sendMessage(tab.id, {
+            action: "showNotification",
+            type: type,
           });
           console.log(`Notification sent to tab ${tab.id}`);
         } catch (error) {
@@ -48,6 +68,49 @@ async function sendIssueNotificationToTabs(type: "token-expired" | "alarm-limit-
     }
   } catch (error) {
     console.error("Error sending notifications to tabs:", error);
+  }
+}
+
+/**
+ * Send payment status update to all GitHub tabs
+ */
+async function sendPaymentStatusUpdateToTabs(): Promise<void> {
+  try {
+    const githubTabs = await browser.tabs.query({
+      url: "https://github.com/*",
+    });
+
+    console.log(
+      `Sending payment status update to ${githubTabs.length} GitHub tabs`
+    );
+
+    // Get current user data from ExtPay
+    const user = await extpay.getUser();
+
+    for (const tab of githubTabs) {
+      if (tab.id) {
+        try {
+          await browser.tabs.sendMessage(tab.id, {
+            action: "paymentStatusChanged",
+            data: {
+              paid: user.paid,
+              trialActive: user.trialStarted && !user.trialExpired,
+              trialStarted: user.trialStarted,
+              trialExpired: user.trialExpired,
+              trialEndDate: user.trialStarted ? user.trialEndDate : null,
+            },
+          });
+          console.log(`Payment update sent to tab ${tab.id}`);
+        } catch (error) {
+          console.error(
+            `Error sending payment update to tab ${tab.id}:`,
+            error
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error sending payment updates to tabs:", error);
   }
 }
 
@@ -67,7 +130,7 @@ self.addEventListener("activate", async (_event: Event) => {
 });
 
 /**
- * Check token validity and alarm count, update extension state if needed
+ * Check token validity, alarm count, and payment status; update extension state if needed
  */
 async function checkAndUpdateExtensionState() {
   // Check token validity
@@ -76,20 +139,40 @@ async function checkAndUpdateExtensionState() {
   // Check alarm count
   const alarmCount = await getActiveAlarmCount();
 
-  // If token is invalid or we're at alarm limit, disable the extension
-  if (!tokenStatus.isValid || alarmCount >= MAX_ALARMS) {
+  // Check payment status using ExtPay's built-in methods
+  const user = await extpay.getUser();
+  const hasValidPayment =
+    user.paid || (user.trialStarted && !user.trialExpired);
+
+  // If token is invalid, alarm limit reached, or no valid payment, disable extension
+  if (!tokenStatus.isValid || alarmCount >= MAX_ALARMS || !hasValidPayment) {
     console.debug(
       `Automatically disabling extension due to: ${
-        !tokenStatus.isValid ? "Invalid token" : "Alarm limit reached"
+        !tokenStatus.isValid
+          ? "Invalid token"
+          : alarmCount >= MAX_ALARMS
+          ? "Alarm limit reached"
+          : "Payment required"
       }`
     );
     await setExtensionEnabled(false);
-    
+
+    // Determine notification type
+    let notificationType:
+      | "token-expired"
+      | "alarm-limit-reached"
+      | "trial-expired";
+    if (!tokenStatus.isValid) {
+      notificationType = "token-expired";
+    } else if (alarmCount >= MAX_ALARMS) {
+      notificationType = "alarm-limit-reached";
+    } else {
+      notificationType = "trial-expired";
+    }
+
     // Send notification message to all GitHub tabs
-    await sendIssueNotificationToTabs(
-      !tokenStatus.isValid ? "token-expired" : "alarm-limit-reached"
-    );
-    
+    await sendIssueNotificationToTabs(notificationType);
+
     return false;
   }
 
@@ -109,15 +192,45 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
       browser.runtime.openOptionsPage();
       return { status: "ok" };
     }
-    
+
     if (request.action === "openManagePage") {
       browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
       return { status: "ok" };
     }
 
+    if (request.action === "openPaymentPage") {
+      try {
+        // Open ExtPay payment page
+        await extpay.openPaymentPage();
+        return { status: "ok" };
+      } catch (error) {
+        console.error("Error opening payment page:", error);
+        return { status: "error", message: "Failed to open payment page" };
+      }
+    }
+
     if (request.action === "checkAndUpdateExtensionState") {
       const result = await checkAndUpdateExtensionState();
       return { status: "ok", data: { enabled: result } };
+    }
+
+    if (request.action === "getPaymentStatus") {
+      try {
+        const user = await extpay.getUser();
+        return {
+          status: "ok",
+          data: {
+            paid: user.paid,
+            trialActive: user.trialStarted && !user.trialExpired,
+            trialStarted: user.trialStarted,
+            trialExpired: user.trialExpired,
+            trialEndDate: user.trialStarted ? user.trialEndDate : null,
+          },
+        };
+      } catch (error) {
+        console.error("Error getting payment status:", error);
+        return { status: "error", message: "Failed to get payment status" };
+      }
     }
 
     // Handle extension state management

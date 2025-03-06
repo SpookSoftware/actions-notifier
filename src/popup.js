@@ -1,5 +1,10 @@
 import browser from "webextension-polyfill";
 
+import ExtPay from "extpay";
+
+// Initialize ExtPay
+const extpay = ExtPay("cicd-workflow-notifications");
+
 document.addEventListener("DOMContentLoaded", async function () {
   // Elements
   const tokenForm = document.getElementById("tokenForm");
@@ -19,6 +24,16 @@ document.addEventListener("DOMContentLoaded", async function () {
   const extensionToggle = document.getElementById("extension-toggle");
   const extensionStatus = document.getElementById("extension-status");
 
+  // Payment elements
+  const paymentSection = document.getElementById("payment-section");
+  const paymentBadge = document.getElementById("payment-badge");
+  const paymentStatusMessage = document.getElementById(
+    "payment-status-message"
+  );
+  const trialProgressBar = document.getElementById("trial-progress-bar");
+  const trialDaysLeft = document.getElementById("trial-days-left");
+  const paymentButton = document.getElementById("payment-button");
+
   // Check if this is first run
   const firstRun = await checkFirstRun();
   if (firstRun) {
@@ -36,6 +51,9 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Update alarm count
   await updateAlarmCount();
 
+  // Load payment status
+  await updatePaymentStatus();
+
   // Form submission
   tokenForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -48,38 +66,48 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (event.target === extensionToggle || event.defaultPrevented) {
       return;
     }
-    
+
     // Prevent double handling
     event.preventDefault();
-    
+
     console.debug(`Toggle clicked: ${event.currentTarget.className}`);
     const newState = !extensionToggle.checked;
     extensionToggle.checked = newState;
-    
+
     // Update UI
     updateExtensionStatusText(newState);
-    
+
     // Update state
     await setExtensionEnabled(newState);
   };
-  
+
   // Add handlers for all toggle-related elements to ensure it works
-  document.querySelector('.toggle-container').addEventListener('click', handleToggleClick);
-  document.querySelector('.toggle-switch').addEventListener('click', handleToggleClick);
-  document.querySelector('.toggle-label').addEventListener('click', handleToggleClick);
-  document.getElementById('extension-status').addEventListener('click', handleToggleClick);
-  document.querySelector('.toggle-slider').addEventListener('click', handleToggleClick);
-  
+  document
+    .querySelector(".toggle-container")
+    .addEventListener("click", handleToggleClick);
+  document
+    .querySelector(".toggle-switch")
+    .addEventListener("click", handleToggleClick);
+  document
+    .querySelector(".toggle-label")
+    .addEventListener("click", handleToggleClick);
+  document
+    .getElementById("extension-status")
+    .addEventListener("click", handleToggleClick);
+  document
+    .querySelector(".toggle-slider")
+    .addEventListener("click", handleToggleClick);
+
   // Change handler for the checkbox
   extensionToggle.addEventListener("change", async (event) => {
     console.debug("Toggle changed:", extensionToggle.checked);
-    
+
     // Get the new state
     const newState = extensionToggle.checked;
-    
+
     // Update UI
     updateExtensionStatusText(newState);
-    
+
     // Update state
     await setExtensionEnabled(newState);
   });
@@ -99,7 +127,28 @@ document.addEventListener("DOMContentLoaded", async function () {
         browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
       });
   }
-  
+
+  // Payment button click
+  paymentButton.addEventListener("click", async () => {
+    try {
+      const user = await extpay.getUser();
+      console.log({ user });
+
+      // If trial hasn't started yet, start trial first
+      if (!user.paid && !user.trialStarted) {
+        await extpay.openTrialPage("start");
+      }
+      // If trial expired or user wants to purchase, open payment page
+      else if (!user.paid) {
+        await extpay.openPaymentPage();
+      }
+    } catch (error) {
+      console.error("Error with payment action:", error);
+      // Fallback using the background script
+      await browser.runtime.sendMessage({ action: "openPaymentPage" });
+    }
+  });
+
   // Debug token notification button
   if (document.getElementById("debug-token-notification")) {
     document
@@ -107,42 +156,47 @@ document.addEventListener("DOMContentLoaded", async function () {
       .addEventListener("click", async () => {
         // Find any open GitHub tabs
         const githubTabs = await browser.tabs.query({
-          url: "https://github.com/*"
+          url: "https://github.com/*",
         });
-        
+
         if (githubTabs.length > 0) {
           // Send notification message to the first GitHub tab
           const tab = githubTabs[0];
-          await browser.tabs.sendMessage(tab.id, { 
-            action: "showNotification", 
-            type: "token-expired" 
+          await browser.tabs.sendMessage(tab.id, {
+            action: "showNotification",
+            type: "token-expired",
           });
-          
+
           // Focus the tab to see the notification
           await browser.tabs.update(tab.id, { active: true });
-          
+
           // Show feedback
           showTokenStatus("Token alert sent to GitHub tab", true);
         } else {
           // If no GitHub tab is open, open one and then show notification
-          const newTab = await browser.tabs.create({ url: "https://github.com" });
-          
+          const newTab = await browser.tabs.create({
+            url: "https://github.com",
+          });
+
           // Wait a bit for the page and content script to load
           setTimeout(async () => {
             try {
-              await browser.tabs.sendMessage(newTab.id, { 
-                action: "showNotification", 
-                type: "token-expired" 
+              await browser.tabs.sendMessage(newTab.id, {
+                action: "showNotification",
+                type: "token-expired",
               });
               showTokenStatus("Token alert sent to new GitHub tab", true);
             } catch (error) {
-              showTokenStatus("Error: Tab not ready yet. Please try again in a few seconds.", false);
+              showTokenStatus(
+                "Error: Tab not ready yet. Please try again in a few seconds.",
+                false
+              );
             }
           }, 2000);
         }
       });
   }
-  
+
   // Debug alarm limit notification button
   if (document.getElementById("debug-alarm-notification")) {
     document
@@ -150,36 +204,41 @@ document.addEventListener("DOMContentLoaded", async function () {
       .addEventListener("click", async () => {
         // Find any open GitHub tabs
         const githubTabs = await browser.tabs.query({
-          url: "https://github.com/*"
+          url: "https://github.com/*",
         });
-        
+
         if (githubTabs.length > 0) {
           // Send notification message to the first GitHub tab
           const tab = githubTabs[0];
-          await browser.tabs.sendMessage(tab.id, { 
-            action: "showNotification", 
-            type: "alarm-limit-reached" 
+          await browser.tabs.sendMessage(tab.id, {
+            action: "showNotification",
+            type: "alarm-limit-reached",
           });
-          
+
           // Focus the tab to see the notification
           await browser.tabs.update(tab.id, { active: true });
-          
+
           // Show feedback
           showTokenStatus("Alarm limit alert sent to GitHub tab", true);
         } else {
           // If no GitHub tab is open, open one and then show notification
-          const newTab = await browser.tabs.create({ url: "https://github.com" });
-          
+          const newTab = await browser.tabs.create({
+            url: "https://github.com",
+          });
+
           // Wait a bit for the page and content script to load
           setTimeout(async () => {
             try {
-              await browser.tabs.sendMessage(newTab.id, { 
-                action: "showNotification", 
-                type: "alarm-limit-reached" 
+              await browser.tabs.sendMessage(newTab.id, {
+                action: "showNotification",
+                type: "alarm-limit-reached",
               });
               showTokenStatus("Alarm limit alert sent to new GitHub tab", true);
             } catch (error) {
-              showTokenStatus("Error: Tab not ready yet. Please try again in a few seconds.", false);
+              showTokenStatus(
+                "Error: Tab not ready yet. Please try again in a few seconds.",
+                false
+              );
             }
           }, 2000);
         }
@@ -383,14 +442,16 @@ document.addEventListener("DOMContentLoaded", async function () {
       return 0;
     }
   }
-  
+
   /**
    * Load the extension enabled state
    */
   async function loadExtensionEnabledState() {
     try {
-      const response = await browser.runtime.sendMessage({ action: "getExtensionEnabled" });
-      
+      const response = await browser.runtime.sendMessage({
+        action: "getExtensionEnabled",
+      });
+
       if (response.status === "ok" && response.data) {
         extensionToggle.checked = response.data.enabled;
         updateExtensionStatusText(response.data.enabled);
@@ -402,30 +463,32 @@ document.addEventListener("DOMContentLoaded", async function () {
       updateExtensionStatusText(true);
     }
   }
-  
+
   /**
    * Set the extension enabled state
    */
   async function setExtensionEnabled(enabled) {
     try {
       console.debug(`Sending request to set extension state to: ${enabled}`);
-      
-      const response = await browser.runtime.sendMessage({ 
-        action: "setExtensionEnabled", 
-        enabled: enabled 
+
+      const response = await browser.runtime.sendMessage({
+        action: "setExtensionEnabled",
+        enabled: enabled,
       });
-      
+
       console.debug("Response from setting extension state:", response);
-      
+
       // If token is valid and we're enabling, trigger a check for any issues
       if (enabled) {
-        await browser.runtime.sendMessage({ action: "checkAndUpdateExtensionState" });
+        await browser.runtime.sendMessage({
+          action: "checkAndUpdateExtensionState",
+        });
         // Refresh the state again to be sure
         await loadExtensionEnabledState();
       }
-      
+
       console.debug(`Extension enabled state set to: ${enabled}`);
-      
+
       // Force UI update regardless of backend response
       extensionToggle.checked = enabled;
       updateExtensionStatusText(enabled);
@@ -435,12 +498,90 @@ document.addEventListener("DOMContentLoaded", async function () {
       await loadExtensionEnabledState();
     }
   }
-  
+
   /**
    * Update the extension status text
    */
   function updateExtensionStatusText(enabled) {
     extensionStatus.textContent = enabled ? "Enabled" : "Disabled";
     extensionStatus.style.color = enabled ? "#28a745" : "#cb2431";
+  }
+
+  /**
+   * Update payment status UI
+   */
+  async function updatePaymentStatus() {
+    try {
+      // Use ExtPay to get user payment status
+      let user;
+      try {
+        user = await extpay.getUser();
+      } catch (error) {
+        console.error("Error getting ExtPay user:", error);
+        // Fall back to background script
+        const response = await browser.runtime.sendMessage({
+          action: "getPaymentStatus",
+        });
+
+        if (response.status === "ok") {
+          user = response.data;
+        } else {
+          throw new Error("Failed to get payment status");
+        }
+      }
+
+      // Update UI based on payment status
+      if (user.paid) {
+        // Paid user
+        paymentBadge.textContent = "Purchased";
+        paymentBadge.classList.add("paid");
+        paymentStatusMessage.textContent =
+          "Thank you for your purchase! You have lifetime access to this extension.";
+        trialProgressBar.style.display = "none";
+        trialDaysLeft.style.display = "none";
+        paymentButton.style.display = "none";
+      } else if (!user.trialStarted) {
+        // Trial not started
+        paymentBadge.textContent = "Free Trial";
+        paymentStatusMessage.textContent =
+          "Start your free 7-day trial to try all features.";
+        trialProgressBar.style.width = "0%";
+        trialDaysLeft.textContent = "7 days available";
+        paymentButton.textContent = "Start Free Trial";
+      } else if (user.trialStarted && !user.trialExpired) {
+        // Active trial
+        const now = Date.now();
+        const trialEndDate = user.trialEndDate;
+        const daysLeft = Math.ceil(
+          (trialEndDate - now) / (1000 * 60 * 60 * 24)
+        );
+        const progressPercent = Math.max(
+          0,
+          Math.min(100, 100 - (daysLeft / 7) * 100)
+        );
+
+        paymentBadge.textContent = "Free Trial";
+        paymentStatusMessage.textContent = `Your 7-day free trial is active.`;
+        trialProgressBar.style.width = `${progressPercent}%`;
+        trialDaysLeft.textContent = `${daysLeft} day${
+          daysLeft !== 1 ? "s" : ""
+        } left`;
+        paymentButton.textContent = "Purchase License ($4.99/lifetime)";
+      } else {
+        // Expired trial
+        paymentBadge.textContent = "Trial Expired";
+        paymentBadge.style.backgroundColor = "#cb2431";
+        paymentStatusMessage.textContent =
+          "Your free trial has expired. Please purchase to continue using this extension.";
+        trialProgressBar.style.width = "100%";
+        trialDaysLeft.textContent = "0 days left";
+        paymentButton.textContent = "Purchase Now ($4.99/lifetime)";
+      }
+    } catch (error) {
+      console.error("Error updating payment status:", error);
+      // Show fallback message
+      paymentStatusMessage.textContent =
+        "Unable to retrieve license status. Please try again later.";
+    }
   }
 });

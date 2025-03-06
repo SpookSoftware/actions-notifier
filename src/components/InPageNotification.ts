@@ -2,7 +2,8 @@ import browser from "webextension-polyfill";
 
 export enum NotificationType {
   TOKEN_EXPIRED = "token-expired",
-  ALARM_LIMIT_REACHED = "alarm-limit-reached"
+  ALARM_LIMIT_REACHED = "alarm-limit-reached",
+  TRIAL_EXPIRED = "trial-expired"
 }
 
 /**
@@ -120,6 +121,26 @@ export function showInPageNotification(type: NotificationType): void {
           browser.runtime.getURL("manage.html") : 
           chrome.runtime.getURL("manage.html");
         window.open(managePage, "_blank");
+      });
+      removeExistingNotifications();
+    });
+  } else if (type === NotificationType.TRIAL_EXPIRED) {
+    title.textContent = "Free Trial Expired";
+    content.innerHTML = "Your 7-day free trial has ended. Please purchase the extension to continue monitoring workflows.";
+    actionButton.textContent = "Purchase Extension";
+    notification.style.borderLeft = "4px solid #6f42c1"; // Purple border for payment
+    
+    actionButton.addEventListener("click", () => {
+      // Use a message to open the payment page
+      browser.runtime.sendMessage({ 
+        action: "openPaymentPage" 
+      }).catch(error => {
+        console.error("Error sending message to open payment page:", error);
+        // Fallback method if messaging fails
+        const popupPage = browser.runtime.getURL ? 
+          browser.runtime.getURL("popup.html") : 
+          chrome.runtime.getURL("popup.html");
+        window.open(popupPage, "_blank");
       });
       removeExistingNotifications();
     });

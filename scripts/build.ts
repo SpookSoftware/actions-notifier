@@ -14,6 +14,7 @@ import { rm } from "node:fs/promises";
       "./src/popup.html",
       "./src/manage.html",
       "./src/onboarding.html",
+      "./src/ExtPay_content_script.js",
     ],
     outdir: outputDir,
     target: "browser",
