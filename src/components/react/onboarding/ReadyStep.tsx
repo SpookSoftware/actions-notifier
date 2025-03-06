@@ -45,9 +45,12 @@ const ReadyStep: React.FC<ReadyStepProps> = ({
             💜 Free Trial Period
           </h3>
           <p>
-            To use the extension, you need to sign up for a
-            <b> 7-day free trial</b>. After the trial period, a one-time
-            purchase is required to continue using the extension.
+            To use the extension, you need to sign up for a{" "}
+            <b>
+              <i>no-credit-card-required</i> 7-day free trial
+            </b>
+            . After the trial period, a one-time purchase is required to
+            continue using the extension.
           </p>
           <p style={{ marginBottom: "10px" }}>
             <b>Price:</b> $2.95 (one-time payment, lifetime license)
