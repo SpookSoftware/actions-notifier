@@ -2,28 +2,17 @@ import React from "react";
 
 interface ExtensionToggleProps {
   enabled: boolean;
-  onToggle: () => Promise<void>;
+  reason?: string;
 }
 
 const ExtensionToggle: React.FC<ExtensionToggleProps> = ({
   enabled,
-  onToggle,
+  reason,
 }) => {
   return (
     <div className="extension-toggle-section">
-      <div className="flex-row toggle-container">
-        <label className="toggle-label" htmlFor="extension-toggle">
-          Extension Status:
-        </label>
-        <div className="toggle-switch" onClick={onToggle}>
-          <input
-            type="checkbox"
-            id="extension-toggle"
-            checked={enabled}
-            onChange={onToggle}
-          />
-          <span className="toggle-slider"></span>
-        </div>
+      <div className="flex-row status-container">
+        <label className="status-label">Extension Status:</label>
         <span
           id="extension-status"
           style={{ color: enabled ? "#28a745" : "#cb2431" }}
@@ -32,7 +21,9 @@ const ExtensionToggle: React.FC<ExtensionToggleProps> = ({
         </span>
       </div>
       <div className="help-text">
-        When disabled, the extension won't add buttons or monitor workflows.
+        {reason || (enabled 
+          ? "The extension is monitoring workflows and adding notification buttons."
+          : "The extension is not monitoring workflows or adding buttons.")}
       </div>
     </div>
   );

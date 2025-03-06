@@ -38,6 +38,8 @@ const Popup: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [alarmCount, setAlarmCount] = useState(0);
   const [extensionEnabled, setExtensionEnabled] = useState(true);
+  const [extensionStatusReason, setExtensionStatusReason] =
+    useState<string>("");
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({
     paid: false,
     trialStarted: false,
@@ -62,19 +64,37 @@ const Popup: React.FC = () => {
       const enabled = await getExtensionEnabledState();
       setExtensionEnabled(enabled);
 
+      // Set reason based on known conditions
+      if (!enabled) {
+        setExtensionStatusReason("Extension is currently disabled.");
+      }
+
       // Update alarm count
       const count = await getAlarmCount();
       setAlarmCount(count);
 
-      // Automatically disable extension if count is at or above the limit
+      // Set extension status reason if count is at or above the limit
       if (count >= 500 && enabled) {
         setExtensionEnabled(false);
-        await setExtensionEnabledState(false);
+        setExtensionStatusReason(
+          "Disabled because you reached the alarm limit (500)."
+        );
+      }
+
+      // Set extension status reason if token is invalid
+      if (authState === "error") {
+        setExtensionStatusReason("Disabled due to token validation issues.");
       }
 
       // Load payment status
       const status = await getPaymentStatus();
       setPaymentStatus(status);
+
+      // Set extension status reason if trial expired and not paid
+      if (status.trialExpired && !status.paid) {
+        setExtensionEnabled(false);
+        setExtensionStatusReason("Disabled because trial period has expired.");
+      }
     };
 
     init();
@@ -86,12 +106,7 @@ const Popup: React.FC = () => {
     await saveAndValidateToken();
   };
 
-  // Toggle extension enabled/disabled
-  const handleToggle = async () => {
-    const newState = !extensionEnabled;
-    setExtensionEnabled(newState);
-    await setExtensionEnabledState(newState);
-  };
+  // This method is no longer used as we removed the toggle functionality
 
   // Helper functions
   async function saveAndValidateToken() {
@@ -233,7 +248,10 @@ const Popup: React.FC = () => {
         onDebugAlarmNotification={handleDebugAlarmNotification}
       />
 
-      <ExtensionToggle enabled={extensionEnabled} onToggle={handleToggle} />
+      <ExtensionToggle
+        enabled={extensionEnabled}
+        reason={extensionStatusReason}
+      />
 
       <PaymentSection
         paymentStatus={paymentStatus}

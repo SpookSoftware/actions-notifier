@@ -1,7 +1,7 @@
 /**
  * Service for handling extension-specific operations
  */
-import browser from 'webextension-polyfill';
+import browser from "webextension-polyfill";
 
 /**
  * Gets the extension enabled state
@@ -23,33 +23,7 @@ export async function getExtensionEnabledState(): Promise<boolean> {
   }
 }
 
-/**
- * Sets the extension enabled state
- * @param enabled Boolean indicating if the extension should be enabled
- * @returns Promise that resolves when the state is set
- */
-export async function setExtensionEnabledState(enabled: boolean): Promise<void> {
-  try {
-    console.debug(`Sending request to set extension state to: ${enabled}`);
-
-    const response = await browser.runtime.sendMessage({
-      action: "setExtensionEnabled",
-      enabled: enabled,
-    });
-
-    console.debug("Response from setting extension state:", response);
-
-    // If we're enabling, trigger a check for any issues
-    if (enabled) {
-      await browser.runtime.sendMessage({
-        action: "checkAndUpdateExtensionState",
-      });
-    }
-  } catch (error) {
-    console.error("Error setting extension state:", error);
-    throw error;
-  }
-}
+// Extension state can no longer be manually set
 
 /**
  * Gets the count of active alarms (monitors)
@@ -71,7 +45,9 @@ export async function getAlarmCount(): Promise<number> {
  * @param notificationType The type of notification to show
  * @returns Promise resolving when the notification is sent
  */
-export async function sendTestNotification(notificationType: 'token-expired' | 'alarm-limit-reached'): Promise<void> {
+export async function sendTestNotification(
+  notificationType: "token-expired" | "alarm-limit-reached"
+): Promise<void> {
   // Find any open GitHub tabs
   const githubTabs = await browser.tabs.query({
     url: "https://github.com/*",

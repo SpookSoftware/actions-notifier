@@ -639,17 +639,7 @@ export function insertButtonBetweenStatusAndDetails(
   }
 }
 
-export function isSetExtensionEnabledRequest(
-  request: unknown
-): request is { action: "setExtensionEnabled"; enabled: boolean } {
-  return (
-    typeof request === "object" &&
-    request !== null &&
-    "action" in request &&
-    request.action === "setExtensionEnabled" &&
-    "enabled" in request
-  );
-}
+// Extension can no longer be manually enabled/disabled
 
 export function messageIsEnabledStatusChange(
   message: any

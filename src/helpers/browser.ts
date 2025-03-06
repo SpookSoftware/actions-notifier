@@ -79,25 +79,13 @@ export async function sendStructuredMessage(
 }
 
 /**
- * Validates if a token exists and has proper permissions
- */
-// Cache for extension enabled state to reduce storage reads
-let enabledStateCache: boolean | null = null;
-
-/**
  * Get the current extension enabled state
  */
 export async function isExtensionEnabled(): Promise<boolean> {
   try {
-    // Use cache if available for better performance
-    if (enabledStateCache !== null) {
-      return enabledStateCache;
-    }
-
     const data = await browser.storage.local.get(EXTENSION_ENABLED_KEY);
     // Default to true if not set
-    enabledStateCache = data[EXTENSION_ENABLED_KEY] !== false;
-    return enabledStateCache;
+    return Boolean(data);
   } catch (error) {
     console.error("Error checking extension enabled state:", error);
     return true; // Default to enabled on error
@@ -109,9 +97,6 @@ export async function isExtensionEnabled(): Promise<boolean> {
  */
 export async function setExtensionEnabled(enabled: boolean): Promise<void> {
   try {
-    // Update cache immediately
-    enabledStateCache = enabled;
-
     // Persist to storage
     await browser.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled });
     console.debug(`Extension enabled state set to: ${enabled}`);
@@ -120,8 +105,6 @@ export async function setExtensionEnabled(enabled: boolean): Promise<void> {
     await broadcastExtensionState(enabled);
   } catch (error) {
     console.error("Error setting extension enabled state:", error);
-    // Reset cache on error
-    enabledStateCache = null;
   }
 }
 
@@ -455,11 +438,7 @@ export async function onMessageCallback(
   if (request && typeof request === "object" && "action" in request) {
     const req = request as { action: string; enabled?: boolean };
 
-    if (req.action === "setExtensionEnabled" && req.enabled !== undefined) {
-      console.debug(`Setting extension enabled state to: ${req.enabled}`);
-      await setExtensionEnabled(req.enabled);
-      return { status: "ok" };
-    }
+    // Extension can no longer be manually enabled/disabled
 
     if (req.action === "getExtensionEnabled") {
       const enabled = await isExtensionEnabled();
