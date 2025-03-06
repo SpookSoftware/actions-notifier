@@ -1,5 +1,5 @@
-import React from 'react';
-import { CrossIcon, PlusIcon } from '../shared/icons';
+import React from "react";
+import { CrossIcon, PlusIcon } from "../shared/icons";
 
 interface TokenStepProps {
   showTokenInput: boolean;
@@ -8,7 +8,7 @@ interface TokenStepProps {
   setGithubToken: (token: string) => void;
   validatingToken: boolean;
   validateToken: () => Promise<void>;
-  tokenMessage: { type: 'success' | 'error'; text: string } | null;
+  tokenMessage: { type: "success" | "error"; text: string } | null;
 }
 
 const TokenStep: React.FC<TokenStepProps> = ({
@@ -55,7 +55,7 @@ const TokenStep: React.FC<TokenStepProps> = ({
             Create New Token
           </a>
           <span>or</span>
-          <button 
+          <button
             className="btn btn-secondary"
             onClick={() => setShowTokenInput(true)}
           >
@@ -78,7 +78,7 @@ const TokenStep: React.FC<TokenStepProps> = ({
               permission.
             </p>
 
-            <button 
+            <button
               className="btn btn-primary"
               onClick={validateToken}
               disabled={validatingToken}
@@ -88,7 +88,13 @@ const TokenStep: React.FC<TokenStepProps> = ({
             </button>
 
             {tokenMessage && (
-              <div className={`token-feedback ${tokenMessage.type === 'success' ? 'success-message' : 'error-message'}`}>
+              <div
+                className={`token-feedback ${
+                  tokenMessage.type === "success"
+                    ? "success-message"
+                    : "error-message"
+                }`}
+              >
                 {tokenMessage.text}
               </div>
             )}

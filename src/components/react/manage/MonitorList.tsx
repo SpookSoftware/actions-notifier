@@ -1,6 +1,6 @@
-import React from 'react';
-import MonitorItem from './MonitorItem';
-import { Monitor } from '../../../types';
+import React from "react";
+import MonitorItem from "./MonitorItem";
+import { Monitor } from "../../../types";
 
 interface MonitorListProps {
   monitors: Monitor[];
@@ -8,18 +8,18 @@ interface MonitorListProps {
   formatTime: (timeString: string) => string;
 }
 
-const MonitorList: React.FC<MonitorListProps> = ({ 
-  monitors, 
+const MonitorList: React.FC<MonitorListProps> = ({
+  monitors,
   onRemove,
-  formatTime
+  formatTime,
 }) => {
   if (monitors.length === 0) {
     return (
       <div className="monitor-list-empty">
         <p>No active workflow monitors found.</p>
         <p>
-          Click the bell icon next to a running workflow on GitHub to
-          start monitoring.
+          Click the bell icon next to a running workflow on GitHub to start
+          monitoring.
         </p>
       </div>
     );
@@ -35,10 +35,10 @@ const MonitorList: React.FC<MonitorListProps> = ({
       </div>
 
       {monitors.map((monitor) => (
-        <MonitorItem 
-          key={monitor.id} 
-          monitor={monitor} 
-          onRemove={onRemove} 
+        <MonitorItem
+          key={monitor.id}
+          monitor={monitor}
+          onRemove={onRemove}
           formatTime={formatTime}
         />
       ))}

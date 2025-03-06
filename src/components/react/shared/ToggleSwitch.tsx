@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ToggleSwitchProps {
   enabled: boolean;
@@ -11,14 +11,14 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   enabled,
   onChange,
   label,
-  className = '',
+  className = "",
 }) => {
   return (
     <div className={`toggle-switch-container ${className}`}>
       {label && <span className="toggle-label">{label}</span>}
       <button
         type="button"
-        className={`toggle-switch ${enabled ? 'enabled' : 'disabled'}`}
+        className={`toggle-switch ${enabled ? "enabled" : "disabled"}`}
         onClick={() => onChange(!enabled)}
         aria-checked={enabled}
         role="switch"

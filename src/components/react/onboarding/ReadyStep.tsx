@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface ReadyStepProps {
   trialButtonText: string;
@@ -33,24 +33,26 @@ const ReadyStep: React.FC<ReadyStepProps> = ({
 
         <div
           style={{
-            margin: '20px 0',
-            padding: '15px',
-            backgroundColor: '#f8f4ff',
-            border: '1px solid #ddd2f7',
-            borderRadius: '6px',
-            borderLeft: '4px solid #6f42c1'
+            margin: "20px 0",
+            padding: "15px",
+            backgroundColor: "#f8f4ff",
+            border: "1px solid #ddd2f7",
+            borderRadius: "6px",
+            borderLeft: "4px solid #6f42c1",
           }}
         >
-          <h3 style={{ marginTop: 0, color: '#6f42c1' }}>💜 Free Trial Period</h3>
+          <h3 style={{ marginTop: 0, color: "#6f42c1" }}>
+            💜 Free Trial Period
+          </h3>
           <p>
             To use the extension, you need to sign up for a
             <b> 7-day free trial</b>. After the trial period, a one-time
             purchase is required to continue using the extension.
           </p>
-          <p style={{ marginBottom: '10px' }}>
+          <p style={{ marginBottom: "10px" }}>
             <b>Price:</b> $2.95 (one-time payment, lifetime license)
           </p>
-          <button 
+          <button
             className="btn btn-primary"
             onClick={startFreeTrial}
             disabled={trialButtonDisabled}
@@ -62,8 +64,8 @@ const ReadyStep: React.FC<ReadyStepProps> = ({
 
         <div className="help-text">
           <p>
-            You can always update your token or manage active monitors from
-            the extension popup.
+            You can always update your token or manage active monitors from the
+            extension popup.
           </p>
         </div>
       </div>

@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Monitor } from '../../types';
-import Header from './manage/Header';
-import StatusBar from './manage/StatusBar';
-import MonitorList from './manage/MonitorList';
-import Pagination from './manage/Pagination';
-import LoadingIndicator from './shared/LoadingIndicator';
-import { clearAllMonitors, formatTime, loadMonitors, removeMonitor } from '../../services/monitors';
+import { Monitor } from "../../types";
+import Header from "./manage/Header";
+import StatusBar from "./manage/StatusBar";
+import MonitorList from "./manage/MonitorList";
+import Pagination from "./manage/Pagination";
+import LoadingIndicator from "./shared/LoadingIndicator";
+import {
+  clearAllMonitors,
+  formatTime,
+  loadMonitors,
+  removeMonitor,
+} from "../../services/monitors";
 
 const ITEMS_PER_PAGE = 10;
 

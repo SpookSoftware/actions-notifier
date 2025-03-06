@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface GitHubTokenFormProps {
   token: string;
@@ -36,13 +36,20 @@ const GitHubTokenForm: React.FC<GitHubTokenFormProps> = ({
         </a>
       </div>
       {tokenStatus.message && (
-        <div id="token-status" className={tokenStatus.isValid ? "token-valid" : "token-invalid"}>
+        <div
+          id="token-status"
+          className={tokenStatus.isValid ? "token-valid" : "token-invalid"}
+        >
           {tokenStatus.message}
         </div>
       )}
       <div className="flex-row">
-        <button type="submit" id="saveButton" disabled={isLoading}>Save Token</button>
-        {isLoading && <div className="spinner" style={{ display: 'inline-block' }}></div>}
+        <button type="submit" id="saveButton" disabled={isLoading}>
+          Save Token
+        </button>
+        {isLoading && (
+          <div className="spinner" style={{ display: "inline-block" }}></div>
+        )}
       </div>
     </form>
   );

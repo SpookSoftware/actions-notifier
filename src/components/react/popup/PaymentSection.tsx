@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface PaymentStatus {
   paid: boolean;
@@ -12,9 +12,9 @@ interface PaymentSectionProps {
   onPaymentClick: () => Promise<void>;
 }
 
-const PaymentSection: React.FC<PaymentSectionProps> = ({ 
-  paymentStatus, 
-  onPaymentClick 
+const PaymentSection: React.FC<PaymentSectionProps> = ({
+  paymentStatus,
+  onPaymentClick,
 }) => {
   // Calculate trial progress
   const calculateTrialProgress = () => {
@@ -41,47 +41,57 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
 
   // Get payment button text
   const getPaymentButtonText = () => {
-    if (paymentStatus.paid) return '';
-    if (!paymentStatus.trialStarted) return 'Start Free Trial';
-    return 'Purchase License ($2.95/lifetime)';
+    if (paymentStatus.paid) return "";
+    if (!paymentStatus.trialStarted) return "Start Free Trial";
+    return "Purchase License ($2.95/lifetime)";
   };
 
   // Get payment status message
   const getPaymentStatusMessage = () => {
     if (paymentStatus.paid) {
-      return 'Thank you for your purchase! You have lifetime access to this extension.';
+      return "Thank you for your purchase! You have lifetime access to this extension.";
     }
     if (!paymentStatus.trialStarted) {
-      return 'Start your free 7-day trial to try all features.';
+      return "Start your free 7-day trial to try all features.";
     }
     if (paymentStatus.trialExpired) {
-      return 'Your free trial has expired. Please purchase to continue using this extension.';
+      return "Your free trial has expired. Please purchase to continue using this extension.";
     }
-    return 'Your 7-day free trial is active.';
+    return "Your 7-day free trial is active.";
   };
 
   return (
     <div className="payment-section">
       <div className="flex-row payment-header">
         <h3>License Status</h3>
-        <span 
+        <span
           className={`payment-badge ${paymentStatus.paid ? "paid" : ""}`}
-          style={{ backgroundColor: paymentStatus.trialExpired ? "#cb2431" : undefined }}
+          style={{
+            backgroundColor: paymentStatus.trialExpired ? "#cb2431" : undefined,
+          }}
         >
-          {paymentStatus.paid ? "Purchased" : paymentStatus.trialExpired ? "Trial Expired" : "Free Trial"}
+          {paymentStatus.paid
+            ? "Purchased"
+            : paymentStatus.trialExpired
+            ? "Trial Expired"
+            : "Free Trial"}
         </span>
       </div>
       <div className="payment-info">
         <p>{getPaymentStatusMessage()}</p>
         {!paymentStatus.paid && (
           <div className="trial-progress-container">
-            <div className="trial-progress-bar" style={{ width: `${calculateTrialProgress()}%` }}></div>
+            <div
+              className="trial-progress-bar"
+              style={{ width: `${calculateTrialProgress()}%` }}
+            ></div>
             <span className="trial-days-left">
-              {getDaysLeft()} day{getDaysLeft() !== 1 ? "s" : ""} {paymentStatus.trialExpired ? "ago" : "remaining"}
+              {getDaysLeft()} day{getDaysLeft() !== 1 ? "s" : ""}{" "}
+              {paymentStatus.trialExpired ? "ago" : "remaining"}
             </span>
           </div>
         )}
-        {(!paymentStatus.paid && getPaymentButtonText()) && (
+        {!paymentStatus.paid && getPaymentButtonText() && (
           <button className="payment-button" onClick={onPaymentClick}>
             {getPaymentButtonText()}
           </button>

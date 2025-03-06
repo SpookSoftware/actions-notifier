@@ -1,15 +1,15 @@
-import React from 'react';
+import React from "react";
 
-type AuthState = 'success' | 'warning' | 'error' | null;
+type AuthState = "success" | "warning" | "error" | null;
 
 interface AuthStateMessageProps {
   authState: AuthState;
   showWelcomeMessage: boolean;
 }
 
-const AuthStateMessage: React.FC<AuthStateMessageProps> = ({ 
-  authState, 
-  showWelcomeMessage 
+const AuthStateMessage: React.FC<AuthStateMessageProps> = ({
+  authState,
+  showWelcomeMessage,
 }) => {
   if (showWelcomeMessage) {
     return (
@@ -23,7 +23,7 @@ const AuthStateMessage: React.FC<AuthStateMessageProps> = ({
     );
   }
 
-  if (authState === 'success') {
+  if (authState === "success") {
     return (
       <div className="auth-state auth-state-success">
         <strong>✓ GitHub token configured</strong>
@@ -36,7 +36,7 @@ const AuthStateMessage: React.FC<AuthStateMessageProps> = ({
     );
   }
 
-  if (authState === 'warning') {
+  if (authState === "warning") {
     return (
       <div className="auth-state auth-state-warning">
         <strong>⚠️ GitHub token required</strong>
@@ -48,7 +48,7 @@ const AuthStateMessage: React.FC<AuthStateMessageProps> = ({
     );
   }
 
-  if (authState === 'error') {
+  if (authState === "error") {
     return (
       <div className="auth-state auth-state-error">
         <strong>✖ GitHub token invalid</strong>

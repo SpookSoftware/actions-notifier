@@ -1,6 +1,6 @@
-import React from 'react';
-import browser from 'webextension-polyfill';
-import { Monitor } from '../../../types';
+import React from "react";
+import browser from "webextension-polyfill";
+import { Monitor } from "../../../types";
 
 interface MonitorItemProps {
   monitor: Monitor;
@@ -8,10 +8,10 @@ interface MonitorItemProps {
   formatTime: (timeString: string) => string;
 }
 
-const MonitorItem: React.FC<MonitorItemProps> = ({ 
-  monitor, 
+const MonitorItem: React.FC<MonitorItemProps> = ({
+  monitor,
   onRemove,
-  formatTime
+  formatTime,
 }) => {
   const openMonitorPage = (url: string) => {
     browser.tabs.create({ url });
@@ -39,10 +39,7 @@ const MonitorItem: React.FC<MonitorItemProps> = ({
         >
           View
         </button>
-        <button
-          className="danger"
-          onClick={() => onRemove(monitor.id)}
-        >
+        <button className="danger" onClick={() => onRemove(monitor.id)}>
           Remove
         </button>
       </div>

@@ -1,11 +1,14 @@
-import React from 'react';
+import React from "react";
 
 interface ExtensionToggleProps {
   enabled: boolean;
   onToggle: () => Promise<void>;
 }
 
-const ExtensionToggle: React.FC<ExtensionToggleProps> = ({ enabled, onToggle }) => {
+const ExtensionToggle: React.FC<ExtensionToggleProps> = ({
+  enabled,
+  onToggle,
+}) => {
   return (
     <div className="extension-toggle-section">
       <div className="flex-row toggle-container">
@@ -21,7 +24,10 @@ const ExtensionToggle: React.FC<ExtensionToggleProps> = ({ enabled, onToggle }) 
           />
           <span className="toggle-slider"></span>
         </div>
-        <span id="extension-status" style={{ color: enabled ? "#28a745" : "#cb2431" }}>
+        <span
+          id="extension-status"
+          style={{ color: enabled ? "#28a745" : "#cb2431" }}
+        >
           {enabled ? "Enabled" : "Disabled"}
         </span>
       </div>

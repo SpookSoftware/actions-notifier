@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface StatusBarProps {
   monitorCount: number;
@@ -8,12 +8,12 @@ interface StatusBarProps {
   hasMonitors: boolean;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ 
-  monitorCount, 
-  refreshing, 
-  onRefresh, 
+const StatusBar: React.FC<StatusBarProps> = ({
+  monitorCount,
+  refreshing,
+  onRefresh,
   onClearAll,
-  hasMonitors
+  hasMonitors,
 }) => {
   // Determine status bar class based on monitor count
   const getStatusBarClass = () => {
@@ -32,11 +32,7 @@ const StatusBar: React.FC<StatusBarProps> = ({
         Active monitors: <strong>{monitorCount}</strong> / 500
       </div>
       <div>
-        <button
-          className="secondary"
-          onClick={onRefresh}
-          disabled={refreshing}
-        >
+        <button className="secondary" onClick={onRefresh} disabled={refreshing}>
           {refreshing && <span className="spinner"></span>}
           Refresh
         </button>

@@ -1,20 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import Header from './popup/Header';
-import AuthStateMessage from './popup/AuthStateMessage';
-import GitHubTokenForm from './popup/GitHubTokenForm';
-import DebugTools from './popup/DebugTools';
-import ExtensionToggle from './popup/ExtensionToggle';
-import PaymentSection from './popup/PaymentSection';
-import MonitorsCount from './popup/MonitorsCount';
-import { validateGitHubToken } from '../../services/github';
-import { checkFirstRun, loadGitHubToken, markOnboardingSeen, saveGitHubToken } from '../../services/storage';
-import { getAlarmCount, getExtensionEnabledState, sendTestNotification, setExtensionEnabledState } from '../../services/extension';
-import { PaymentStatus, getPaymentStatus, openPaymentPage } from '../../services/payment';
+import React, { useEffect, useState } from "react";
+import Header from "./popup/Header";
+import AuthStateMessage from "./popup/AuthStateMessage";
+import GitHubTokenForm from "./popup/GitHubTokenForm";
+import DebugTools from "./popup/DebugTools";
+import ExtensionToggle from "./popup/ExtensionToggle";
+import PaymentSection from "./popup/PaymentSection";
+import MonitorsCount from "./popup/MonitorsCount";
+import { validateGitHubToken } from "../../services/github";
+import {
+  checkFirstRun,
+  loadGitHubToken,
+  markOnboardingSeen,
+  saveGitHubToken,
+} from "../../services/storage";
+import {
+  getAlarmCount,
+  getExtensionEnabledState,
+  sendTestNotification,
+  setExtensionEnabledState,
+} from "../../services/extension";
+import {
+  PaymentStatus,
+  getPaymentStatus,
+  openPaymentPage,
+} from "../../services/payment";
 
 const Popup: React.FC = () => {
-  const [token, setToken] = useState('');
-  const [tokenStatus, setTokenStatus] = useState<{ message: string, isValid: boolean | null }>({ message: '', isValid: null });
-  const [authState, setAuthState] = useState<'success' | 'warning' | 'error' | null>(null);
+  const [token, setToken] = useState("");
+  const [tokenStatus, setTokenStatus] = useState<{
+    message: string;
+    isValid: boolean | null;
+  }>({ message: "", isValid: null });
+  const [authState, setAuthState] = useState<
+    "success" | "warning" | "error" | null
+  >(null);
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [alarmCount, setAlarmCount] = useState(0);
@@ -23,9 +42,9 @@ const Popup: React.FC = () => {
     paid: false,
     trialStarted: false,
     trialExpired: false,
-    trialEndDate: undefined
+    trialEndDate: undefined,
   });
-  
+
   // Load data on component mount
   useEffect(() => {
     const init = async () => {
@@ -79,7 +98,10 @@ const Popup: React.FC = () => {
     const trimmedToken = token.trim();
 
     if (!trimmedToken) {
-      setTokenStatus({ message: "Please enter a GitHub token", isValid: false });
+      setTokenStatus({
+        message: "Please enter a GitHub token",
+        isValid: false,
+      });
       return;
     }
 
@@ -94,20 +116,26 @@ const Popup: React.FC = () => {
       if (isValid) {
         // Save valid token
         await saveGitHubToken(trimmedToken);
-        setTokenStatus({ message: "✓ Token validated successfully", isValid: true });
-        setAuthState('success');
-        
+        setTokenStatus({
+          message: "✓ Token validated successfully",
+          isValid: true,
+        });
+        setAuthState("success");
+
         // Update alarm count after successful token validation
         const count = await getAlarmCount();
         setAlarmCount(count);
       } else {
-        setTokenStatus({ message: "✖ Invalid token or insufficient permissions", isValid: false });
-        setAuthState('error');
+        setTokenStatus({
+          message: "✖ Invalid token or insufficient permissions",
+          isValid: false,
+        });
+        setAuthState("error");
       }
     } catch (error: any) {
       console.error("Error validating token:", error);
       setTokenStatus({ message: `✖ Error: ${error.message}`, isValid: false });
-      setAuthState('error');
+      setAuthState("error");
     } finally {
       // Reset loading state
       setIsLoading(false);
@@ -127,42 +155,53 @@ const Popup: React.FC = () => {
 
         if (isValid) {
           setTokenStatus({ message: "✓ Token valid", isValid: true });
-          setAuthState('success');
+          setAuthState("success");
         } else {
-          setTokenStatus({ message: "✖ Token invalid or expired", isValid: false });
-          setAuthState('error');
+          setTokenStatus({
+            message: "✖ Token invalid or expired",
+            isValid: false,
+          });
+          setAuthState("error");
         }
       } else {
         // No token exists
-        setAuthState('warning');
+        setAuthState("warning");
       }
     } catch (error) {
       console.error("Error loading GitHub token:", error);
-      setAuthState('error');
+      setAuthState("error");
     }
   }
 
   // Debug notification handlers
   const handleDebugTokenNotification = async () => {
     try {
-      await sendTestNotification('token-expired');
-      setTokenStatus({ message: "Token alert sent to GitHub tab", isValid: true });
+      await sendTestNotification("token-expired");
+      setTokenStatus({
+        message: "Token alert sent to GitHub tab",
+        isValid: true,
+      });
     } catch (error) {
       setTokenStatus({
-        message: "Error: Could not send notification. Try again in a few seconds.",
-        isValid: false
+        message:
+          "Error: Could not send notification. Try again in a few seconds.",
+        isValid: false,
       });
     }
   };
 
   const handleDebugAlarmNotification = async () => {
     try {
-      await sendTestNotification('alarm-limit-reached');
-      setTokenStatus({ message: "Alarm limit alert sent to GitHub tab", isValid: true });
+      await sendTestNotification("alarm-limit-reached");
+      setTokenStatus({
+        message: "Alarm limit alert sent to GitHub tab",
+        isValid: true,
+      });
     } catch (error) {
       setTokenStatus({
-        message: "Error: Could not send notification. Try again in a few seconds.",
-        isValid: false
+        message:
+          "Error: Could not send notification. Try again in a few seconds.",
+        isValid: false,
       });
     }
   };
@@ -176,9 +215,9 @@ const Popup: React.FC = () => {
     <div className="container">
       <Header />
 
-      <AuthStateMessage 
-        authState={authState} 
-        showWelcomeMessage={showWelcomeMessage} 
+      <AuthStateMessage
+        authState={authState}
+        showWelcomeMessage={showWelcomeMessage}
       />
 
       <GitHubTokenForm
@@ -194,19 +233,16 @@ const Popup: React.FC = () => {
         onDebugAlarmNotification={handleDebugAlarmNotification}
       />
 
-      <ExtensionToggle 
-        enabled={extensionEnabled} 
-        onToggle={handleToggle} 
-      />
+      <ExtensionToggle enabled={extensionEnabled} onToggle={handleToggle} />
 
       <PaymentSection
         paymentStatus={paymentStatus}
         onPaymentClick={handlePaymentClick}
       />
 
-      <MonitorsCount 
-        alarmCount={alarmCount} 
-        isTokenValid={authState === 'success'} 
+      <MonitorsCount
+        alarmCount={alarmCount}
+        isTokenValid={authState === "success"}
       />
     </div>
   );

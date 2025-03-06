@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { createRoot } from 'react-dom/client';
-import { NotificationType } from '../../types';
-import NotificationContainer from './inpage/NotificationContainer';
-import NotificationContent from './inpage/NotificationContent';
+import React, { useEffect } from "react";
+import { createRoot } from "react-dom/client";
+import { NotificationType } from "../../types";
+import NotificationContainer from "./inpage/NotificationContainer";
+import NotificationContent from "./inpage/NotificationContent";
 
 interface NotificationProps {
   type: NotificationType;
@@ -20,13 +20,8 @@ const InPageNotification: React.FC<NotificationProps> = ({ type, onClose }) => {
   }, [onClose]);
 
   // Get notification content configuration
-  const {
-    title,
-    content,
-    buttonText,
-    borderColor,
-    handleButtonClick
-  } = NotificationContent({ type, onClose });
+  const { title, content, buttonText, borderColor, handleButtonClick } =
+    NotificationContent({ type, onClose });
 
   return (
     <NotificationContainer
@@ -49,20 +44,20 @@ export function showInPageNotification(type: NotificationType): void {
   removeExistingNotifications();
 
   // Create container for React component
-  const container = document.createElement('div');
+  const container = document.createElement("div");
   document.body.appendChild(container);
-  
+
   // Create React root and render component
   const root = createRoot(container);
   root.render(
-    <InPageNotification 
-      type={type} 
+    <InPageNotification
+      type={type}
       onClose={() => {
         root.unmount();
         if (document.body.contains(container)) {
           document.body.removeChild(container);
         }
-      }} 
+      }}
     />
   );
 }
@@ -71,8 +66,10 @@ export function showInPageNotification(type: NotificationType): void {
  * Remove any existing in-page notifications
  */
 export function removeExistingNotifications(): void {
-  const existingNotifications = document.querySelectorAll(".cicd-workflow-in-page-notification");
-  existingNotifications.forEach(notification => {
+  const existingNotifications = document.querySelectorAll(
+    ".cicd-workflow-in-page-notification"
+  );
+  existingNotifications.forEach((notification) => {
     if (notification.parentElement) {
       document.body.removeChild(notification.parentElement);
     }

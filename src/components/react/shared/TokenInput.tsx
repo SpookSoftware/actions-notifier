@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface TokenInputProps {
   token: string;
@@ -17,7 +17,7 @@ export const TokenInput: React.FC<TokenInputProps> = ({
   isValidating,
   isValid,
   errorMessage,
-  placeholder = 'Enter your GitHub token',
+  placeholder = "Enter your GitHub token",
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
@@ -31,22 +31,24 @@ export const TokenInput: React.FC<TokenInputProps> = ({
     <div className="token-input-container">
       <div className="token-input-wrapper">
         <input
-          type={isPasswordVisible ? 'text' : 'password'}
+          type={isPasswordVisible ? "text" : "password"}
           value={token}
           onChange={(e) => onTokenChange(e.target.value)}
           onBlur={handleValidate}
           placeholder={placeholder}
-          className={`token-input ${isValid === false ? 'error' : ''}`}
+          className={`token-input ${isValid === false ? "error" : ""}`}
         />
         <button
           type="button"
           onClick={() => setIsPasswordVisible(!isPasswordVisible)}
           className="toggle-password-visibility"
         >
-          {isPasswordVisible ? 'Hide' : 'Show'}
+          {isPasswordVisible ? "Hide" : "Show"}
         </button>
       </div>
-      {isValidating && <div className="token-validating">Validating token...</div>}
+      {isValidating && (
+        <div className="token-validating">Validating token...</div>
+      )}
       {isValid === false && errorMessage && (
         <div className="token-error">{errorMessage}</div>
       )}

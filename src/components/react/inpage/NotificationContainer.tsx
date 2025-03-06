@@ -1,5 +1,5 @@
-import React from 'react';
-import browser from 'webextension-polyfill';
+import React from "react";
+import browser from "webextension-polyfill";
 
 interface NotificationContainerProps {
   id: string;
@@ -18,10 +18,10 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({
   content,
   buttonText,
   onButtonClick,
-  onClose
+  onClose,
 }) => {
   return (
-    <div 
+    <div
       className="cicd-workflow-in-page-notification"
       id={`cicd-notification-${id}`}
       style={{
@@ -39,17 +39,19 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({
         display: "flex",
         flexDirection: "column",
         gap: "12px",
-        borderLeft: `4px solid ${borderColor}`
+        borderLeft: `4px solid ${borderColor}`,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-        <img 
-          src={browser.runtime.getURL("images/icon-48.png")} 
+        <img
+          src={browser.runtime.getURL("images/icon-48.png")}
           alt="Notification icon"
           style={{ width: "24px", height: "24px" }}
         />
-        <div style={{ fontWeight: 600, fontSize: "16px", flexGrow: 1 }}>{title}</div>
-        <button 
+        <div style={{ fontWeight: 600, fontSize: "16px", flexGrow: 1 }}>
+          {title}
+        </div>
+        <button
           onClick={onClose}
           style={{
             background: "none",
@@ -58,16 +60,19 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({
             fontSize: "20px",
             padding: 0,
             cursor: "pointer",
-            lineHeight: 1
+            lineHeight: 1,
           }}
         >
           ×
         </button>
       </div>
-      
-      <div style={{ fontSize: "14px", lineHeight: 1.4 }} dangerouslySetInnerHTML={{ __html: content }} />
-      
-      <button 
+
+      <div
+        style={{ fontSize: "14px", lineHeight: 1.4 }}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+
+      <button
         onClick={onButtonClick}
         style={{
           background: "#2ea44f",
@@ -79,7 +84,7 @@ const NotificationContainer: React.FC<NotificationContainerProps> = ({
           fontWeight: 500,
           fontSize: "14px",
           marginTop: "8px",
-          alignSelf: "flex-start"
+          alignSelf: "flex-start",
         }}
       >
         {buttonText}

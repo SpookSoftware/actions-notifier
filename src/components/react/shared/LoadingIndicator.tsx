@@ -1,11 +1,11 @@
-import React from 'react';
+import React from "react";
 
 interface LoadingIndicatorProps {
   message?: string;
 }
 
-const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({ 
-  message = 'Loading...' 
+const LoadingIndicator: React.FC<LoadingIndicatorProps> = ({
+  message = "Loading...",
 }) => {
   return (
     <div className="loading">

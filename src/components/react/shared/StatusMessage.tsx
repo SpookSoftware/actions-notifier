@@ -1,6 +1,6 @@
-import React from 'react';
+import React from "react";
 
-type StatusType = 'success' | 'error' | 'warning' | 'info';
+type StatusType = "success" | "error" | "warning" | "info";
 
 interface StatusMessageProps {
   type: StatusType;
@@ -11,7 +11,7 @@ interface StatusMessageProps {
 export const StatusMessage: React.FC<StatusMessageProps> = ({
   type,
   message,
-  className = '',
+  className = "",
 }) => {
   return (
     <div className={`status-message status-${type} ${className}`}>

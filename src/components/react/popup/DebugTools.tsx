@@ -1,5 +1,5 @@
-import React from 'react';
-import browser from 'webextension-polyfill';
+import React from "react";
+import browser from "webextension-polyfill";
 
 interface DebugToolsProps {
   onDebugTokenNotification: () => Promise<void>;
@@ -16,10 +16,17 @@ const DebugTools: React.FC<DebugToolsProps> = ({
 
   return (
     <div className="debug-buttons">
-      <h3 style={{ fontSize: '14px', marginTop: '16px', marginBottom: '10px' }}>
+      <h3 style={{ fontSize: "14px", marginTop: "16px", marginBottom: "10px" }}>
         Debug Tools:
       </h3>
-      <div className="flex-row" style={{ flexWrap: 'wrap', gap: '8px', justifyContent: 'space-between' }}>
+      <div
+        className="flex-row"
+        style={{
+          flexWrap: "wrap",
+          gap: "8px",
+          justifyContent: "space-between",
+        }}
+      >
         <button
           className="secondary"
           onClick={handleDebugOnboardingClick}
@@ -30,14 +37,22 @@ const DebugTools: React.FC<DebugToolsProps> = ({
         <button
           className="secondary"
           onClick={onDebugTokenNotification}
-          style={{ flex: 1, backgroundColor: '#ffeef0', borderColor: '#f97583' }}
+          style={{
+            flex: 1,
+            backgroundColor: "#ffeef0",
+            borderColor: "#f97583",
+          }}
         >
           Test Token Alert
         </button>
         <button
           className="secondary"
           onClick={onDebugAlarmNotification}
-          style={{ flex: 1, backgroundColor: '#fffbdd', borderColor: '#f9c513' }}
+          style={{
+            flex: 1,
+            backgroundColor: "#fffbdd",
+            borderColor: "#f9c513",
+          }}
         >
           Test Alarm Alert
         </button>

@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import ProgressBar from './shared/ProgressBar';
-import Header from './onboarding/Header';
-import WelcomeStep from './onboarding/WelcomeStep';
-import TokenStep from './onboarding/TokenStep';
-import ReadyStep from './onboarding/ReadyStep';
-import NavigationControls from './onboarding/NavigationControls';
-import { validateGitHubToken } from '../../services/github';
-import { loadGitHubToken, saveGitHubToken } from '../../services/storage';
-import { finishOnboarding, startFreeTrial, startTrialStatusPolling, trialIsValid } from '../../services/trial';
-import ExtPay from 'extpay';
+import React, { useState, useEffect } from "react";
+import ProgressBar from "./shared/ProgressBar";
+import Header from "./onboarding/Header";
+import WelcomeStep from "./onboarding/WelcomeStep";
+import TokenStep from "./onboarding/TokenStep";
+import ReadyStep from "./onboarding/ReadyStep";
+import NavigationControls from "./onboarding/NavigationControls";
+import { validateGitHubToken } from "../../services/github";
+import { loadGitHubToken, saveGitHubToken } from "../../services/storage";
+import {
+  finishOnboarding,
+  startFreeTrial,
+  startTrialStatusPolling,
+  trialIsValid,
+} from "../../services/trial";
+import ExtPay from "extpay";
 
 // Initialize ExtPay
 const extpay = ExtPay("cicd-workflow-notifications");
@@ -18,11 +23,14 @@ const OnboardingPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [tokenValidated, setTokenValidated] = useState(false);
   const [showTokenInput, setShowTokenInput] = useState(false);
-  const [githubToken, setGithubToken] = useState('');
+  const [githubToken, setGithubToken] = useState("");
   const [validatingToken, setValidatingToken] = useState(false);
-  const [tokenMessage, setTokenMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [tokenMessage, setTokenMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [startingTrial, setStartingTrial] = useState(false);
-  const [trialButtonText, setTrialButtonText] = useState('Start Free Trial');
+  const [trialButtonText, setTrialButtonText] = useState("Start Free Trial");
   const [trialButtonDisabled, setTrialButtonDisabled] = useState(false);
 
   // Check for existing token on mount
@@ -43,8 +51,8 @@ const OnboardingPage: React.FC = () => {
     if (currentStep === 2 && !tokenValidated && showTokenInput) {
       // Show validation message if they try to proceed without validating
       setTokenMessage({
-        type: 'error',
-        text: 'Please validate your token before continuing.'
+        type: "error",
+        text: "Please validate your token before continuing.",
       });
       return;
     }
@@ -71,8 +79,8 @@ const OnboardingPage: React.FC = () => {
           // Show success message and token input
           setShowTokenInput(true);
           setTokenMessage({
-            type: 'success',
-            text: '✓ Existing token is valid! You can proceed.'
+            type: "success",
+            text: "✓ Existing token is valid! You can proceed.",
           });
         }
       }
@@ -85,8 +93,8 @@ const OnboardingPage: React.FC = () => {
   const validateToken = async () => {
     if (!githubToken.trim()) {
       setTokenMessage({
-        type: 'error',
-        text: 'Please enter a token.'
+        type: "error",
+        text: "Please enter a token.",
       });
       return;
     }
@@ -103,8 +111,8 @@ const OnboardingPage: React.FC = () => {
         // Success
         setTokenValidated(true);
         setTokenMessage({
-          type: 'success',
-          text: '✓ Token validated successfully!'
+          type: "success",
+          text: "✓ Token validated successfully!",
         });
 
         // Save token
@@ -120,15 +128,17 @@ const OnboardingPage: React.FC = () => {
         // Error
         setTokenValidated(false);
         setTokenMessage({
-          type: 'error',
-          text: '✖ Invalid token or insufficient permissions. Please ensure your token has the "repo" scope.'
+          type: "error",
+          text: '✖ Invalid token or insufficient permissions. Please ensure your token has the "repo" scope.',
         });
       }
     } catch (error) {
       console.error("Token validation error:", error);
       setTokenMessage({
-        type: 'error',
-        text: `✖ Error: ${error instanceof Error ? error.message : "Network error"}`
+        type: "error",
+        text: `✖ Error: ${
+          error instanceof Error ? error.message : "Network error"
+        }`,
       });
     } finally {
       // Reset loading state
@@ -142,32 +152,32 @@ const OnboardingPage: React.FC = () => {
       // Disable button and show loading state
       setTrialButtonDisabled(true);
       setStartingTrial(true);
-      setTrialButtonText('Starting trial...');
+      setTrialButtonText("Starting trial...");
 
       // Get user status
       const user = await extpay.getUser();
 
       // If trial already started, show message
       if (trialIsValid(user.trialStartedAt)) {
-        setTrialButtonText('✓ Trial already activated');
+        setTrialButtonText("✓ Trial already activated");
         setTimeout(() => {
-          setTrialButtonText('Trial Active');
+          setTrialButtonText("Trial Active");
         }, 2000);
         return;
       }
 
       // Start the trial
       await startFreeTrial();
-      
+
       // Start polling for trial status
       startTrialStatusPolling(
         // On trial activated
         () => {
           setTrialButtonDisabled(true);
           setStartingTrial(false);
-          setTrialButtonText('✓ Trial activated!');
+          setTrialButtonText("✓ Trial activated!");
           setTimeout(() => {
-            setTrialButtonText('Trial Active');
+            setTrialButtonText("Trial Active");
           }, 2000);
         },
         // On trial pending
@@ -179,14 +189,14 @@ const OnboardingPage: React.FC = () => {
         () => {
           setTrialButtonDisabled(false);
           setStartingTrial(false);
-          setTrialButtonText('Try Again');
+          setTrialButtonText("Try Again");
         }
       );
     } catch (error) {
       console.error("Error with trial activation:", error);
       setTrialButtonDisabled(false);
       setStartingTrial(false);
-      setTrialButtonText('Try Again');
+      setTrialButtonText("Try Again");
     }
   };
 
@@ -200,13 +210,13 @@ const OnboardingPage: React.FC = () => {
       <Header />
 
       <ProgressBar
-        steps={['Welcome', 'GitHub Token', 'Ready']}
+        steps={["Welcome", "GitHub Token", "Ready"]}
         currentStep={currentStep}
       />
 
       <div className="steps-container">
         {currentStep === 1 && <WelcomeStep />}
-        
+
         {currentStep === 2 && (
           <TokenStep
             showTokenInput={showTokenInput}
@@ -218,7 +228,7 @@ const OnboardingPage: React.FC = () => {
             tokenMessage={tokenMessage}
           />
         )}
-        
+
         {currentStep === 3 && (
           <ReadyStep
             trialButtonText={trialButtonText}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface StepMarkerProps {
   step: number;
@@ -6,18 +6,22 @@ interface StepMarkerProps {
   label: string;
 }
 
-const StepMarker: React.FC<StepMarkerProps> = ({ step, currentStep, label }) => {
+const StepMarker: React.FC<StepMarkerProps> = ({
+  step,
+  currentStep,
+  label,
+}) => {
   const isActive = step === currentStep;
   const isCompleted = step < currentStep;
-  
+
   return (
     <div className="progress-step">
-      <div 
+      <div
         className={`step-marker ${
-          isActive ? 'active' : isCompleted ? 'completed' : ''
+          isActive ? "active" : isCompleted ? "completed" : ""
         }`}
       >
-        {isCompleted ? '✓' : step}
+        {isCompleted ? "✓" : step}
       </div>
       <div className="step-label">{label}</div>
     </div>

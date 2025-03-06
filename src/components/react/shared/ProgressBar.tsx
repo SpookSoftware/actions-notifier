@@ -1,5 +1,5 @@
-import React from 'react';
-import StepMarker from './StepMarker';
+import React from "react";
+import StepMarker from "./StepMarker";
 
 interface ProgressBarProps {
   steps: string[];
@@ -10,7 +10,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ steps, currentStep }) => {
   return (
     <div className="progress-bar">
       {steps.map((label, index) => (
-        <StepMarker 
+        <StepMarker
           key={index + 1}
           step={index + 1}
           currentStep={currentStep}

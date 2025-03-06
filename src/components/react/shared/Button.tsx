@@ -1,7 +1,7 @@
-import React from 'react';
+import React from "react";
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
-type ButtonSize = 'small' | 'medium' | 'large';
+type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type ButtonSize = "small" | "medium" | "large";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -12,17 +12,19 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button: React.FC<ButtonProps> = ({
   children,
-  variant = 'primary',
-  size = 'medium',
+  variant = "primary",
+  size = "medium",
   isLoading = false,
   icon,
-  className = '',
+  className = "",
   disabled,
   ...props
 }) => {
   return (
     <button
-      className={`btn btn-${variant} btn-${size} ${isLoading ? 'btn-loading' : ''} ${className}`}
+      className={`btn btn-${variant} btn-${size} ${
+        isLoading ? "btn-loading" : ""
+      } ${className}`}
       disabled={isLoading || disabled}
       {...props}
     >

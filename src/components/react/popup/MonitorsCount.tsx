@@ -1,12 +1,15 @@
-import React from 'react';
-import browser from 'webextension-polyfill';
+import React from "react";
+import browser from "webextension-polyfill";
 
 interface MonitorsCountProps {
   alarmCount: number;
   isTokenValid: boolean;
 }
 
-const MonitorsCount: React.FC<MonitorsCountProps> = ({ alarmCount, isTokenValid }) => {
+const MonitorsCount: React.FC<MonitorsCountProps> = ({
+  alarmCount,
+  isTokenValid,
+}) => {
   const handleManageClick = () => {
     browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
   };
@@ -24,9 +27,7 @@ const MonitorsCount: React.FC<MonitorsCountProps> = ({ alarmCount, isTokenValid 
         {alarmCount >= 400 && alarmCount < 475 && (
           <span id="alarm-count-warning">⚠️ Approaching limit</span>
         )}
-        {alarmCount >= 475 && (
-          <span id="alarm-count-error">⚠️ At limit</span>
-        )}
+        {alarmCount >= 475 && <span id="alarm-count-error">⚠️ At limit</span>}
       </div>
       {alarmCount > 0 && (
         <div className="manage-section">
