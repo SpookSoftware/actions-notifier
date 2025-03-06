@@ -75,3 +75,13 @@ export async function openPaymentPage(): Promise<void> {
     await browser.runtime.sendMessage({ action: "openPaymentPage" });
   }
 }
+
+export async function openBuyPage(): Promise<void> {
+  try {
+    await extpay.openPaymentPage();
+  } catch (error) {
+    console.error("Error opening buy page:", error);
+    // Fallback using the background script
+    await browser.runtime.sendMessage({ action: "openPaymentPage" });
+  }
+}

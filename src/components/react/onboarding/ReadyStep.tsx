@@ -1,4 +1,5 @@
 import React from "react";
+import { openBuyPage, openPaymentPage } from "@/services/payment";
 
 interface ReadyStepProps {
   trialButtonText: string;
@@ -13,6 +14,18 @@ const ReadyStep: React.FC<ReadyStepProps> = ({
   startingTrial,
   startFreeTrial,
 }) => {
+  const [purchaseLoading, setPurchaseLoading] = React.useState(false);
+
+  const handleBuyNow = async () => {
+    setPurchaseLoading(true);
+    try {
+      await openBuyPage();
+    } catch (error) {
+      console.error("Error opening payment page:", error);
+    } finally {
+      setPurchaseLoading(false);
+    }
+  };
   return (
     <div className="step">
       <div className="step-number">3</div>
@@ -55,14 +68,30 @@ const ReadyStep: React.FC<ReadyStepProps> = ({
           <p style={{ marginBottom: "10px" }}>
             <b>Price:</b> $2.95 (one-time payment, lifetime license)
           </p>
-          <button
-            className="btn btn-primary"
-            onClick={startFreeTrial}
-            disabled={trialButtonDisabled}
-          >
-            {startingTrial && <span className="spinner"></span>}
-            {trialButtonText}
-          </button>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <button
+              className="btn btn-primary"
+              onClick={startFreeTrial}
+              disabled={trialButtonDisabled}
+            >
+              {startingTrial && <span className="spinner"></span>}
+              {trialButtonText}
+            </button>
+
+            <button
+              className="btn"
+              onClick={handleBuyNow}
+              disabled={purchaseLoading}
+              style={{
+                background: "#fff",
+                border: "1px solid #6f42c1",
+                color: "#6f42c1",
+              }}
+            >
+              {purchaseLoading && <span className="spinner"></span>}
+              Buy Now ($2.95)
+            </button>
+          </div>
         </div>
 
         <div className="help-text">
