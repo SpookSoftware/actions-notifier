@@ -44,7 +44,7 @@ import browser from "webextension-polyfill";
 import {
   NotificationType,
   showInPageNotification,
-} from "./components/InPageNotification";
+} from "./components/react/InPageNotification";
 
 // Listen for messages from the background script or other parts of the extension
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
