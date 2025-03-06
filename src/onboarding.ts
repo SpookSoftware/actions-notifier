@@ -348,7 +348,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Initial delay before first check (3 seconds)
     setTimeout(async () => {
       let attempts = 0;
-      const maxAttempts = 20; // Stop after ~1 minute (20 * 3 seconds)
+      const maxAttempts = 100; // Stop after ~5 minutes (100 * 3 seconds)
 
       const checkTrialStatus = async () => {
         try {
