@@ -566,7 +566,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         trialDaysLeft.textContent = `${daysLeft} day${
           daysLeft !== 1 ? "s" : ""
         } left`;
-        paymentButton.textContent = "Purchase License ($4.99/lifetime)";
+        paymentButton.textContent = "Purchase License ($2.95/lifetime)";
       } else {
         // Expired trial
         paymentBadge.textContent = "Trial Expired";
@@ -575,7 +575,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           "Your free trial has expired. Please purchase to continue using this extension.";
         trialProgressBar.style.width = "100%";
         trialDaysLeft.textContent = "0 days left";
-        paymentButton.textContent = "Purchase Now ($4.99/lifetime)";
+        paymentButton.textContent = "Purchase Now ($2.95/lifetime)";
       }
     } catch (error) {
       console.error("Error updating payment status:", error);

@@ -1,4 +1,8 @@
 import browser from "webextension-polyfill";
+import ExtPay from "extpay";
+
+// Initialize ExtPay
+const extpay = ExtPay("cicd-workflow-notifications");
 
 document.addEventListener("DOMContentLoaded", () => {
   // Elements
@@ -9,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const prevBtn = document.getElementById("prev-btn") as HTMLButtonElement;
   const nextBtn = document.getElementById("next-btn") as HTMLButtonElement;
   const finishBtn = document.getElementById("finish-btn") as HTMLButtonElement;
+  const startTrialBtn = document.getElementById(
+    "start-trial-btn"
+  ) as HTMLButtonElement;
 
   const existingTokenBtn = document.getElementById(
     "existing-token-btn"
@@ -40,6 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   finishBtn.addEventListener("click", finishOnboarding);
   existingTokenBtn.addEventListener("click", showTokenInput);
   validateTokenBtn.addEventListener("click", validateToken);
+  startTrialBtn.addEventListener("click", startFreeTrial);
 
   // Check if token already exists (for users reinstalling)
   checkExistingToken();
@@ -279,5 +287,112 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       console.error("Error finishing onboarding:", error);
     }
+  }
+
+  function trialIsValid(trialStart: Date | null): boolean {
+    if (!trialStart) {
+      return false;
+    }
+    const trialStartedLessThanSevenDaysAgo =
+      Date.now() - trialStart.getTime() <= 7 * 24 * 60 * 60 * 1000;
+    return trialStartedLessThanSevenDaysAgo;
+  }
+
+  /**
+   * Start the free trial
+   */
+  async function startFreeTrial(): Promise<void> {
+    try {
+      // Disable button and show loading state
+      startTrialBtn.disabled = true;
+      startTrialBtn.innerHTML = `<span class="spinner"></span> Starting trial...`;
+
+      // Get user status
+      const user = await extpay.getUser();
+
+      // If trial already started, show message
+      if (trialIsValid(user.trialStartedAt)) {
+        startTrialBtn.innerHTML = "✓ Trial already activated";
+        setTimeout(() => {
+          startTrialBtn.innerHTML = "Trial Active";
+        }, 2000);
+        return;
+      }
+
+      // Start the trial using ExtPay
+      try {
+        await extpay.openTrialPage("start");
+
+        // Start polling for trial status
+        startTrialStatusPolling();
+      } catch (error) {
+        console.error("Error starting trial:", error);
+
+        // Fallback using the background script
+        await browser.runtime.sendMessage({ action: "openPaymentPage" });
+
+        // Start polling for trial status
+        startTrialStatusPolling();
+      }
+    } catch (error) {
+      console.error("Error with trial activation:", error);
+      startTrialBtn.disabled = false;
+      startTrialBtn.innerHTML = "Try Again";
+    }
+  }
+
+  /**
+   * Poll for trial status and update the button accordingly
+   */
+  function startTrialStatusPolling(): void {
+    // Initial delay before first check (3 seconds)
+    setTimeout(async () => {
+      let attempts = 0;
+      const maxAttempts = 20; // Stop after ~1 minute (20 * 3 seconds)
+
+      const checkTrialStatus = async () => {
+        try {
+          const user = await extpay.getUser();
+
+          if (trialIsValid(user.trialStartedAt)) {
+            // Trial activated successfully
+            startTrialBtn.disabled = true;
+            startTrialBtn.innerHTML = "✓ Trial activated!";
+            setTimeout(() => {
+              startTrialBtn.innerHTML = "Trial Active";
+            }, 2000);
+            return true; // Stop polling
+          }
+
+          // Continue checking if max attempts not reached
+          attempts++;
+          if (attempts >= maxAttempts) {
+            // Max attempts reached, reset button state
+            startTrialBtn.disabled = false;
+            startTrialBtn.innerHTML = "Start Free Trial";
+            return true; // Stop polling
+          }
+
+          return false; // Continue polling
+        } catch (error) {
+          console.error("Error checking trial status:", error);
+
+          // Reset button after error
+          startTrialBtn.disabled = false;
+          startTrialBtn.innerHTML = "Start Free Trial";
+          return true; // Stop polling on error
+        }
+      };
+
+      // Start the polling process
+      const poll = async () => {
+        const shouldStop = await checkTrialStatus();
+        if (!shouldStop) {
+          setTimeout(poll, 3000); // Check every 3 seconds
+        }
+      };
+
+      poll();
+    }, 3000);
   }
 });
