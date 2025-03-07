@@ -56,9 +56,12 @@ let hasShownWelcomeNotification = false;
 
 /**
  * Send issue notification to all GitHub tabs
+ * @param type The notification type
+ * @param metadata Optional additional metadata to send with the notification
  */
 async function sendIssueNotificationToTabs(
-  type: "token-expired" | "alarm-limit-reached" | "trial-expired"
+  type: "token-expired" | "alarm-limit-reached" | "trial-expired",
+  metadata?: Record<string, any>
 ): Promise<void> {
   try {
     const githubTabs = await browser.tabs.query({
@@ -75,6 +78,7 @@ async function sendIssueNotificationToTabs(
           await browser.tabs.sendMessage(tab.id, {
             action: "showNotification",
             type: type,
+            metadata: metadata
           });
           console.log(`Notification sent to tab ${tab.id}`);
         } catch (error) {
@@ -176,11 +180,23 @@ async function checkAndUpdateExtensionState() {
     } else if (alarmCount >= MAX_ALARMS) {
       notificationType = "alarm-limit-reached";
     } else {
+      // Use the same notification type whether the trial expired or was never started
       notificationType = "trial-expired";
     }
 
-    // Send notification message to all GitHub tabs
-    await sendIssueNotificationToTabs(notificationType);
+    // Check if the notification is about the trial
+    if (notificationType === "trial-expired") {
+      // Determine whether the trial was never started or actually expired
+      const hasTrialStarted = user.trialStartedAt !== null && user.trialStartedAt !== undefined;
+      
+      // Send notification message to all GitHub tabs with additional context
+      await sendIssueNotificationToTabs(notificationType, { 
+        hasTrialStarted: hasTrialStarted 
+      });
+    } else {
+      // Send other notification types without additional context
+      await sendIssueNotificationToTabs(notificationType);
+    }
 
     return false;
   }

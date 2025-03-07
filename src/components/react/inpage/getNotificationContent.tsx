@@ -3,11 +3,13 @@ import browser from "webextension-polyfill";
 
 interface getNotificationContentProps {
   type: NotificationType;
+  metadata?: Record<string, any>;
   onClose: () => void;
 }
 
 const getNotificationContent = ({
   type,
+  metadata,
   onClose,
 }: getNotificationContentProps) => {
   // Configure notification content based on type
@@ -64,10 +66,15 @@ const getNotificationContent = ({
       onClose();
     };
   } else if (type === NotificationType.TRIAL_EXPIRED) {
-    title = "Free Trial Expired";
-    content =
-      "Your 7-day free trial has ended. Please purchase the extension to continue monitoring workflows.";
-    buttonText = "Purchase Extension";
+    // Check if metadata exists and includes trial information
+    if (metadata?.hasTrialStarted) {
+      title = "Free Trial Expired";
+      content = "Your 7-day free trial has ended. Please purchase the extension to continue monitoring workflows.";
+    } else {
+      title = "Trial Required";
+      content = "Please start your free 7-day trial to use this extension.";
+    }
+    buttonText = "Manage Subscription";
     borderColor = "#6f42c1"; // Purple border for payment
 
     handleButtonClick = () => {

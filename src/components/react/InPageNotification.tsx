@@ -6,10 +6,11 @@ import getNotificationContent from "./inpage/getNotificationContent";
 
 interface NotificationProps {
   type: NotificationType;
+  metadata?: Record<string, any>;
   onClose: () => void;
 }
 
-const InPageNotification: React.FC<NotificationProps> = ({ type, onClose }) => {
+const InPageNotification: React.FC<NotificationProps> = ({ type, metadata, onClose }) => {
   useEffect(() => {
     // Auto-close after 30 seconds
     const timer = setTimeout(() => {
@@ -21,7 +22,7 @@ const InPageNotification: React.FC<NotificationProps> = ({ type, onClose }) => {
 
   // Get notification content configuration
   const { title, content, buttonText, borderColor, handleButtonClick } =
-    getNotificationContent({ type, onClose });
+    getNotificationContent({ type, metadata, onClose });
 
   return (
     <NotificationContainer
@@ -39,7 +40,10 @@ const InPageNotification: React.FC<NotificationProps> = ({ type, onClose }) => {
 /**
  * Creates and shows an in-page notification popup on GitHub pages
  */
-export function showInPageNotification(type: NotificationType): void {
+export function showInPageNotification(
+  type: NotificationType, 
+  metadata?: Record<string, any>
+): void {
   // Remove any existing notifications first
   removeExistingNotifications();
 
@@ -52,6 +56,7 @@ export function showInPageNotification(type: NotificationType): void {
   root.render(
     <InPageNotification
       type={type}
+      metadata={metadata}
       onClose={() => {
         root.unmount();
         if (document.body.contains(container)) {

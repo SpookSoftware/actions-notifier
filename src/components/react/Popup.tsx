@@ -84,10 +84,17 @@ const Popup: React.FC = () => {
       const status = await getPaymentStatus();
       setPaymentStatus(status);
 
-      // Set extension status reason if trial expired and not paid
-      if (!status.trialIsValid && !status.paid) {
-        setExtensionEnabled(false);
-        setExtensionStatusReason("Disabled because trial period has expired.");
+      // Handle trial status conditions
+      if (!status.paid) {
+        if (!status.trialStartedAt) {
+          // Trial never started (user skipped onboarding)
+          setExtensionEnabled(false);
+          setExtensionStatusReason("Disabled because you need to start a trial to use the extension.");
+        } else if (!status.trialIsValid) {
+          // Trial started but expired
+          setExtensionEnabled(false);
+          setExtensionStatusReason("Disabled because trial period has expired.");
+        }
       }
     };
 
