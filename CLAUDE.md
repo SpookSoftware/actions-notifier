@@ -3,8 +3,6 @@
 ## Build Commands
 - `bun run build`: Build the Chrome extension for development
 - `bun run build:production`: Build Chrome extension with minification and console.log removal
-- `bun run build:firefox`: Build Firefox extension for development
-- `bun run build:firefox:production`: Build Firefox extension with minification and console.log removal
 - `bun run dev`: Start a watcher that rebuilds on file changes
 
 ## Test Commands

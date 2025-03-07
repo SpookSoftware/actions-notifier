@@ -20,8 +20,6 @@
     "test:pw": "playwright test",
     "build": "bun ./scripts/build.ts",
     "build:production": "bun ./scripts/build.ts --production",
-    "build:firefox": "bun ./scripts/build.ts --firefox",
-    "build:firefox:production": "bun ./scripts/build.ts --firefox --production",
     "dev": "bun ./scripts/watcher.ts",
     "refresh": "bun run build && osascript -e 'tell application \"Brave Browser\" to open location \"http://reload.extensions\"'"
   },
