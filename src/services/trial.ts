@@ -112,9 +112,6 @@ export async function startFreeTrial(): Promise<void> {
  */
 export async function finishOnboarding(): Promise<void> {
   try {
-    // Mark onboarding as completed
-    await browser.storage.local.set({ hasCompletedOnboarding: true });
-
     // Navigate to GitHub
     window.location.href = "https://github.com";
   } catch (error) {

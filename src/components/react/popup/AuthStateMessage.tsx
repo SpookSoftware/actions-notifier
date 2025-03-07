@@ -4,25 +4,9 @@ type AuthState = "success" | "warning" | "error" | null;
 
 interface AuthStateMessageProps {
   authState: AuthState;
-  showWelcomeMessage: boolean;
 }
 
-const AuthStateMessage: React.FC<AuthStateMessageProps> = ({
-  authState,
-  showWelcomeMessage,
-}) => {
-  if (showWelcomeMessage) {
-    return (
-      <div className="auth-state auth-state-warning" id="welcome-message">
-        <strong>Welcome to CI/CD Workflow Notifications!</strong>
-        <p>
-          This extension needs a GitHub token to monitor your workflows and
-          notify you when they complete.
-        </p>
-      </div>
-    );
-  }
-
+const AuthStateMessage: React.FC<AuthStateMessageProps> = ({ authState }) => {
   if (authState === "success") {
     return (
       <div className="auth-state auth-state-success">

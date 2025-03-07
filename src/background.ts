@@ -48,12 +48,6 @@ setInterval(() => {
   checkAndUpdateExtensionState();
 }, 60 * 60 * 1000); // Check every hour
 
-// Constants
-const TOKEN_NOTIFICATION_ID = "github-token-required";
-
-// Flag to track if we've already shown the welcome notification
-let hasShownWelcomeNotification = false;
-
 /**
  * Send issue notification to all GitHub tabs
  * @param type The notification type
@@ -136,9 +130,6 @@ self.addEventListener("activate", async (_event: Event) => {
 
   // Check the extension's validation state and enable/disable accordingly
   await checkAndUpdateExtensionState();
-
-  // Schedule a welcome notification check
-  setTimeout(checkFirstRunAndShowWelcome, 2000);
 });
 
 /**
@@ -161,7 +152,7 @@ async function checkAndUpdateExtensionState() {
   if (!tokenStatus.isValid || alarmCount >= MAX_ALARMS || !userIsEligible) {
     // Make sure state is set to disabled in storage
     await setExtensionEnabled(false);
-    
+
     console.debug(
       `Automatically disabling extension due to: ${
         !tokenStatus.isValid
@@ -261,55 +252,11 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
 browser.alarms.onAlarm.addListener(onAlarmCallback);
 
 // Notification click handler
-browser.notifications.onClicked.addListener((notificationId) => {
-  // Handle special notification IDs
-  if (notificationId === TOKEN_NOTIFICATION_ID) {
-    // Open extension popup to configure token
-    browser.runtime.openOptionsPage();
-    return;
-  }
-
-  if (notificationId === "welcome-notification") {
-    // Open extension popup on welcome notification click
-    browser.runtime.openOptionsPage();
-    return;
-  }
-
-  // Handle regular workflow notifications
-  onNotificationClickedCallback(notificationId);
-});
-
-// Function to check if this is first run and show welcome
-async function checkFirstRunAndShowWelcome() {
-  // Avoid showing multiple welcome notifications
-  if (hasShownWelcomeNotification) return;
-
-  try {
-    const data = await browser.storage.local.get("hasSeenOnboarding");
-
-    // If this is first run, show welcome notification
-    if (!data.hasSeenOnboarding) {
-      browser.notifications.create("welcome-notification", {
-        type: "basic",
-        title: "CI/CD Workflow Notifications",
-        message:
-          "Thanks for installing! Please configure your GitHub token to start monitoring workflows.",
-        iconUrl: "images/icon-128.png",
-      });
-
-      hasShownWelcomeNotification = true;
-    }
-  } catch (error) {
-    console.error("Error checking first run status:", error);
-  }
-}
+browser.notifications.onClicked.addListener(onNotificationClickedCallback);
 
 // Listen for installation events
 browser.runtime.onInstalled.addListener((details) => {
   if (details.reason === "install") {
-    // Set first run flag
-    browser.storage.local.set({ hasSeenOnboarding: false });
-
     browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
   }
 });

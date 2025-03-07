@@ -9,7 +9,6 @@ import { validateGitHubToken } from "../../services/github";
 import {
   checkFirstRun,
   loadGitHubToken,
-  markOnboardingSeen,
   saveGitHubToken,
 } from "../../services/storage";
 import {
@@ -132,8 +131,6 @@ interface PopupContentProps {
 
 // Main popup content that suspends
 const PopupContent: React.FC<PopupContentProps> = ({ resources }) => {
-  // Read all resources (this will suspend if any are still loading)
-  const firstRun = resources.firstRun.read();
   const savedToken = resources.token.read() || "";
   const extensionEnabled = resources.extensionEnabled.read();
   const alarmCount = resources.alarmCount.read();
@@ -147,8 +144,6 @@ const PopupContent: React.FC<PopupContentProps> = ({ resources }) => {
   const [authState, setAuthState] = useState<
     "success" | "warning" | "error" | null
   >(savedToken ? "success" : "warning");
-  const [showWelcomeMessage, setShowWelcomeMessage] =
-    useState<boolean>(firstRun);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [extensionStatusReason, setExtensionStatusReason] = useState<string>(
     determineStatusReason(
@@ -158,13 +153,6 @@ const PopupContent: React.FC<PopupContentProps> = ({ resources }) => {
       paymentStatus
     )
   );
-
-  // Mark onboarding as seen if this is first run
-  useEffect(() => {
-    if (firstRun) {
-      markOnboardingSeen();
-    }
-  }, [firstRun]);
 
   // Helper function to determine why extension is enabled/disabled
   function determineStatusReason(
@@ -253,10 +241,7 @@ const PopupContent: React.FC<PopupContentProps> = ({ resources }) => {
     <div className="container">
       <Header />
 
-      <AuthStateMessage
-        authState={authState}
-        showWelcomeMessage={showWelcomeMessage}
-      />
+      <AuthStateMessage authState={authState} />
 
       <GitHubTokenForm
         token={token}

@@ -9,6 +9,9 @@ const ExtensionToggle: React.FC<ExtensionToggleProps> = ({
   enabled,
   reason,
 }) => {
+  if (!enabled) {
+    debugger;
+  }
   return (
     <div className="extension-toggle-section">
       <div className="flex-row status-container">
@@ -21,9 +24,10 @@ const ExtensionToggle: React.FC<ExtensionToggleProps> = ({
         </span>
       </div>
       <div className="help-text">
-        {reason || (enabled 
-          ? "The extension is monitoring workflows and adding notification buttons."
-          : "The extension is not monitoring workflows or adding buttons.")}
+        {reason ||
+          (enabled
+            ? "The extension is monitoring workflows and adding notification buttons."
+            : "The extension is not monitoring workflows or adding buttons.")}
       </div>
     </div>
   );
