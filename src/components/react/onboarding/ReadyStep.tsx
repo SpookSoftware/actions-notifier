@@ -16,7 +16,9 @@ const TrialButton: React.FC<{
   disableAllButtons: boolean;
 }> = ({ trialActivated, onStartTrial, disableAllButtons }) => {
   const [isLoading, setIsLoading] = React.useState(false);
-  const [buttonText, setButtonText] = React.useState("Start Free Trial");
+  const [buttonText, setButtonText] = React.useState(
+    "Start Free Trial (no credit card required)"
+  );
 
   const handleClick = async () => {
     if (trialActivated) return;
@@ -94,11 +96,11 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
 
   // Reference to store cleanup function
   const pollingCleanupRef = React.useRef<(() => void) | null>(null);
-  
+
   // Start status polling for trial/purchase
   const startStatusPolling = () => {
     setCheckingStatus(true);
-    
+
     // Set a safety timeout to reset the checking status if something goes wrong
     // This prevents the UI from getting stuck if the user closes the trial page
     const safetyTimeoutId = setTimeout(() => {
@@ -157,11 +159,11 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
         setCheckingStatus(false);
       }
     );
-    
+
     // Store the cleanup function for component unmount
     pollingCleanupRef.current = cleanup;
   };
-  
+
   // Clean up polling on unmount
   React.useEffect(() => {
     return () => {
@@ -175,14 +177,14 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
   React.useEffect(() => {
     let intervalId: number | NodeJS.Timeout;
     let isMounted = true; // Track if component is still mounted
-    
+
     const checkPaymentStatus = async () => {
       if (!isMounted) return; // Don't proceed if component unmounted
-      
+
       try {
         const status = await getPaymentStatus();
         if (!isMounted) return; // Don't update state if component unmounted
-        
+
         if (status.paid) {
           setPaymentComplete(true);
           setShowStatusMessage(true);
@@ -190,7 +192,7 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
             "Thank you for your purchase! You have lifetime access to this extension."
           );
           if (onPaymentStatusChange) onPaymentStatusChange(true);
-          
+
           // If we've detected a successful payment, stop polling
           clearInterval(intervalId as NodeJS.Timeout);
         } else if (status.trialIsValid) {
@@ -200,7 +202,7 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
             "Your 7-day free trial has been activated. Enjoy the extension!"
           );
           if (onPaymentStatusChange) onPaymentStatusChange(true);
-          
+
           // If we've detected a successful trial activation, stop polling
           clearInterval(intervalId as NodeJS.Timeout);
         } else {

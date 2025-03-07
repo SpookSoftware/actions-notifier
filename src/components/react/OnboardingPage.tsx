@@ -72,10 +72,12 @@ const OnboardingPage: React.FC = () => {
 
             // Save token
             await saveGitHubToken(githubToken);
-            
+
             // Notify background script to check extension state
             try {
-              await browser.runtime.sendMessage({ action: "checkAndUpdateExtensionState" });
+              await browser.runtime.sendMessage({
+                action: "checkAndUpdateExtensionState",
+              });
             } catch (error) {
               console.error("Error updating extension state:", error);
             }
@@ -105,7 +107,7 @@ const OnboardingPage: React.FC = () => {
         }
         return;
       }
-      
+
       // If token input is visible but no token entered
       if (showTokenInput && !githubToken.trim()) {
         setTokenMessage({
@@ -114,7 +116,7 @@ const OnboardingPage: React.FC = () => {
         });
         return;
       }
-      
+
       // If token input is not visible (user hasn't clicked "I already have a token")
       if (!showTokenInput) {
         setTokenMessage({
@@ -125,7 +127,7 @@ const OnboardingPage: React.FC = () => {
         setShowTokenInput(true);
         return;
       }
-      
+
       // Don't proceed if token isn't validated
       return;
     }
@@ -191,10 +193,12 @@ const OnboardingPage: React.FC = () => {
 
         // Save token
         await saveGitHubToken(githubToken);
-        
+
         // Notify background script to check extension state
         try {
-          await browser.runtime.sendMessage({ action: "checkAndUpdateExtensionState" });
+          await browser.runtime.sendMessage({
+            action: "checkAndUpdateExtensionState",
+          });
         } catch (error) {
           console.error("Error updating extension state:", error);
         }
@@ -283,7 +287,7 @@ const OnboardingPage: React.FC = () => {
 
   // State for payment or trial status
   const [isPaidOrTrialing, setIsPaidOrTrialing] = useState(false);
-  
+
   // Complete the onboarding process
   const handleFinishOnboarding = async () => {
     // Only allow completion if the user has started a trial or made a payment
@@ -316,7 +320,9 @@ const OnboardingPage: React.FC = () => {
           />
         )}
 
-        {currentStep === 3 && <ReadyStep onPaymentStatusChange={setIsPaidOrTrialing} />}
+        {currentStep === 3 && (
+          <ReadyStep onPaymentStatusChange={setIsPaidOrTrialing} />
+        )}
       </div>
 
       <NavigationControls
