@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import browser from "webextension-polyfill";
 import ProgressBar from "./shared/ProgressBar";
 import Header from "./onboarding/Header";
 import WelcomeStep from "./onboarding/WelcomeStep";
@@ -71,6 +72,13 @@ const OnboardingPage: React.FC = () => {
 
             // Save token
             await saveGitHubToken(githubToken);
+            
+            // Notify background script to check extension state
+            try {
+              await browser.runtime.sendMessage({ action: "checkAndUpdateExtensionState" });
+            } catch (error) {
+              console.error("Error updating extension state:", error);
+            }
 
             // Proceed to next step
             if (currentStep < 3) {
@@ -183,6 +191,13 @@ const OnboardingPage: React.FC = () => {
 
         // Save token
         await saveGitHubToken(githubToken);
+        
+        // Notify background script to check extension state
+        try {
+          await browser.runtime.sendMessage({ action: "checkAndUpdateExtensionState" });
+        } catch (error) {
+          console.error("Error updating extension state:", error);
+        }
 
         // Auto-advance after a short delay
         setTimeout(() => {

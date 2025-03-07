@@ -112,6 +112,14 @@ export async function startFreeTrial(): Promise<void> {
  */
 export async function finishOnboarding(): Promise<void> {
   try {
+    // Mark onboarding as seen in storage
+    const { markOnboardingSeen } = await import("./storage");
+    await markOnboardingSeen();
+
+    // Ensure extension is enabled
+    const { setExtensionEnabled } = await import("../helpers/browser");
+    await setExtensionEnabled(true);
+
     // Navigate to GitHub
     window.location.href = "https://github.com";
   } catch (error) {
