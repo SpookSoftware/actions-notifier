@@ -17,14 +17,12 @@ export async function getExtensionEnabledState(): Promise<boolean> {
     if (isGetExtensionEnabledResponse(response)) {
       return response.data.enabled;
     }
-    return true; // Default to enabled if there's an issue
+    return false; // Default to disabled if there's an issue
   } catch (error) {
     console.error("Error loading extension state:", error);
-    return true; // Default to enabled
+    return false; // Default to disabled for safety
   }
 }
-
-// Extension state can no longer be manually set
 
 /**
  * Gets the count of active alarms (monitors)

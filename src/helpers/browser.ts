@@ -1,6 +1,20 @@
 // This file is for all functions that make use of the browser polyfill.
-
 import browser from "webextension-polyfill";
+import {
+  buildMonitoringPayloads,
+  decode,
+  encode,
+  setSVGColor,
+  resetSVGColor,
+  isValidGithubResponse,
+  encodeRequest,
+  createURL,
+  isProperlyEncoded,
+  isStartMonitoringRequest,
+  isStopMonitoringRequest,
+  hasClickHandler,
+} from "@/helpers/pure";
+import type { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 
 /**
  * Notifies all GitHub tabs about an issue
@@ -34,21 +48,6 @@ export async function notifyGitHubTabsAboutIssue(
     console.error("Error sending notifications to tabs:", error);
   }
 }
-import {
-  buildMonitoringPayloads,
-  decode,
-  encode,
-  setSVGColor,
-  resetSVGColor,
-  isValidGithubResponse,
-  encodeRequest,
-  createURL,
-  isProperlyEncoded,
-  isStartMonitoringRequest,
-  isStopMonitoringRequest,
-  hasClickHandler,
-} from "@/helpers/pure";
-import { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 
 // Token validation error types
 export type TokenValidationError =
@@ -81,14 +80,76 @@ export async function sendStructuredMessage(
 /**
  * Get the current extension enabled state
  */
+// todo: should we get the key here? Or should we just run the calculation ourselves?
 export async function isExtensionEnabled(): Promise<boolean> {
   try {
+    // Get from storage first to avoid circular dependency
     const data = await browser.storage.local.get(EXTENSION_ENABLED_KEY);
-    // Default to true if not set
-    return Boolean(data);
+    if (EXTENSION_ENABLED_KEY in data) {
+      return data[EXTENSION_ENABLED_KEY];
+    }
+    
+    // If not in storage, calculate based on conditions
+    // Get token first to check if it exists
+    const tokenData = await browser.storage.sync.get("githubToken");
+    if (!tokenData.githubToken) {
+      return false; // No token = disabled
+    }
+    
+    const tooManyAlarms = (await getActiveAlarmCount()) >= MAX_ALARMS;
+    const userHasPaid = await checkPaymentStatus();
+    const userHasValidTrial = await checkTrialStatus();
+    
+    // Validate token directly to avoid circular reference
+    const tokenIsValid = await validateTokenDirectly(tokenData.githubToken);
+
+    const extensionEnabled =
+      tokenIsValid &&
+      !tooManyAlarms &&
+      (userHasPaid || userHasValidTrial);
+
+    return extensionEnabled;
   } catch (error) {
     console.error("Error checking extension enabled state:", error);
-    return true; // Default to enabled on error
+    return false; // Default to disabled on error for safety
+  }
+}
+
+// Helper to validate token without circular dependency
+async function validateTokenDirectly(token: string): Promise<boolean> {
+  try {
+    // Test token with GitHub API
+    const response = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `token ${token}`,
+        Accept: "application/vnd.github.v3+json",
+      },
+    });
+    
+    // Check for unauthorized
+    if (response.status === 401) {
+      return false;
+    }
+    
+    // Test if token has repo scope with a sample repo request
+    const repoResponse = await fetch(
+      "https://api.github.com/repos/octocat/hello-world",
+      {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      }
+    );
+    
+    if (repoResponse.status === 403) {
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error validating token directly:", error);
+    return false;
   }
 }
 
@@ -140,16 +201,6 @@ export async function broadcastExtensionState(enabled: boolean): Promise<void> {
 
 export async function validateGitHubToken(): Promise<TokenStatus> {
   try {
-    // First check if extension is enabled
-    const enabled = await isExtensionEnabled();
-    if (!enabled) {
-      return {
-        isValid: false,
-        errorType: "NO_TOKEN_FOUND",
-        errorMessage: "Extension is disabled",
-      };
-    }
-
     // Check if token exists
     const data = await browser.storage.sync.get("githubToken");
 
@@ -437,8 +488,6 @@ export async function onMessageCallback(
   // Handle extension state change requests
   if (request && typeof request === "object" && "action" in request) {
     const req = request as { action: string; enabled?: boolean };
-
-    // Extension can no longer be manually enabled/disabled
 
     if (req.action === "getExtensionEnabled") {
       const enabled = await isExtensionEnabled();

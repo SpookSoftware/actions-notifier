@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import Header from "./popup/Header";
 import AuthStateMessage from "./popup/AuthStateMessage";
 import GitHubTokenForm from "./popup/GitHubTokenForm";
-import DebugTools from "./popup/DebugTools";
 import ExtensionToggle from "./popup/ExtensionToggle";
 import PaymentSection from "./popup/PaymentSection";
 import MonitorsCount from "./popup/MonitorsCount";
@@ -20,6 +19,7 @@ import {
 } from "../../services/extension";
 import { getPaymentStatus, openPaymentPage } from "../../services/payment";
 import { PaymentStatus } from "@/types";
+import browser from "webextension-polyfill";
 
 const Popup: React.FC = () => {
   const [token, setToken] = useState("");
@@ -51,53 +51,50 @@ const Popup: React.FC = () => {
         await markOnboardingSeen();
       }
 
-      // Load and validate existing token
+      // Load and validate existing token first
       await loadAndValidateToken();
-
-      // Load extension enabled state
-      const enabled = await getExtensionEnabledState();
-      setExtensionEnabled(enabled);
-
-      // Set reason based on known conditions
-      if (!enabled) {
-        setExtensionStatusReason("Extension is currently disabled.");
-      }
 
       // Update alarm count
       const count = await getAlarmCount();
       setAlarmCount(count);
 
-      // Set extension status reason if count is at or above the limit
-      if (count >= 500 && enabled) {
-        setExtensionEnabled(false);
-        setExtensionStatusReason(
-          "Disabled because you reached the alarm limit (500)."
-        );
-      }
-
-      // Set extension status reason if token is invalid
-      if (authState === "error") {
-        setExtensionStatusReason("Disabled due to token validation issues.");
-      }
-
       // Load payment status
       const status = await getPaymentStatus();
       setPaymentStatus(status);
 
-      // Handle trial status conditions
-      if (!status.paid) {
-        if (!status.trialStartedAt) {
-          // Trial never started (user skipped onboarding)
-          setExtensionEnabled(false);
+      // Load extension enabled state
+      const enabled = await getExtensionEnabledState();
+      setExtensionEnabled(enabled);
+
+      // Set appropriate status reason based on conditions
+      if (!enabled) {
+        // If no token or invalid token, that's the primary reason
+        if (!tokenStatus.isValid) {
+          setExtensionStatusReason("Disabled due to token validation issues.");
+        }
+        // Check alarms next
+        else if (count >= 500) {
           setExtensionStatusReason(
-            "Disabled because you need to start a trial to use the extension."
+            "Disabled because you reached the alarm limit (500)."
           );
-        } else if (!status.trialIsValid) {
-          // Trial started but expired
-          setExtensionEnabled(false);
-          setExtensionStatusReason(
-            "Disabled because trial period has expired."
-          );
+        }
+        // Then check trial/payment status
+        else if (!status.paid) {
+          if (!status.trialStartedAt) {
+            // Trial never started (user skipped onboarding)
+            setExtensionStatusReason(
+              "Disabled because you need to start a trial to use the extension."
+            );
+          } else if (!status.trialIsValid) {
+            // Trial started but expired
+            setExtensionStatusReason(
+              "Disabled because trial period has expired."
+            );
+          }
+        }
+        // Generic fallback message if no specific reason identified
+        else {
+          setExtensionStatusReason("Extension is currently disabled.");
         }
       }
     };
@@ -110,8 +107,6 @@ const Popup: React.FC = () => {
     e.preventDefault();
     await saveAndValidateToken();
   };
-
-  // This method is no longer used as we removed the toggle functionality
 
   // Helper functions
   async function saveAndValidateToken() {
@@ -193,39 +188,6 @@ const Popup: React.FC = () => {
     }
   }
 
-  // Debug notification handlers
-  const handleDebugTokenNotification = async () => {
-    try {
-      await sendTestNotification("token-expired");
-      setTokenStatus({
-        message: "Token alert sent to GitHub tab",
-        isValid: true,
-      });
-    } catch (error) {
-      setTokenStatus({
-        message:
-          "Error: Could not send notification. Try again in a few seconds.",
-        isValid: false,
-      });
-    }
-  };
-
-  const handleDebugAlarmNotification = async () => {
-    try {
-      await sendTestNotification("alarm-limit-reached");
-      setTokenStatus({
-        message: "Alarm limit alert sent to GitHub tab",
-        isValid: true,
-      });
-    } catch (error) {
-      setTokenStatus({
-        message:
-          "Error: Could not send notification. Try again in a few seconds.",
-        isValid: false,
-      });
-    }
-  };
-
   // Payment handler
   const handlePaymentClick = async () => {
     await openPaymentPage();
@@ -248,10 +210,33 @@ const Popup: React.FC = () => {
         isLoading={isLoading}
       />
 
-      <DebugTools
-        onDebugTokenNotification={handleDebugTokenNotification}
-        onDebugAlarmNotification={handleDebugAlarmNotification}
-      />
+      <div className="debug-buttons">
+        <h3
+          style={{ fontSize: "14px", marginTop: "16px", marginBottom: "10px" }}
+        >
+          Debug Tools:
+        </h3>
+        <div
+          className="flex-row"
+          style={{
+            flexWrap: "wrap",
+            gap: "8px",
+            justifyContent: "space-between",
+          }}
+        >
+          <button
+            className="secondary"
+            onClick={() => {
+              browser.tabs.create({
+                url: browser.runtime.getURL("onboarding.html"),
+              });
+            }}
+            style={{ flex: 1 }}
+          >
+            Debug Onboarding
+          </button>
+        </div>
+      </div>
 
       <ExtensionToggle
         enabled={extensionEnabled}

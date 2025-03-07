@@ -78,7 +78,7 @@ async function sendIssueNotificationToTabs(
           await browser.tabs.sendMessage(tab.id, {
             action: "showNotification",
             type: type,
-            metadata: metadata
+            metadata: metadata,
           });
           console.log(`Notification sent to tab ${tab.id}`);
         } catch (error) {
@@ -159,6 +159,9 @@ async function checkAndUpdateExtensionState() {
 
   // If token is invalid, alarm limit reached, or no valid payment, disable extension
   if (!tokenStatus.isValid || alarmCount >= MAX_ALARMS || !userIsEligible) {
+    // Make sure state is set to disabled in storage
+    await setExtensionEnabled(false);
+    
     console.debug(
       `Automatically disabling extension due to: ${
         !tokenStatus.isValid
@@ -168,7 +171,6 @@ async function checkAndUpdateExtensionState() {
           : "Payment required"
       }`
     );
-    await setExtensionEnabled(false);
 
     // Determine notification type
     let notificationType:
@@ -187,11 +189,12 @@ async function checkAndUpdateExtensionState() {
     // Check if the notification is about the trial
     if (notificationType === "trial-expired") {
       // Determine whether the trial was never started or actually expired
-      const hasTrialStarted = user.trialStartedAt !== null && user.trialStartedAt !== undefined;
-      
+      const hasTrialStarted =
+        user.trialStartedAt !== null && user.trialStartedAt !== undefined;
+
       // Send notification message to all GitHub tabs with additional context
-      await sendIssueNotificationToTabs(notificationType, { 
-        hasTrialStarted: hasTrialStarted 
+      await sendIssueNotificationToTabs(notificationType, {
+        hasTrialStarted: hasTrialStarted,
       });
     } else {
       // Send other notification types without additional context
@@ -226,7 +229,6 @@ browser.runtime.onMessage.addListener(async (request, sender) => {
 
     if (request.action === "openPaymentPage") {
       try {
-        // Open ExtPay payment page
         await extpay.openPaymentPage();
         return { status: "ok" };
       } catch (error) {
