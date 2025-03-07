@@ -1,6 +1,9 @@
 import React from "react";
 import { openBuyPage, getPaymentStatus } from "@/services/payment";
-import { startFreeTrial as startFreeTrialService, startTrialStatusPolling } from "@/services/trial";
+import {
+  startFreeTrial as startFreeTrialService,
+  startTrialStatusPolling,
+} from "@/services/trial";
 
 interface ReadyStepProps {
   onPaymentStatusChange?: (isPaidOrTrialing: boolean) => void;
@@ -14,13 +17,13 @@ const TrialButton: React.FC<{
 }> = ({ trialActivated, onStartTrial, disableAllButtons }) => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [buttonText, setButtonText] = React.useState("Start Free Trial");
-  
+
   const handleClick = async () => {
     if (trialActivated) return;
-    
+
     setIsLoading(true);
     setButtonText("Starting Trial...");
-    
+
     try {
       await startFreeTrialService();
       onStartTrial();
@@ -31,7 +34,7 @@ const TrialButton: React.FC<{
       setIsLoading(false);
     }
   };
-  
+
   return (
     <button
       className="btn btn-primary"
@@ -50,7 +53,7 @@ const PurchaseButton: React.FC<{
   disableAllButtons: boolean;
 }> = ({ onPurchaseInitiated, disableAllButtons }) => {
   const [isLoading, setIsLoading] = React.useState(false);
-  
+
   const handleClick = async () => {
     setIsLoading(true);
     try {
@@ -62,7 +65,7 @@ const PurchaseButton: React.FC<{
       setIsLoading(false);
     }
   };
-  
+
   return (
     <button
       className="btn"
@@ -84,28 +87,32 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
   const [checkingStatus, setCheckingStatus] = React.useState(false);
   const [paymentComplete, setPaymentComplete] = React.useState(false);
   const [trialActivated, setTrialActivated] = React.useState(false);
-  
+
   // Status message states
   const [showStatusMessage, setShowStatusMessage] = React.useState(false);
   const [statusMessage, setStatusMessage] = React.useState("");
-  
+
   // Start status polling for trial/purchase
   const startStatusPolling = () => {
     setCheckingStatus(true);
-    
+
     startTrialStatusPolling(
       // On trial/purchase activated
       () => {
-        getPaymentStatus().then(status => {
+        getPaymentStatus().then((status) => {
           if (status.paid) {
             setPaymentComplete(true);
             setShowStatusMessage(true);
-            setStatusMessage("Thank you for your purchase! You have lifetime access to this extension.");
+            setStatusMessage(
+              "Thank you for your purchase! You have lifetime access to this extension."
+            );
             if (onPaymentStatusChange) onPaymentStatusChange(true);
           } else if (status.trialIsValid) {
             setTrialActivated(true);
             setShowStatusMessage(true);
-            setStatusMessage("Your 7-day free trial has been activated. Enjoy the extension!");
+            setStatusMessage(
+              "Your 7-day free trial has been activated. Enjoy the extension!"
+            );
             if (onPaymentStatusChange) onPaymentStatusChange(true);
           }
           setCheckingStatus(false);
@@ -121,7 +128,7 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
       }
     );
   };
-  
+
   // Check payment/trial status on component mount and poll for updates
   React.useEffect(() => {
     const checkPaymentStatus = async () => {
@@ -130,12 +137,16 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
         if (status.paid) {
           setPaymentComplete(true);
           setShowStatusMessage(true);
-          setStatusMessage("Thank you for your purchase! You have lifetime access to this extension.");
+          setStatusMessage(
+            "Thank you for your purchase! You have lifetime access to this extension."
+          );
           if (onPaymentStatusChange) onPaymentStatusChange(true);
         } else if (status.trialIsValid) {
           setTrialActivated(true);
           setShowStatusMessage(true);
-          setStatusMessage("Your 7-day free trial has been activated. Enjoy the extension!");
+          setStatusMessage(
+            "Your 7-day free trial has been activated. Enjoy the extension!"
+          );
           if (onPaymentStatusChange) onPaymentStatusChange(true);
         } else {
           if (onPaymentStatusChange) onPaymentStatusChange(false);
@@ -145,17 +156,17 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
         if (onPaymentStatusChange) onPaymentStatusChange(false);
       }
     };
-    
+
     // Initial check
     checkPaymentStatus();
-    
+
     // Set up regular polling every second
     const intervalId = setInterval(checkPaymentStatus, 1000);
-    
+
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, [onPaymentStatusChange]);
-  
+
   return (
     <div className="step">
       <div className="step-number">3</div>
@@ -187,7 +198,9 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
           {showStatusMessage ? (
             <div style={{ padding: "10px 0", color: "#6f42c1" }}>
               <h3 style={{ marginTop: 0, color: "#6f42c1" }}>
-                {paymentComplete ? "💰 Purchase Complete" : "✅ Trial Activated"}
+                {paymentComplete
+                  ? "💰 Purchase Complete"
+                  : "✅ Trial Activated"}
               </h3>
               <p>{statusMessage}</p>
             </div>
@@ -209,10 +222,10 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
               </p>
             </>
           )}
-          
+
           {!paymentComplete && (
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <TrialButton 
+              <TrialButton
                 trialActivated={trialActivated}
                 onStartTrial={startStatusPolling}
                 disableAllButtons={checkingStatus}
@@ -224,10 +237,15 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
               />
             </div>
           )}
-          
+
           {!trialActivated && !paymentComplete && (
             <div style={{ marginTop: "15px", color: "#e25822" }}>
-              <p><strong>* You must start a trial or make a purchase to complete onboarding.</strong></p>
+              <p>
+                <strong>
+                  * You must start a trial or make a purchase to complete
+                  onboarding.
+                </strong>
+              </p>
             </div>
           )}
         </div>

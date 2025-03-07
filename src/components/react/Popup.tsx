@@ -89,11 +89,15 @@ const Popup: React.FC = () => {
         if (!status.trialStartedAt) {
           // Trial never started (user skipped onboarding)
           setExtensionEnabled(false);
-          setExtensionStatusReason("Disabled because you need to start a trial to use the extension.");
+          setExtensionStatusReason(
+            "Disabled because you need to start a trial to use the extension."
+          );
         } else if (!status.trialIsValid) {
           // Trial started but expired
           setExtensionEnabled(false);
-          setExtensionStatusReason("Disabled because trial period has expired.");
+          setExtensionStatusReason(
+            "Disabled because trial period has expired."
+          );
         }
       }
     };
@@ -263,6 +267,13 @@ const Popup: React.FC = () => {
         alarmCount={alarmCount}
         isTokenValid={authState === "success"}
       />
+
+      <p>
+        Questions? Feedback? Email us at{" "}
+        <a href="mailto:cicd-notifications@spook.software">
+          cicd-notifications@spook.software
+        </a>
+      </p>
     </div>
   );
 };
