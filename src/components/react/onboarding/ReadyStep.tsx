@@ -2,7 +2,9 @@ import React from "react";
 import { openBuyPage, getPaymentStatus } from "@/services/payment";
 import { startFreeTrial as startFreeTrialService, startTrialStatusPolling } from "@/services/trial";
 
-interface ReadyStepProps {}
+interface ReadyStepProps {
+  onPaymentStatusChange?: (isPaidOrTrialing: boolean) => void;
+}
 
 // Trial button component
 const TrialButton: React.FC<{
@@ -78,7 +80,7 @@ const PurchaseButton: React.FC<{
   );
 };
 
-const ReadyStep: React.FC<ReadyStepProps> = () => {
+const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
   const [checkingStatus, setCheckingStatus] = React.useState(false);
   const [paymentComplete, setPaymentComplete] = React.useState(false);
   const [trialActivated, setTrialActivated] = React.useState(false);
@@ -99,10 +101,12 @@ const ReadyStep: React.FC<ReadyStepProps> = () => {
             setPaymentComplete(true);
             setShowStatusMessage(true);
             setStatusMessage("Thank you for your purchase! You have lifetime access to this extension.");
+            if (onPaymentStatusChange) onPaymentStatusChange(true);
           } else if (status.trialIsValid) {
             setTrialActivated(true);
             setShowStatusMessage(true);
             setStatusMessage("Your 7-day free trial has been activated. Enjoy the extension!");
+            if (onPaymentStatusChange) onPaymentStatusChange(true);
           }
           setCheckingStatus(false);
         });
@@ -118,27 +122,39 @@ const ReadyStep: React.FC<ReadyStepProps> = () => {
     );
   };
   
-  // Check payment/trial status on component mount
+  // Check payment/trial status on component mount and poll for updates
   React.useEffect(() => {
-    const checkInitialStatus = async () => {
+    const checkPaymentStatus = async () => {
       try {
         const status = await getPaymentStatus();
         if (status.paid) {
           setPaymentComplete(true);
           setShowStatusMessage(true);
           setStatusMessage("Thank you for your purchase! You have lifetime access to this extension.");
+          if (onPaymentStatusChange) onPaymentStatusChange(true);
         } else if (status.trialIsValid) {
           setTrialActivated(true);
           setShowStatusMessage(true);
           setStatusMessage("Your 7-day free trial has been activated. Enjoy the extension!");
+          if (onPaymentStatusChange) onPaymentStatusChange(true);
+        } else {
+          if (onPaymentStatusChange) onPaymentStatusChange(false);
         }
       } catch (error) {
         console.error("Error checking payment status:", error);
+        if (onPaymentStatusChange) onPaymentStatusChange(false);
       }
     };
     
-    checkInitialStatus();
-  }, []);
+    // Initial check
+    checkPaymentStatus();
+    
+    // Set up regular polling every second
+    const intervalId = setInterval(checkPaymentStatus, 1000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [onPaymentStatusChange]);
   
   return (
     <div className="step">
@@ -206,6 +222,12 @@ const ReadyStep: React.FC<ReadyStepProps> = () => {
                 onPurchaseInitiated={startStatusPolling}
                 disableAllButtons={checkingStatus}
               />
+            </div>
+          )}
+          
+          {!trialActivated && !paymentComplete && (
+            <div style={{ marginTop: "15px", color: "#e25822" }}>
+              <p><strong>* You must start a trial or make a purchase to complete onboarding.</strong></p>
             </div>
           )}
         </div>

@@ -48,17 +48,22 @@ const OnboardingPage: React.FC = () => {
   // Navigate to next step
   const goToNextStep = async () => {
     // If on step 2 (token step) with token entered but not validated
-    if (currentStep === 2 && !tokenValidated && showTokenInput && githubToken.trim()) {
+    if (
+      currentStep === 2 &&
+      !tokenValidated &&
+      showTokenInput &&
+      githubToken.trim()
+    ) {
       // Attempt to validate the token before proceeding
       setValidatingToken(true);
       setTokenMessage({
         type: "error",
         text: "Validating token...",
       });
-      
+
       try {
         const isValid = await validateGitHubToken(githubToken);
-        
+
         if (isValid) {
           // Success
           setTokenValidated(true);
@@ -66,10 +71,10 @@ const OnboardingPage: React.FC = () => {
             type: "success",
             text: "✓ Token validated successfully!",
           });
-          
+
           // Save token
           await saveGitHubToken(githubToken);
-          
+
           // Proceed to next step
           if (currentStep < 3) {
             setCurrentStep(currentStep + 1);
@@ -95,9 +100,14 @@ const OnboardingPage: React.FC = () => {
       }
       return;
     }
-    
+
     // If on step 2 with no token but input shown, show validation message
-    if (currentStep === 2 && !tokenValidated && showTokenInput && !githubToken.trim()) {
+    if (
+      currentStep === 2 &&
+      !tokenValidated &&
+      showTokenInput &&
+      !githubToken.trim()
+    ) {
       setTokenMessage({
         type: "error",
         text: "Please enter a token before continuing.",
@@ -249,9 +259,15 @@ const OnboardingPage: React.FC = () => {
     }
   };
 
+  // State for payment or trial status
+  const [isPaidOrTrialing, setIsPaidOrTrialing] = useState(false);
+  
   // Complete the onboarding process
   const handleFinishOnboarding = async () => {
-    await finishOnboarding();
+    // Only allow completion if the user has started a trial or made a payment
+    if (isPaidOrTrialing) {
+      await finishOnboarding();
+    }
   };
 
   return (
@@ -278,14 +294,7 @@ const OnboardingPage: React.FC = () => {
           />
         )}
 
-        {currentStep === 3 && (
-          <ReadyStep
-            trialButtonText={trialButtonText}
-            trialButtonDisabled={trialButtonDisabled}
-            startingTrial={startingTrial}
-            startFreeTrial={handleStartFreeTrial}
-          />
-        )}
+        {currentStep === 3 && <ReadyStep onPaymentStatusChange={setIsPaidOrTrialing} />}
       </div>
 
       <NavigationControls
@@ -294,6 +303,7 @@ const OnboardingPage: React.FC = () => {
         onPrevious={goToPreviousStep}
         onNext={goToNextStep}
         onFinish={handleFinishOnboarding}
+        isPaidOrTrialing={isPaidOrTrialing}
       />
     </>
   );
