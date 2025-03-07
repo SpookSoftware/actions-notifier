@@ -14,6 +14,7 @@ import {
   isStopMonitoringRequest,
   hasClickHandler,
 } from "@/helpers/pure";
+import { getPaymentStatus } from "@/services/payment";
 import type { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 
 /**
@@ -80,33 +81,33 @@ export async function sendStructuredMessage(
 /**
  * Get the current extension enabled state
  */
-// todo: should we get the key here? Or should we just run the calculation ourselves?
 export async function isExtensionEnabled(): Promise<boolean> {
   try {
     // Get from storage first to avoid circular dependency
     const data = await browser.storage.local.get(EXTENSION_ENABLED_KEY);
     if (EXTENSION_ENABLED_KEY in data) {
-      return data[EXTENSION_ENABLED_KEY];
+      return Boolean(data[EXTENSION_ENABLED_KEY]);
     }
-    
+
     // If not in storage, calculate based on conditions
     // Get token first to check if it exists
     const tokenData = await browser.storage.sync.get("githubToken");
     if (!tokenData.githubToken) {
       return false; // No token = disabled
     }
-    
+
     const tooManyAlarms = (await getActiveAlarmCount()) >= MAX_ALARMS;
-    const userHasPaid = await checkPaymentStatus();
-    const userHasValidTrial = await checkTrialStatus();
-    
+    const paymentStatus = await getPaymentStatus();
+    const userHasPaid = paymentStatus.paid;
+    const userHasValidTrial = paymentStatus.trialIsValid;
+
     // Validate token directly to avoid circular reference
-    const tokenIsValid = await validateTokenDirectly(tokenData.githubToken);
+    const tokenIsValid = await validateTokenDirectly(
+      String(tokenData.githubToken)
+    );
 
     const extensionEnabled =
-      tokenIsValid &&
-      !tooManyAlarms &&
-      (userHasPaid || userHasValidTrial);
+      tokenIsValid && !tooManyAlarms && (userHasPaid || userHasValidTrial);
 
     return extensionEnabled;
   } catch (error) {
@@ -125,12 +126,12 @@ async function validateTokenDirectly(token: string): Promise<boolean> {
         Accept: "application/vnd.github.v3+json",
       },
     });
-    
+
     // Check for unauthorized
     if (response.status === 401) {
       return false;
     }
-    
+
     // Test if token has repo scope with a sample repo request
     const repoResponse = await fetch(
       "https://api.github.com/repos/octocat/hello-world",
@@ -141,11 +142,11 @@ async function validateTokenDirectly(token: string): Promise<boolean> {
         },
       }
     );
-    
+
     if (repoResponse.status === 403) {
       return false;
     }
-    
+
     return true;
   } catch (error) {
     console.error("Error validating token directly:", error);

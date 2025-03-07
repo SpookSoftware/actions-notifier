@@ -47,71 +47,78 @@ const OnboardingPage: React.FC = () => {
 
   // Navigate to next step
   const goToNextStep = async () => {
-    // If on step 2 (token step) with token entered but not validated
-    if (
-      currentStep === 2 &&
-      !tokenValidated &&
-      showTokenInput &&
-      githubToken.trim()
-    ) {
-      // Attempt to validate the token before proceeding
-      setValidatingToken(true);
-      setTokenMessage({
-        type: "error",
-        text: "Validating token...",
-      });
-
-      try {
-        const isValid = await validateGitHubToken(githubToken);
-
-        if (isValid) {
-          // Success
-          setTokenValidated(true);
-          setTokenMessage({
-            type: "success",
-            text: "✓ Token validated successfully!",
-          });
-
-          // Save token
-          await saveGitHubToken(githubToken);
-
-          // Proceed to next step
-          if (currentStep < 3) {
-            setCurrentStep(currentStep + 1);
-          }
-        } else {
-          // Error
-          setTokenValidated(false);
-          setTokenMessage({
-            type: "error",
-            text: '✖ Invalid token or insufficient permissions. Please ensure your token has the "repo" scope.',
-          });
-        }
-      } catch (error) {
-        console.error("Token validation error:", error);
+    // If on step 2 (token step) and token is not validated yet
+    if (currentStep === 2 && !tokenValidated) {
+      // If token input is visible with token entered but not validated
+      if (showTokenInput && githubToken.trim()) {
+        // Attempt to validate the token before proceeding
+        setValidatingToken(true);
         setTokenMessage({
           type: "error",
-          text: `✖ Error: ${
-            error instanceof Error ? error.message : "Network error"
-          }`,
+          text: "Validating token...",
         });
-      } finally {
-        setValidatingToken(false);
-      }
-      return;
-    }
 
-    // If on step 2 with no token but input shown, show validation message
-    if (
-      currentStep === 2 &&
-      !tokenValidated &&
-      showTokenInput &&
-      !githubToken.trim()
-    ) {
-      setTokenMessage({
-        type: "error",
-        text: "Please enter a token before continuing.",
-      });
+        try {
+          const isValid = await validateGitHubToken(githubToken);
+
+          if (isValid) {
+            // Success
+            setTokenValidated(true);
+            setTokenMessage({
+              type: "success",
+              text: "✓ Token validated successfully!",
+            });
+
+            // Save token
+            await saveGitHubToken(githubToken);
+
+            // Proceed to next step
+            if (currentStep < 3) {
+              setCurrentStep(currentStep + 1);
+            }
+          } else {
+            // Error
+            setTokenValidated(false);
+            setTokenMessage({
+              type: "error",
+              text: '✖ Invalid token or insufficient permissions. Please ensure your token has the "repo" scope.',
+            });
+          }
+        } catch (error) {
+          console.error("Token validation error:", error);
+          setTokenMessage({
+            type: "error",
+            text: `✖ Error: ${
+              error instanceof Error ? error.message : "Network error"
+            }`,
+          });
+        } finally {
+          setValidatingToken(false);
+        }
+        return;
+      }
+      
+      // If token input is visible but no token entered
+      if (showTokenInput && !githubToken.trim()) {
+        setTokenMessage({
+          type: "error",
+          text: "Please enter a token before continuing.",
+        });
+        return;
+      }
+      
+      // If token input is not visible (user hasn't clicked "I already have a token")
+      if (!showTokenInput) {
+        setTokenMessage({
+          type: "error",
+          text: "Please create a token or enter an existing one before continuing.",
+        });
+        // Show the token input to guide the user
+        setShowTokenInput(true);
+        return;
+      }
+      
+      // Don't proceed if token isn't validated
       return;
     }
 

@@ -86,18 +86,19 @@ const TokenStep: React.FC<TokenStepProps> = ({
               {validatingToken && <span className="spinner"></span>}
               Validate Token
             </button>
-
-            {tokenMessage && (
-              <div
-                className={`token-feedback ${
-                  tokenMessage.type === "success"
-                    ? "success-message"
-                    : "error-message"
-                }`}
-              >
-                {tokenMessage.text}
-              </div>
-            )}
+          </div>
+        )}
+        
+        {/* Always show token messages, regardless of input visibility */}
+        {tokenMessage && (
+          <div
+            className={`token-feedback ${
+              tokenMessage.type === "success"
+                ? "success-message"
+                : "error-message"
+            }`}
+          >
+            {tokenMessage.text}
           </div>
         )}
       </div>
