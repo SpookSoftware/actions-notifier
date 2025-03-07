@@ -158,7 +158,8 @@ async function validateTokenDirectly(token: string): Promise<boolean> {
  */
 export async function setExtensionEnabled(enabled: boolean): Promise<void> {
   try {
-    // Persist to storage
+    // Persist to storage - we still need to save this state to storage
+    // since it's used by both background script and content scripts
     await browser.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled });
     console.debug(`Extension enabled state set to: ${enabled}`);
 

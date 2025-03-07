@@ -140,6 +140,17 @@ const Popup: React.FC = () => {
         // Update alarm count after successful token validation
         const count = await getAlarmCount();
         setAlarmCount(count);
+        
+        // Ask background script to check and update extension state
+        // This will re-evaluate all conditions including the token
+        const result = await browser.runtime.sendMessage({
+          action: "checkAndUpdateExtensionState"
+        });
+        
+        if (result?.data?.enabled) {
+          setExtensionEnabled(true);
+          setExtensionStatusReason("The extension is monitoring workflows and adding notification buttons.");
+        }
       } else {
         setTokenStatus({
           message: "✖ Invalid token or insufficient permissions",
@@ -171,6 +182,12 @@ const Popup: React.FC = () => {
         if (isValid) {
           setTokenStatus({ message: "✓ Token valid", isValid: true });
           setAuthState("success");
+          
+          // If the token is valid, we need to tell the background script
+          // to check the extension state again
+          await browser.runtime.sendMessage({
+            action: "checkAndUpdateExtensionState"
+          });
         } else {
           setTokenStatus({
             message: "✖ Token invalid or expired",
