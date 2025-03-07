@@ -1,6 +1,7 @@
 import { trialIsValid } from "@/services/trial";
 import { PaymentStatus } from "@/types";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import LoadingSpinner from "../shared/LoadingSpinner";
 
 interface PaymentSectionProps {
   paymentStatus: PaymentStatus;
@@ -17,6 +18,15 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   paymentStatus,
   onPaymentClick,
 }) => {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // When paymentStatus changes from its initial state, we know it's loaded
+    if (paymentStatus.trialStartedAt !== null || paymentStatus.paid === true) {
+      setIsLoading(false);
+    }
+  }, [paymentStatus]);
+
   const trialExpired = !trialIsValid(paymentStatus.trialStartedAt);
   const trialEndDate = getTrialEndDate(paymentStatus.trialStartedAt);
   const trialNeverStarted = !paymentStatus.trialStartedAt;
@@ -64,6 +74,23 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   };
 
   const shouldShowTrialProgress = !paymentStatus.paid && !trialNeverStarted;
+
+  if (isLoading) {
+    return (
+      <div className="payment-section">
+        <div className="flex-row payment-header">
+          <h3>License Status</h3>
+          <span className="payment-badge">Loading...</span>
+        </div>
+        <div
+          className="payment-info"
+          style={{ display: "flex", justifyContent: "center", padding: "20px" }}
+        >
+          <LoadingSpinner />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="payment-section">

@@ -35,6 +35,7 @@ const Popup: React.FC = () => {
   const [extensionEnabled, setExtensionEnabled] = useState(true);
   const [extensionStatusReason, setExtensionStatusReason] =
     useState<string>("");
+  // Initialize with null trialStartedAt to indicate loading state
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({
     paid: false,
     trialIsValid: false,

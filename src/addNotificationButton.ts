@@ -77,7 +77,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       showInPageNotification(NotificationType.ALARM_LIMIT_REACHED);
     } else if (message.type === "trial-expired") {
       // Pass along metadata about trial status if available
-      showInPageNotification(NotificationType.TRIAL_EXPIRED, message.metadata);
+      if ("metadata" in message) {
+        showInPageNotification(
+          NotificationType.TRIAL_EXPIRED,
+          message.metadata as Record<string, any>
+        );
+      } else {
+        showInPageNotification(NotificationType.TRIAL_EXPIRED);
+      }
     }
   }
 
