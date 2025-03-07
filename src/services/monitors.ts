@@ -13,6 +13,7 @@ export async function loadMonitors(): Promise<Monitor[]> {
   try {
     // Get all alarms (active monitors)
     const alarms = await browser.alarms.getAll();
+    console.log(`Found ${alarms.length} alarms`);
 
     // Get details for each encoded alarm name from storage
     const monitorDetails: Monitor[] = [];
@@ -21,18 +22,32 @@ export async function loadMonitors(): Promise<Monitor[]> {
       try {
         // Get alarm details
         const encodedId = alarm.name;
-        const decodedData = decode(encodedId as Encoded);
-
-        // Get time when monitor was created
-        const storageData = await browser.storage.local.get(encodedId);
-        if (storageData[encodedId]) {
-          console.error(`No data found for alarm ${alarm.name}`);
+        if (!encodedId) {
+          console.error(`Alarm has no name:`, alarm);
           continue;
         }
-        const createdTime =
-          storageData[encodedId] === true
-            ? new Date().toLocaleString() // fallback if no timestamp stored
-            : new Date(storageData[encodedId] as string).toLocaleString();
+
+        const decodedData = decode(encodedId as Encoded);
+        
+        // Get time when monitor was created
+        const storageData = await browser.storage.local.get(encodedId);
+        
+        // For debugging
+        console.log(`Loading alarm data for ${encodedId}:`, storageData);
+        
+        // Handle different possible data types safely
+        let createdTime;
+        const storedValue = storageData[encodedId];
+        
+        if (storedValue === true) {
+          createdTime = new Date().toLocaleString(); // fallback if no timestamp stored
+        } else if (typeof storedValue === 'string') {
+          createdTime = new Date(storedValue).toLocaleString();
+        } else if (typeof storedValue === 'number') {
+          createdTime = new Date(storedValue).toLocaleString();
+        } else {
+          createdTime = new Date().toLocaleString(); // ultimate fallback
+        }
 
         monitorDetails.push({
           id: encodedId,
@@ -51,13 +66,16 @@ export async function loadMonitors(): Promise<Monitor[]> {
       }
     }
 
+    console.log(`Processed ${monitorDetails.length} monitors`);
+
     // Sort by creation time (newest first)
     return monitorDetails.sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   } catch (error) {
     console.error("Error loading monitors:", error);
-    throw error;
+    // Return empty array instead of throwing, to avoid infinite suspense loop
+    return [];
   }
 }
 

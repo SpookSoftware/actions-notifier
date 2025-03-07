@@ -47,7 +47,7 @@ const GitHubTokenForm: React.FC<GitHubTokenFormProps> = ({
         <button type="submit" id="saveButton" disabled={isLoading}>
           Save Token
         </button>
-        {isLoading && (
+        {isLoading && !tokenStatus.isValid && (
           <div className="spinner" style={{ display: "inline-block" }}></div>
         )}
       </div>

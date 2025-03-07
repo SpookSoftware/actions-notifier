@@ -16,59 +16,138 @@ const ITEMS_PER_PAGE = 10;
 
 const ManagePage: React.FC = () => {
   // State variables
-  const [allMonitors, setAllMonitors] = useState<Monitor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [monitors, setMonitors] = useState<Monitor[]>([]);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Load monitors on component mount
-  useEffect(() => {
-    handleLoadMonitors();
-  }, []);
-
-  // Current monitors to display based on pagination
-  const currentMonitors = allMonitors.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
-
-  // Handle loading monitors
-  const handleLoadMonitors = async () => {
+  // Load monitors on mount and whenever refresh is triggered
+  const fetchMonitors = async () => {
     try {
-      // Show loading state
       setLoading(true);
-      setRefreshing(true);
-
-      // Load monitors from service
-      const monitors = await loadMonitors();
-      setAllMonitors(monitors);
-    } catch (error) {
-      console.error("Error loading monitors:", error);
+      setError(null);
+      
+      console.log("Fetching monitors...");
+      const data = await loadMonitors();
+      console.log(`Fetched ${data.length} monitors`);
+      
+      setMonitors(data);
+    } catch (err) {
+      console.error("Error loading monitors:", err);
+      setError("Failed to load monitors. Please try again.");
     } finally {
-      // Hide loading state
       setLoading(false);
       setRefreshing(false);
     }
   };
 
+  // Initial load
+  useEffect(() => {
+    fetchMonitors();
+  }, []);
+
+  // Handle refreshing the monitors list
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchMonitors();
+  };
+
   // Handle removing a monitor
   const handleRemoveMonitor = async (id: string) => {
-    const success = await removeMonitor(id);
-    if (success) {
-      // Reload monitors to update UI
-      await handleLoadMonitors();
+    try {
+      const success = await removeMonitor(id);
+      if (success) {
+        // Remove from local state instead of full refresh
+        setMonitors(prev => prev.filter(monitor => monitor.id !== id));
+        
+        // If current page is now empty and not the first page, go to previous page
+        const remainingMonitors = monitors.filter(monitor => monitor.id !== id);
+        const totalPages = Math.ceil(remainingMonitors.length / ITEMS_PER_PAGE);
+        if (currentPage > totalPages && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+      }
+      return success;
+    } catch (err) {
+      console.error(`Error removing monitor ${id}:`, err);
+      return false;
     }
-    return success;
   };
 
   // Handle clearing all monitors
   const handleClearAllMonitors = async () => {
-    const success = await clearAllMonitors();
-    if (success) {
-      // Reload monitors to update UI
-      await handleLoadMonitors();
+    if (
+      window.confirm(
+        "Are you sure you want to remove all workflow monitors? This action cannot be undone."
+      )
+    ) {
+      try {
+        const success = await clearAllMonitors();
+        if (success) {
+          setMonitors([]);
+          setCurrentPage(1);
+        }
+        return success;
+      } catch (err) {
+        console.error("Error clearing all monitors:", err);
+        return false;
+      }
     }
-    return success;
+    return false;
+  };
+
+  // Calculate current page slice of monitors
+  const currentMonitors = monitors.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Render monitors content based on state
+  const renderContent = () => {
+    if (loading && monitors.length === 0) {
+      return <LoadingIndicator message="Loading monitors..." />;
+    }
+
+    if (error) {
+      return (
+        <div className="error-message">
+          {error}
+          <button onClick={handleRefresh} className="retry-button">
+            Retry
+          </button>
+        </div>
+      );
+    }
+
+    if (monitors.length === 0) {
+      return (
+        <div className="empty-state">
+          <p>No active workflow monitors found.</p>
+          <p>
+            Click the bell icon next to a running workflow on GitHub to start
+            monitoring.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <MonitorList
+          monitors={currentMonitors}
+          onRemove={handleRemoveMonitor}
+          formatTime={formatTime}
+        />
+
+        <Pagination
+          currentPage={currentPage}
+          totalItems={monitors.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setCurrentPage}
+        />
+      </div>
+    );
   };
 
   return (
@@ -76,31 +155,14 @@ const ManagePage: React.FC = () => {
       <Header />
 
       <StatusBar
-        monitorCount={allMonitors.length}
+        monitorCount={monitors.length}
         refreshing={refreshing}
-        onRefresh={handleLoadMonitors}
+        onRefresh={handleRefresh}
         onClearAll={handleClearAllMonitors}
-        hasMonitors={allMonitors.length > 0}
+        hasMonitors={monitors.length > 0}
       />
 
-      {loading ? (
-        <LoadingIndicator message="Loading monitors..." />
-      ) : (
-        <div>
-          <MonitorList
-            monitors={currentMonitors}
-            onRemove={handleRemoveMonitor}
-            formatTime={formatTime}
-          />
-
-          <Pagination
-            currentPage={currentPage}
-            totalItems={allMonitors.length}
-            itemsPerPage={ITEMS_PER_PAGE}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
+      {renderContent()}
     </>
   );
 };
