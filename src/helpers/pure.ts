@@ -349,17 +349,24 @@ export const createActionRunCallback = (onObservationChange: Function) => {
 export const createPRRunCallback = (
   onObservationChange: Function
 ): ((mutationsList: MutationRecord[]) => void) => {
-  return (mutationsList: MutationRecord[]) => {
+  return function (mutationsList: MutationRecord[]) {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
         for (const addedNode of mutation.addedNodes) {
           if (addedNode instanceof Element) {
-            console.debug("A new element was added:", addedNode);
-            // If it is in fact the container we are expecting
-            if (addedNode.matches(PR_CHECKS_CONTAINER_PARENT_SELECTOR)) {
-              console.debug("The PR checks container was replaced");
+            const isPRChecksContainer =
+              addedNode instanceof HTMLElement &&
+              addedNode.classList.entries().some(([_index, value]) => {
+                return value.includes("MergeBox-module__mergePartialContainer");
+              });
+            if (isPRChecksContainer) {
+              console.debug(
+                "Added element is a queued or running action run DOM node: ",
+                addedNode
+              );
               onObservationChange();
             }
+            console.groupEnd();
           }
         }
       }
