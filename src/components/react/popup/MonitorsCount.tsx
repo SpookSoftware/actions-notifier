@@ -3,20 +3,12 @@ import browser from "webextension-polyfill";
 
 interface MonitorsCountProps {
   alarmCount: number;
-  isTokenValid: boolean;
 }
 
-const MonitorsCount: React.FC<MonitorsCountProps> = ({
-  alarmCount,
-  isTokenValid,
-}) => {
+const MonitorsCount: React.FC<MonitorsCountProps> = ({ alarmCount }) => {
   const handleManageClick = () => {
     browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
   };
-
-  if (!isTokenValid) {
-    return null;
-  }
 
   return (
     <div className="monitors-count">
