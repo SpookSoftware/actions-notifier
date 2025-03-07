@@ -19,6 +19,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
 }) => {
   const trialExpired = !trialIsValid(paymentStatus.trialStartedAt);
   const trialEndDate = getTrialEndDate(paymentStatus.trialStartedAt);
+  const trialNeverStarted = !paymentStatus.trialStartedAt;
 
   // Calculate trial progress
   const calculateTrialProgress = () => {
@@ -62,6 +63,8 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
     return "Your 7-day free trial is active.";
   };
 
+  const shouldShowTrialProgress = !paymentStatus.paid && !trialNeverStarted;
+
   return (
     <div className="payment-section">
       <div className="flex-row payment-header">
@@ -74,6 +77,9 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
         >
           {paymentStatus.paid
             ? "Purchased"
+            : // Note to self: trialNeverStarted has to be in front of trialExpired or the wrong thing will display
+            trialNeverStarted
+            ? "No Trial Started"
             : trialExpired
             ? "Trial Expired"
             : "Free Trial"}
@@ -81,7 +87,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
       </div>
       <div className="payment-info">
         <p>{getPaymentStatusMessage()}</p>
-        {!paymentStatus.paid && (
+        {shouldShowTrialProgress && (
           <div className="trial-progress-container">
             <div
               className="trial-progress-bar"
