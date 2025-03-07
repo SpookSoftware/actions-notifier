@@ -26,56 +26,84 @@ export function trialIsValid(trialStart: Date | null | false): boolean {
  * @param onActivated Callback function called when trial is activated or payment is completed
  * @param onPending Callback function called while status is pending
  * @param onError Callback function called on error
+ * @returns Cleanup function to stop polling
  */
 export function startTrialStatusPolling(
   onActivated: () => void,
   onPending: (attempt: number, maxAttempts: number) => void,
   onError: () => void
-): void {
+): () => void {
+  let isActive = true;
+  let timeoutId: ReturnType<typeof setTimeout>;
+  
   // Initial delay before first check (3 seconds)
-  setTimeout(async () => {
+  timeoutId = setTimeout(async () => {
     let attempts = 0;
-    const maxAttempts = 100; // Stop after ~5 minutes (100 * 3 seconds)
-
+    const maxAttempts = 20; // Stop after ~1 minute (20 * 3 seconds) - reduced from 100
+    
     const checkTrialStatus = async () => {
+      if (!isActive) return true; // Stop if we've been cleaned up
+      
       try {
         const user = await extpay.getUser();
 
         // Check for either trial activation or payment
         if (trialIsValid(user.trialStartedAt) || user.paid) {
           // Trial activated or payment completed successfully
-          onActivated();
+          if (isActive) onActivated();
           return true; // Stop polling
         }
 
         // Continue checking if max attempts not reached
         attempts++;
-        onPending(attempts, maxAttempts);
+        if (isActive) onPending(attempts, maxAttempts);
 
         if (attempts >= maxAttempts) {
           // Max attempts reached
-          onError();
+          if (isActive) onError();
           return true; // Stop polling
         }
 
         return false; // Continue polling
       } catch (error) {
         console.error("Error checking trial/payment status:", error);
-        onError();
+        
+        // If it appears the trial page was closed (connection error)
+        // we should check once more to see if the trial was actually started
+        try {
+          const user = await extpay.getUser();
+          if (trialIsValid(user.trialStartedAt) || user.paid) {
+            // Trial was actually started despite the error
+            if (isActive) onActivated();
+            return true;
+          }
+        } catch (secondError) {
+          // Ignore second error and proceed with original error handling
+        }
+        
+        if (isActive) onError();
         return true; // Stop polling on error
       }
     };
 
     // Start the polling process
     const poll = async () => {
+      if (!isActive) return; // Don't continue polling if cleanup has been called
+      
       const shouldStop = await checkTrialStatus();
-      if (!shouldStop) {
-        setTimeout(poll, 3000); // Check every 3 seconds
+      if (!shouldStop && isActive) {
+        timeoutId = setTimeout(poll, 3000); // Check every 3 seconds
       }
     };
 
     poll();
   }, 3000);
+  
+  // Return a cleanup function to stop polling
+  return () => {
+    isActive = false;
+    clearTimeout(timeoutId);
+  };
 }
 
 /**

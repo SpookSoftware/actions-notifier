@@ -19,12 +19,21 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({
   onPaymentClick,
 }) => {
   const [isLoading, setIsLoading] = useState(true);
-
+  
   useEffect(() => {
+    // Set a timeout to stop loading after a reasonable time
+    // This prevents the UI from being stuck in a loading state forever
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000); // 3 seconds is enough time for normal loading
+    
     // When paymentStatus changes from its initial state, we know it's loaded
     if (paymentStatus.trialStartedAt !== null || paymentStatus.paid === true) {
       setIsLoading(false);
+      clearTimeout(timeoutId);
     }
+    
+    return () => clearTimeout(timeoutId); // Clean up timeout on unmount
   }, [paymentStatus]);
 
   const trialExpired = !trialIsValid(paymentStatus.trialStartedAt);
