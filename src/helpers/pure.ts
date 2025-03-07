@@ -188,7 +188,7 @@ export function getTargetElements(divs: NodeListOf<Element>) {
 
 const isQueuedPR = (el: any) => {
   // Look for a span with text mentioning "Queued"
-  const maybeQueuedSpans = el.querySelectorAll("span.text-italic");
+  const maybeQueuedSpans = el.querySelectorAll("span");
 
   for (const span of maybeQueuedSpans) {
     if (span.textContent && span.textContent.toLowerCase().includes("queued")) {
@@ -358,24 +358,30 @@ export const createActionRunCallback = (onObservationChange: Function) => {
 };
 
 export const createPRRunCallback = (
-  onObservationChange: Function
+  onObservationChange: Function,
+  onWholeContainerChange: Function
 ): ((mutationsList: MutationRecord[]) => void) => {
   return function (mutationsList: MutationRecord[]) {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
         for (const addedNode of mutation.addedNodes) {
           if (addedNode instanceof Element) {
-            if (
+            const wholeContainerChanged = addedNode.classList
+              .entries()
+              .some(([_idx, value]) => {
+                return value.includes("MergeBox-module__mergePartialContainer");
+              });
+
+            const singleElementChanged =
               isQueuedRunningAndNotButtonedPR(addedNode) &&
-              // The observer will mistakenly fire on when the div is replaced, and it messes things up.
-              !(addedNode instanceof HTMLDivElement)
-            ) {
-              console.debug("It is a queued or running action run DOM node");
-              onObservationChange();
-            } else {
-              console.debug("It's not a action run DOM node");
+              !(addedNode instanceof HTMLDivElement);
+
+            // either we are seeing that a li got added or removed, or the entire container got replaced.
+            if (singleElementChanged) {
+              onObservationChange(addedNode);
+            } else if (wholeContainerChanged) {
+              onWholeContainerChange();
             }
-            console.groupEnd();
           }
         }
       }
@@ -617,7 +623,7 @@ export function insertButtonBetweenStatusAndDetails(
   // Position the button absolutely inside the zero-sized container
   button.style.position = "absolute";
   button.style.top = "7px"; // Adjust vertical position slightly higher
-  button.style.left = "-10px"; // Adjust horizontal position
+  button.style.left = "50px"; // Adjust horizontal position
   button.style.width = "20px"; // Maintain good button size
   button.style.height = "20px";
   button.style.padding = "0";

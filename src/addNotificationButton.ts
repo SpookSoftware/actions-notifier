@@ -248,6 +248,53 @@ async function processElementsForJobPages() {
   }
 }
 
+async function processSinglePRPageElement(node: Element) {
+  const link = node.querySelector("a");
+
+  console.assert(
+    link,
+    "Expected link to exist on currently running or queued element"
+  );
+  if (!link) {
+    return;
+  }
+  if (!(link instanceof HTMLAnchorElement)) {
+    console.error("Expected link to be an HTMLAnchorElement");
+    return;
+  }
+
+  // PRs show runs by job.
+  const { owner, repository, runId, jobId } = extractJobDataFromURL(link.href);
+
+  const button = createNotificationButton({
+    runId,
+    owner,
+    repository,
+    jobId,
+  });
+
+  const svg = createNotificationSVG();
+
+  button.appendChild(svg);
+
+  const handleMonitoringClickFn = createMonitorToggleHandler({
+    runId,
+    jobId,
+    owner,
+    repository,
+    svg,
+  });
+  button.onclick = handleMonitoringClickFn;
+
+  const encoded = encode({ runId, jobId, owner, repository });
+  const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
+  if (isAlreadyMonitored) {
+    setSVGColor(svg, "yellow");
+  }
+
+  insertButtonBetweenStatusAndDetails(button, node);
+}
+
 async function processElementsForPRPages() {
   const checksPanelIsOpen =
     document.querySelector(NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR) !== null;
@@ -273,52 +320,7 @@ async function processElementsForPRPages() {
   const currentlyRunningOrQueued = getTargetPRElements(runs);
 
   for (const element of currentlyRunningOrQueued) {
-    const link = element.querySelector("a");
-
-    console.assert(
-      link,
-      "Expected link to exist on currently running or queued element"
-    );
-    if (!link) {
-      continue;
-    }
-    if (!(link instanceof HTMLAnchorElement)) {
-      console.error("Expected link to be an HTMLAnchorElement");
-      continue;
-    }
-
-    // PRs show runs by job.
-    const { owner, repository, runId, jobId } = extractJobDataFromURL(
-      link.href
-    );
-
-    const button = createNotificationButton({
-      runId,
-      owner,
-      repository,
-      jobId,
-    });
-
-    const svg = createNotificationSVG();
-
-    button.appendChild(svg);
-
-    const handleMonitoringClickFn = createMonitorToggleHandler({
-      runId,
-      jobId,
-      owner,
-      repository,
-      svg,
-    });
-    button.onclick = handleMonitoringClickFn;
-
-    const encoded = encode({ runId, jobId, owner, repository });
-    const isAlreadyMonitored = await isIdAlreadyMonitored(encoded);
-    if (isAlreadyMonitored) {
-      setSVGColor(svg, "yellow");
-    }
-
-    insertButtonBetweenStatusAndDetails(button, element);
+    processSinglePRPageElement(element);
   }
 }
 
@@ -473,14 +475,19 @@ async function main(): Promise<void> {
       console.debug("Determined we are in the PR monitoring path");
       await processElementsForPRPages();
 
+      // const prRunsContainer = document.querySelector(
+      //   "react-partial[partial-name='mergebox-partial']"
+      // );
+
       const prRunsContainer = document.querySelector(
-        "react-partial[partial-name='mergebox-partial']"
+        "div.merge-pr.Details.is-merging"
       );
 
       if (prRunsContainer) {
         console.debug("Attaching PR actions observer");
 
         const prRunCallback = createPRRunCallback(
+          async (node: Element) => await processSinglePRPageElement(node),
           async () => await processElementsForPRPages()
         );
 
