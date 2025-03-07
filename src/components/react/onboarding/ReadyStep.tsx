@@ -1,31 +1,145 @@
 import React from "react";
-import { openBuyPage, openPaymentPage } from "@/services/payment";
+import { openBuyPage, getPaymentStatus } from "@/services/payment";
+import { startFreeTrial as startFreeTrialService, startTrialStatusPolling } from "@/services/trial";
 
-interface ReadyStepProps {
-  trialButtonText: string;
-  trialButtonDisabled: boolean;
-  startingTrial: boolean;
-  startFreeTrial: () => Promise<void>;
-}
+interface ReadyStepProps {}
 
-const ReadyStep: React.FC<ReadyStepProps> = ({
-  trialButtonText,
-  trialButtonDisabled,
-  startingTrial,
-  startFreeTrial,
-}) => {
-  const [purchaseLoading, setPurchaseLoading] = React.useState(false);
+// Trial button component
+const TrialButton: React.FC<{
+  trialActivated: boolean;
+  onStartTrial: () => void;
+  disableAllButtons: boolean;
+}> = ({ trialActivated, onStartTrial, disableAllButtons }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [buttonText, setButtonText] = React.useState("Start Free Trial");
+  
+  const handleClick = async () => {
+    if (trialActivated) return;
+    
+    setIsLoading(true);
+    setButtonText("Starting Trial...");
+    
+    try {
+      await startFreeTrialService();
+      onStartTrial();
+    } catch (error) {
+      console.error("Error starting trial:", error);
+      setButtonText("Failed to Start Trial");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  return (
+    <button
+      className="btn btn-primary"
+      onClick={handleClick}
+      disabled={isLoading || trialActivated || disableAllButtons}
+    >
+      {isLoading && <span className="spinner"></span>}
+      {trialActivated ? "Trial Activated" : buttonText}
+    </button>
+  );
+};
 
-  const handleBuyNow = async () => {
-    setPurchaseLoading(true);
+// Purchase button component
+const PurchaseButton: React.FC<{
+  onPurchaseInitiated: () => void;
+  disableAllButtons: boolean;
+}> = ({ onPurchaseInitiated, disableAllButtons }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+  
+  const handleClick = async () => {
+    setIsLoading(true);
     try {
       await openBuyPage();
+      onPurchaseInitiated();
     } catch (error) {
       console.error("Error opening payment page:", error);
     } finally {
-      setPurchaseLoading(false);
+      setIsLoading(false);
     }
   };
+  
+  return (
+    <button
+      className="btn"
+      onClick={handleClick}
+      disabled={isLoading || disableAllButtons}
+      style={{
+        background: "#fff",
+        border: "1px solid #6f42c1",
+        color: "#6f42c1",
+      }}
+    >
+      {isLoading && <span className="spinner"></span>}
+      Buy Now ($2.95)
+    </button>
+  );
+};
+
+const ReadyStep: React.FC<ReadyStepProps> = () => {
+  const [checkingStatus, setCheckingStatus] = React.useState(false);
+  const [paymentComplete, setPaymentComplete] = React.useState(false);
+  const [trialActivated, setTrialActivated] = React.useState(false);
+  
+  // Status message states
+  const [showStatusMessage, setShowStatusMessage] = React.useState(false);
+  const [statusMessage, setStatusMessage] = React.useState("");
+  
+  // Start status polling for trial/purchase
+  const startStatusPolling = () => {
+    setCheckingStatus(true);
+    
+    startTrialStatusPolling(
+      // On trial/purchase activated
+      () => {
+        getPaymentStatus().then(status => {
+          if (status.paid) {
+            setPaymentComplete(true);
+            setShowStatusMessage(true);
+            setStatusMessage("Thank you for your purchase! You have lifetime access to this extension.");
+          } else if (status.trialIsValid) {
+            setTrialActivated(true);
+            setShowStatusMessage(true);
+            setStatusMessage("Your 7-day free trial has been activated. Enjoy the extension!");
+          }
+          setCheckingStatus(false);
+        });
+      },
+      // On trial pending
+      (attempt, maxAttempts) => {
+        // Just monitor attempts
+      },
+      // On error
+      () => {
+        setCheckingStatus(false);
+      }
+    );
+  };
+  
+  // Check payment/trial status on component mount
+  React.useEffect(() => {
+    const checkInitialStatus = async () => {
+      try {
+        const status = await getPaymentStatus();
+        if (status.paid) {
+          setPaymentComplete(true);
+          setShowStatusMessage(true);
+          setStatusMessage("Thank you for your purchase! You have lifetime access to this extension.");
+        } else if (status.trialIsValid) {
+          setTrialActivated(true);
+          setShowStatusMessage(true);
+          setStatusMessage("Your 7-day free trial has been activated. Enjoy the extension!");
+        }
+      } catch (error) {
+        console.error("Error checking payment status:", error);
+      }
+    };
+    
+    checkInitialStatus();
+  }, []);
+  
   return (
     <div className="step">
       <div className="step-number">3</div>
@@ -54,44 +168,46 @@ const ReadyStep: React.FC<ReadyStepProps> = ({
             borderLeft: "4px solid #6f42c1",
           }}
         >
-          <h3 style={{ marginTop: 0, color: "#6f42c1" }}>
-            💜 Free Trial Period
-          </h3>
-          <p>
-            To use the extension, you need to sign up for a{" "}
-            <b>
-              <i>no-credit-card-required</i> 7-day free trial
-            </b>
-            . After the trial period, a one-time purchase is required to
-            continue using the extension.
-          </p>
-          <p style={{ marginBottom: "10px" }}>
-            <b>Price:</b> $2.95 (one-time payment, lifetime license)
-          </p>
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <button
-              className="btn btn-primary"
-              onClick={startFreeTrial}
-              disabled={trialButtonDisabled}
-            >
-              {startingTrial && <span className="spinner"></span>}
-              {trialButtonText}
-            </button>
+          {showStatusMessage ? (
+            <div style={{ padding: "10px 0", color: "#6f42c1" }}>
+              <h3 style={{ marginTop: 0, color: "#6f42c1" }}>
+                {paymentComplete ? "💰 Purchase Complete" : "✅ Trial Activated"}
+              </h3>
+              <p>{statusMessage}</p>
+            </div>
+          ) : (
+            <>
+              <h3 style={{ marginTop: 0, color: "#6f42c1" }}>
+                💜 Free Trial Period
+              </h3>
+              <p>
+                To use the extension, you need to sign up for a{" "}
+                <b>
+                  <i>no-credit-card-required</i> 7-day free trial
+                </b>
+                . After the trial period, a one-time purchase is required to
+                continue using the extension.
+              </p>
+              <p style={{ marginBottom: "10px" }}>
+                <b>Price:</b> $2.95 (one-time payment, lifetime license)
+              </p>
+            </>
+          )}
+          
+          {!paymentComplete && (
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <TrialButton 
+                trialActivated={trialActivated}
+                onStartTrial={startStatusPolling}
+                disableAllButtons={checkingStatus}
+              />
 
-            <button
-              className="btn"
-              onClick={handleBuyNow}
-              disabled={purchaseLoading}
-              style={{
-                background: "#fff",
-                border: "1px solid #6f42c1",
-                color: "#6f42c1",
-              }}
-            >
-              {purchaseLoading && <span className="spinner"></span>}
-              Buy Now ($2.95)
-            </button>
-          </div>
+              <PurchaseButton
+                onPurchaseInitiated={startStatusPolling}
+                disableAllButtons={checkingStatus}
+              />
+            </div>
+          )}
         </div>
 
         <div className="help-text">

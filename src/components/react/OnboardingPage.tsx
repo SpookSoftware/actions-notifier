@@ -46,17 +46,66 @@ const OnboardingPage: React.FC = () => {
   };
 
   // Navigate to next step
-  const goToNextStep = () => {
-    // If on step 2 (token step), require validation before proceeding
-    if (currentStep === 2 && !tokenValidated && showTokenInput) {
-      // Show validation message if they try to proceed without validating
+  const goToNextStep = async () => {
+    // If on step 2 (token step) with token entered but not validated
+    if (currentStep === 2 && !tokenValidated && showTokenInput && githubToken.trim()) {
+      // Attempt to validate the token before proceeding
+      setValidatingToken(true);
       setTokenMessage({
         type: "error",
-        text: "Please validate your token before continuing.",
+        text: "Validating token...",
+      });
+      
+      try {
+        const isValid = await validateGitHubToken(githubToken);
+        
+        if (isValid) {
+          // Success
+          setTokenValidated(true);
+          setTokenMessage({
+            type: "success",
+            text: "✓ Token validated successfully!",
+          });
+          
+          // Save token
+          await saveGitHubToken(githubToken);
+          
+          // Proceed to next step
+          if (currentStep < 3) {
+            setCurrentStep(currentStep + 1);
+          }
+        } else {
+          // Error
+          setTokenValidated(false);
+          setTokenMessage({
+            type: "error",
+            text: '✖ Invalid token or insufficient permissions. Please ensure your token has the "repo" scope.',
+          });
+        }
+      } catch (error) {
+        console.error("Token validation error:", error);
+        setTokenMessage({
+          type: "error",
+          text: `✖ Error: ${
+            error instanceof Error ? error.message : "Network error"
+          }`,
+        });
+      } finally {
+        setValidatingToken(false);
+      }
+      return;
+    }
+    
+    // If on step 2 with no token but input shown, show validation message
+    if (currentStep === 2 && !tokenValidated && showTokenInput && !githubToken.trim()) {
+      setTokenMessage({
+        type: "error",
+        text: "Please enter a token before continuing.",
       });
       return;
     }
 
+    // Default behavior - go to next step
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     }

@@ -17,21 +17,23 @@ const NavigationControls: React.FC<NavigationControlsProps> = ({
 }) => {
   return (
     <div className="controls">
-      {currentStep > 1 && (
-        <button className="btn btn-secondary" onClick={onPrevious}>
-          Previous
-        </button>
-      )}
-      {currentStep < totalSteps && (
-        <button className="btn btn-primary" onClick={onNext}>
-          Next
-        </button>
-      )}
-      {currentStep === totalSteps && (
-        <button className="btn btn-primary" onClick={onFinish}>
-          Get Started
-        </button>
-      )}
+      <div className="buttons-container">
+        {currentStep > 1 && (
+          <button className="btn btn-secondary" onClick={onPrevious}>
+            Previous
+          </button>
+        )}
+        {currentStep < totalSteps && (
+          <button className="btn btn-primary" onClick={onNext}>
+            Next
+          </button>
+        )}
+        {currentStep === totalSteps && (
+          <button className="btn btn-primary" onClick={onFinish}>
+            Get Started
+          </button>
+        )}
+      </div>
     </div>
   );
 };

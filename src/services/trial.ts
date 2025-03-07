@@ -22,14 +22,14 @@ export function trialIsValid(trialStart: Date | null | false): boolean {
 }
 
 /**
- * Starts trial status polling
- * @param onTrialActivated Callback function called when trial is activated
- * @param onTrialPending Callback function called while trial is pending
+ * Starts polling for trial or payment status changes
+ * @param onActivated Callback function called when trial is activated or payment is completed
+ * @param onPending Callback function called while status is pending
  * @param onError Callback function called on error
  */
 export function startTrialStatusPolling(
-  onTrialActivated: () => void,
-  onTrialPending: (attempt: number, maxAttempts: number) => void,
+  onActivated: () => void,
+  onPending: (attempt: number, maxAttempts: number) => void,
   onError: () => void
 ): void {
   // Initial delay before first check (3 seconds)
@@ -41,15 +41,16 @@ export function startTrialStatusPolling(
       try {
         const user = await extpay.getUser();
 
-        if (trialIsValid(user.trialStartedAt)) {
-          // Trial activated successfully
-          onTrialActivated();
+        // Check for either trial activation or payment
+        if (trialIsValid(user.trialStartedAt) || user.paid) {
+          // Trial activated or payment completed successfully
+          onActivated();
           return true; // Stop polling
         }
 
         // Continue checking if max attempts not reached
         attempts++;
-        onTrialPending(attempts, maxAttempts);
+        onPending(attempts, maxAttempts);
 
         if (attempts >= maxAttempts) {
           // Max attempts reached
@@ -59,7 +60,7 @@ export function startTrialStatusPolling(
 
         return false; // Continue polling
       } catch (error) {
-        console.error("Error checking trial status:", error);
+        console.error("Error checking trial/payment status:", error);
         onError();
         return true; // Stop polling on error
       }
