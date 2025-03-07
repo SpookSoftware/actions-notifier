@@ -219,7 +219,7 @@ const ReadyStep: React.FC<ReadyStepProps> = ({ onPaymentStatusChange }) => {
 
     // Set up polling with a more reasonable interval (3 seconds instead of 1)
     // This reduces system load while still being responsive
-    intervalId = setInterval(checkPaymentStatus, 3000);
+    intervalId = setInterval(checkPaymentStatus, 3000) as NodeJS.Timeout;
 
     // Clean up function
     return () => {
