@@ -292,7 +292,7 @@ const PopupContent: React.FC<PopupContentProps> = ({ resources }) => {
       <MonitorsCount alarmCount={alarmCount} />
 
       <p>
-        Questions? Feedback? Email us at{" "}
+        Questions? Problems? Feedback? Email us at{" "}
         <a href="mailto:cicd-notifications@spook.software">
           cicd-notifications@spook.software
         </a>
