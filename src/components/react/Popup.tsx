@@ -15,7 +15,6 @@ import {
 import {
   getAlarmCount,
   getExtensionEnabledState,
-  sendTestNotification,
 } from "../../services/extension";
 import { getPaymentStatus, openPaymentPage } from "../../services/payment";
 import { PaymentStatus } from "@/types";
@@ -143,11 +142,12 @@ const Popup: React.FC = () => {
 
         // Ask background script to check and update extension state
         // This will re-evaluate all conditions including the token
-        const result = await browser.runtime.sendMessage({
-          action: "checkAndUpdateExtensionState",
-        });
+        const result: { data?: { enabled?: boolean } } =
+          await browser.runtime.sendMessage({
+            action: "checkAndUpdateExtensionState",
+          });
 
-        if (result?.data?.enabled) {
+        if (result.data?.enabled) {
           setExtensionEnabled(true);
           setExtensionStatusReason(
             "The extension is monitoring workflows and adding notification buttons."
