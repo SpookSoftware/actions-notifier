@@ -45,7 +45,6 @@ const Popup: React.FC = () => {
   // Load data on component mount
   useEffect(() => {
     const init = async () => {
-      // Check if first run
       const firstRun = await checkFirstRun();
       if (firstRun) {
         setShowWelcomeMessage(true);

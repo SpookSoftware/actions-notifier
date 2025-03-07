@@ -11,9 +11,9 @@ import { rm } from "node:fs/promises";
     entrypoints: [
       "./src/addNotificationButton.ts",
       "./src/background.ts",
-      "./src/popup.tsx", // Changed from HTML to TSX
-      "./src/manage.tsx", // Changed from HTML to TSX
-      "./src/onboarding.tsx", // Changed from HTML to TSX
+      "./src/popup.tsx",
+      "./src/manage.tsx",
+      "./src/onboarding.tsx",
       "./src/ExtPay_content_script.js",
     ],
     outdir: outputDir,
