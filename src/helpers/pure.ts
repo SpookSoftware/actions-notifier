@@ -1,6 +1,8 @@
 import {
   CURRENTLY_RUNNING_SELECTOR,
   IN_PROGRESS_SELECTOR,
+  NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR,
+  NEW_PR_CURRENTLY_RUNNING_SELECTOR,
   PR_CHECKS_CONTAINER_PARENT_SELECTOR,
   PR_CURRENTLY_RUNNING_SELECTOR,
   PR_QUEUED_SELECTOR,
@@ -185,10 +187,19 @@ export function getTargetElements(divs: NodeListOf<Element>) {
 }
 
 const isQueuedPR = (el: any) => {
-  return selectorHasChildren(PR_QUEUED_SELECTOR, el);
+  // Look for a span with text mentioning "Queued"
+  const maybeQueuedSpans = el.querySelectorAll("span.text-italic");
+
+  for (const span of maybeQueuedSpans) {
+    if (span.textContent && span.textContent.toLowerCase().includes("queued")) {
+      return true;
+    }
+  }
+
+  return false;
 };
 const isRunningPR = (el: any) => {
-  return selectorHasChildren(PR_CURRENTLY_RUNNING_SELECTOR, el);
+  return selectorHasChildren(NEW_PR_CURRENTLY_RUNNING_SELECTOR, el);
 };
 export function isQueuedRunningAndNotButtonedPR<
   HasQuerySelector extends {
@@ -354,17 +365,15 @@ export const createPRRunCallback = (
       if (mutation.type === "childList") {
         for (const addedNode of mutation.addedNodes) {
           if (addedNode instanceof Element) {
-            const isPRChecksContainer =
-              addedNode instanceof HTMLElement &&
-              addedNode.classList.entries().some(([_index, value]) => {
-                return value.includes("MergeBox-module__mergePartialContainer");
-              });
-            if (isPRChecksContainer) {
-              console.debug(
-                "Added element is a queued or running action run DOM node: ",
-                addedNode
-              );
+            if (
+              isQueuedRunningAndNotButtonedPR(addedNode) &&
+              // The observer will mistakenly fire on when the div is replaced, and it messes things up.
+              !(addedNode instanceof HTMLDivElement)
+            ) {
+              console.debug("It is a queued or running action run DOM node");
               onObservationChange();
+            } else {
+              console.debug("It's not a action run DOM node");
             }
             console.groupEnd();
           }
@@ -607,7 +616,7 @@ export function insertButtonBetweenStatusAndDetails(
 
   // Position the button absolutely inside the zero-sized container
   button.style.position = "absolute";
-  button.style.top = "-14px"; // Adjust vertical position slightly higher
+  button.style.top = "7px"; // Adjust vertical position slightly higher
   button.style.left = "-10px"; // Adjust horizontal position
   button.style.width = "20px"; // Maintain good button size
   button.style.height = "20px";

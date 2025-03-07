@@ -3,11 +3,11 @@ import {
   JOB_RUNS_CONTAINER_SELECTOR,
   ACTION_RUNS_SELECTOR,
   ACTION_RUNS_CONTAINER_SELECTOR,
-  PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR,
-  PR_RUN_SELECTOR,
-  PR_RUN_LINK_SELECTOR,
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
   CHECKS_PAGE_CONTAINER_SELECTOR,
+  NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR,
+  NEW_PR_RUN_SELECTOR,
+  NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR,
 } from "./selectors";
 import {
   createMonitorToggleHandler,
@@ -250,7 +250,7 @@ async function processElementsForJobPages() {
 
 async function processElementsForPRPages() {
   const checksPanelIsOpen =
-    document.querySelector(PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR) !== null;
+    document.querySelector(NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR) !== null;
 
   if (!checksPanelIsOpen) {
     console.debug(
@@ -268,12 +268,12 @@ async function processElementsForPRPages() {
       }
     });
 
-  const runs = document.querySelectorAll(PR_RUN_SELECTOR);
+  const runs = document.querySelectorAll(NEW_PR_RUN_SELECTOR);
 
   const currentlyRunningOrQueued = getTargetPRElements(runs);
 
   for (const element of currentlyRunningOrQueued) {
-    const link = element.querySelector(PR_RUN_LINK_SELECTOR);
+    const link = element.querySelector("a");
 
     console.assert(
       link,
@@ -473,9 +473,8 @@ async function main(): Promise<void> {
       console.debug("Determined we are in the PR monitoring path");
       await processElementsForPRPages();
 
-      // Any time a job status changes, the entire PR checks container is re-rendered. So we have to select a higher-up element than normal.
       const prRunsContainer = document.querySelector(
-        PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR
+        "react-partial[partial-name='mergebox-partial']"
       );
 
       if (prRunsContainer) {
