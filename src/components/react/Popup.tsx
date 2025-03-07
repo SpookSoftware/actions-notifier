@@ -221,7 +221,7 @@ const PopupContent: React.FC<PopupContentProps> = ({ resources }) => {
           action: "checkAndUpdateExtensionState",
         });
 
-        if (result.data?.enabled) {
+        if ((result as { data?: { enabled?: boolean } }).data?.enabled) {
           // Refresh the page to get latest data
           window.location.reload();
         }
