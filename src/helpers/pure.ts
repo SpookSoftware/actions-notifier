@@ -327,7 +327,7 @@ export function resetSVGColor(svg: SVGElement) {
 
 export function isValidGithubResponse(
   data: unknown
-): data is { status: string; name: string } {
+): data is { status: string; name: string; conclusion?: string } {
   return (
     typeof data === "object" &&
     data != undefined &&

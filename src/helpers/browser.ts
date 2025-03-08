@@ -410,6 +410,7 @@ export async function checkActionStatus({
   return {
     status: data.status,
     name: data.name,
+    conclusion: data.conclusion,
   };
 }
 
@@ -445,6 +446,7 @@ export async function checkJobStatus({
   return {
     status: data.status,
     name: data.name,
+    conclusion: data.conclusion,
   };
 }
 
@@ -605,17 +607,17 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
       return;
     }
 
-    const { status, name: taskName } = await checkStatus({
+    const { status, name: taskName, conclusion } = await checkStatus({
       runId,
       owner,
       repository,
       jobId,
     });
 
-    console.debug(`Alarm ${alarm.name} fired with status ${status}`);
+    console.debug(`Alarm ${alarm.name} fired with status ${status}, conclusion ${conclusion}`);
 
     if (status === "completed") {
-      await createCompletionNotification(alarm.name, taskName);
+      await createCompletionNotification(alarm.name, taskName, conclusion);
       await teardown(alarm.name);
     }
   } catch (error) {
@@ -633,23 +635,28 @@ export async function teardown(alarmName: string) {
 
 export async function createCompletionNotification(
   alarmName: string,
-  taskName: string
+  taskName: string,
+  conclusion?: string
 ) {
   // Determine if this is a job or an action based on the alarm name
   if (isProperlyEncoded(alarmName)) {
     const decoded = decode(alarmName);
     const isJob = !!decoded.jobId;
-
+    
+    // Format conclusion for display - capitalize first letter and handle undefined
+    let formattedConclusion = conclusion || "unknown";
+    formattedConclusion = formattedConclusion.charAt(0).toUpperCase() + formattedConclusion.slice(1);
+    
     await browser.notifications.create(alarmName, {
       type: "basic",
       title: isJob ? "Job Completed" : "Action Completed",
-      message: `${taskName} has completed. Click to view the results.`,
+      message: `${taskName} has completed with result: ${formattedConclusion}. Click to view the details.`,
       iconUrl: browser.runtime.getURL("images/icon-128.png"),
     });
     console.debug(
       `Successfully created notification for ${
         isJob ? "job" : "action"
-      } with id ${alarmName}`
+      } with id ${alarmName} (conclusion: ${conclusion})`
     );
   } else {
     console.error(`Unexpected alarm name format: ${alarmName}`);
