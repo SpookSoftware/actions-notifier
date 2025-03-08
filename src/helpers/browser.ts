@@ -551,7 +551,7 @@ export async function onMessageCallback(
     }
 
     try {
-      await setupMonitoring(encoded, 0.1);
+      await setupMonitoring(encoded, 1);
       console.debug(`Started monitoring for id ${encoded}`);
       return { status: "ok" };
     } catch (err) {
