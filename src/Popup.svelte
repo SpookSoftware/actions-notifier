@@ -10,7 +10,6 @@
   import { tokenState } from "@/helpers/helpers.svelte";
 
   let authState = $state<"success" | "warning" | "error" | null>(null);
-  let tokenStatus = $state({ message: "", isValid: null as boolean | null });
   let isLoading = $state(false);
   let enabled = $state(true);
   let disabledReason = $state<string | undefined>(undefined);
@@ -140,12 +139,7 @@
   {#await tokenState.readTokenFromStorage()}
     <p>Reading token from storage...</p>
   {:then token}
-    <GitHubTokenForm
-      {token}
-      onSubmit={handleTokenSubmit}
-      {tokenStatus}
-      {isLoading}
-    />
+    <GitHubTokenForm {token} onSubmit={handleTokenSubmit} {isLoading} />
   {/await}
 
   <MonitorsCount {alarmCount} />

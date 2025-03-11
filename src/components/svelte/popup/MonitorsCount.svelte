@@ -1,7 +1,6 @@
 <script lang="ts">
   import browser from "webextension-polyfill";
 
-  // Props using Runes
   const alarmCount = $props<number>();
 
   // Functions

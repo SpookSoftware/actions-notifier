@@ -1,5 +1,5 @@
 <script lang="ts">
-  const { token, onSubmit, tokenStatus, isLoading } = $props();
+  const { token, onSubmit, isLoading } = $props();
 </script>
 
 <form onsubmit={onSubmit}>
@@ -20,21 +20,10 @@
       Create a new token with repo scope →
     </a>
   </div>
-  {#if tokenStatus.message}
-    <div
-      id="token-status"
-      class={tokenStatus.isValid ? "token-valid" : "token-invalid"}
-    >
-      {tokenStatus.message}
-    </div>
-  {/if}
   <div class="flex-row">
     <button type="submit" id="saveButton" disabled={isLoading}>
       Save Token
     </button>
-    {#if isLoading && !tokenStatus.isValid}
-      <div class="spinner"></div>
-    {/if}
   </div>
 </form>
 
