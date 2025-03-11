@@ -1,7 +1,6 @@
 <script lang="ts">
   // Props using Runes
-  const size = $props<"small" | "medium" | "large">("medium");
-  const className = $props<string>("");
+  const { size = "medium", className } = $props<"small" | "medium" | "large">();
 </script>
 
 <div class="loading-spinner size-{size} {className}"></div>

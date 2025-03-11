@@ -72,11 +72,11 @@ export interface Monitor {
   url: string;
 }
 
-export interface PaymentStatus {
+export type PaymentStatus = {
   paid: boolean;
   trialStartedAt: Date | null;
   trialIsValid: boolean;
-}
+};
 
 // Notification types
 export enum NotificationType {

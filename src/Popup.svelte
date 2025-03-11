@@ -7,9 +7,7 @@
   import ExtensionToggle from "./components/svelte/popup/ExtensionToggle.svelte";
   import PaymentSection from "./components/svelte/popup/PaymentSection.svelte";
   import browser from "webextension-polyfill";
-  import { PaymentStatus } from "./types";
 
-  // State using Runes
   let token = $state("");
   let authState = $state<"success" | "warning" | "error" | null>(null);
   let tokenStatus = $state({ message: "", isValid: null as boolean | null });
@@ -17,9 +15,10 @@
   let enabled = $state(true);
   let disabledReason = $state<string | undefined>(undefined);
   let alarmCount = $state(0);
-  let paymentStatus = $state<PaymentStatus>({
+  let paymentStatus = $state({
     paid: false,
     trialStartedAt: null,
+    trialIsValid: false,
   });
 
   // Functions

@@ -1,19 +1,14 @@
 <script lang="ts">
-  // Props using Runes
-  const token = $props<string>();
-  const onTokenChange = $props<(token: string) => void>();
-  const onSubmit = $props<(e: SubmitEvent) => Promise<void>>();
-  const tokenStatus = $props<{ message: string; isValid: boolean | null }>();
-  const isLoading = $props<boolean>();
+  const { token, onTokenChange, onSubmit, tokenStatus, isLoading } = $props();
 </script>
 
-<form on:submit|preventDefault={onSubmit}>
+<form onsubmit={onSubmit}>
   <label for="githubToken">GitHub Token:</label>
   <input
     type="password"
     id="githubToken"
     value={token}
-    on:input={(e) => onTokenChange(e.currentTarget.value)}
+    oninput={(e) => onTokenChange(e.currentTarget.value)}
     required
     placeholder="ghp_..."
   />

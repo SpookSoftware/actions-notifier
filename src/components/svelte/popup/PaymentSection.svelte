@@ -1,22 +1,31 @@
 <script lang="ts">
   import { trialIsValid } from "@/services/trial";
-  import { PaymentStatus } from "@/types";
   import LoadingSpinner from "../shared/LoadingSpinner.svelte";
-  
+
   // Props using Runes
-  const paymentStatus = $props<PaymentStatus>();
-  const onPaymentClick = $props<() => Promise<void>>();
-  
+  const { paymentStatus, onPaymentClick } = $props();
+
   // State
   let isLoading = $state(true);
-  
+
+  const trialExpired = $derived.by(() => {
+    return !trialIsValid(paymentStatus.trialStartedAt);
+  });
+  let trialEndDate = $derived.by(() => {
+    return getTrialEndDate(paymentStatus.trialStartedAt);
+  });
+  let trialNeverStarted = $derived(!paymentStatus.trialStartedAt);
+  let shouldShowTrialProgress = $derived.by(() => {
+    return !paymentStatus.paid && !trialNeverStarted;
+  });
+
   // Functions
   function getTrialEndDate(trialStartedAt: Date | null): number {
     if (!trialStartedAt) return 0;
     const in7Days = 1000 * 60 * 60 * 24 * 7;
     return trialStartedAt.getTime() + in7Days;
   }
-  
+
   // Reactive variables
   $effect(() => {
     // Set a timeout to stop loading after a reasonable time
@@ -24,43 +33,37 @@
     const timeoutId = setTimeout(() => {
       isLoading = false;
     }, 3000); // 3 seconds is enough time for normal loading
-    
+
     // When paymentStatus changes from its initial state, we know it's loaded
     if (paymentStatus.trialStartedAt !== null || paymentStatus.paid === true) {
       isLoading = false;
       clearTimeout(timeoutId);
     }
-    
+
     return () => clearTimeout(timeoutId); // Clean up timeout on unmount
   });
-  
-  // Computed values using reactive declarations
-  $derived.trialExpired = !trialIsValid(paymentStatus.trialStartedAt);
-  $derived.trialEndDate = getTrialEndDate(paymentStatus.trialStartedAt);
-  $derived.trialNeverStarted = !paymentStatus.trialStartedAt;
-  $derived.shouldShowTrialProgress = !paymentStatus.paid && !$derived.trialNeverStarted;
-  
+
   // Calculate trial progress
   function calculateTrialProgress() {
     if (paymentStatus.paid) return 100;
     if (!paymentStatus.trialStartedAt) return 0;
-    if ($derived.trialExpired) return 100;
-    
+    if (trialExpired) return 100;
+
     const now = Date.now();
-    const daysLeft = Math.ceil(($derived.trialEndDate - now) / (1000 * 60 * 60 * 24));
+    const daysLeft = Math.ceil((trialEndDate - now) / (1000 * 60 * 60 * 24));
     return Math.max(0, Math.min(100, 100 - (daysLeft / 7) * 100));
   }
-  
+
   // Calculate days left in trial
   function getDaysLeft() {
     if (paymentStatus.paid) return 0;
     if (!paymentStatus.trialStartedAt) return 7;
-    if ($derived.trialExpired) return 0;
-    
+    if (trialExpired) return 0;
+
     const now = Date.now();
-    return Math.ceil(($derived.trialEndDate - now) / (1000 * 60 * 60 * 24));
+    return Math.ceil((trialEndDate - now) / (1000 * 60 * 60 * 24));
   }
-  
+
   // Get payment button text
   function getPaymentButtonText() {
     if (paymentStatus.paid) return "";
@@ -68,7 +71,7 @@
       return "Start Free Trial (no credit card required)";
     return "Purchase License ($2.95/lifetime)";
   }
-  
+
   // Get payment status message
   function getPaymentStatusMessage() {
     if (paymentStatus.paid) {
@@ -77,7 +80,7 @@
     if (!paymentStatus.trialStartedAt) {
       return "Start your free 7-day trial to try all features.";
     }
-    if ($derived.trialExpired) {
+    if (trialExpired) {
       return "Your free trial has expired. Please purchase to continue using this extension.";
     }
     return "Your 7-day free trial is active.";
@@ -100,13 +103,13 @@
       <h3>License Status</h3>
       <span
         class="payment-badge {paymentStatus.paid ? 'paid' : ''}"
-        class:expired={$derived.trialExpired}
+        class:expired={trialExpired}
       >
         {#if paymentStatus.paid}
           Purchased
-        {:else if $derived.trialNeverStarted}
+        {:else if trialNeverStarted}
           No Trial Started
-        {:else if $derived.trialExpired}
+        {:else if trialExpired}
           Trial Expired
         {:else}
           Free Trial
@@ -115,15 +118,15 @@
     </div>
     <div class="payment-info">
       <p>{getPaymentStatusMessage()}</p>
-      {#if $derived.shouldShowTrialProgress}
+      {#if shouldShowTrialProgress}
         <div class="trial-progress-container">
           <div
             class="trial-progress-bar"
             style="width: {calculateTrialProgress()}%"
           ></div>
           <span class="trial-days-left">
-            {getDaysLeft()} day{getDaysLeft() !== 1 ? "s" : ""} 
-            {$derived.trialExpired ? "ago" : "remaining"}
+            {getDaysLeft()} day{getDaysLeft() !== 1 ? "s" : ""}
+            {trialExpired ? "ago" : "remaining"}
           </span>
         </div>
       {/if}

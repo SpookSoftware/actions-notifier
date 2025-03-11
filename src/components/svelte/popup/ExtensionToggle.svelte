@@ -1,21 +1,21 @@
 <script lang="ts">
   // Props using Runes
-  const enabled = $props<boolean>();
-  const reason = $props<string | undefined>();
+  const { enabled, reason } = $props<boolean>();
 </script>
 
 <div class="extension-toggle-section">
   <div class="flex-row status-container">
-    <label class="status-label">Extension Status:</label>
+    <label class="status-label" for="extension-status">Extension Status:</label>
     <span
       id="extension-status"
       class={enabled ? "status-enabled" : "status-disabled"}
+      role="status"
     >
       {enabled ? "Enabled" : "Disabled"}
     </span>
   </div>
   <div class="help-text">
-    {reason || 
+    {reason ||
       (enabled
         ? "The extension is monitoring workflows and adding notification buttons."
         : "The extension is not monitoring workflows or adding buttons.")}

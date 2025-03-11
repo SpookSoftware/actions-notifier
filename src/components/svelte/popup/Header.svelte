@@ -1,5 +1,4 @@
 <script lang="ts">
-  // No props or state needed for this component
 </script>
 
 <header>
@@ -14,12 +13,12 @@
     margin-bottom: 16px;
     gap: 12px;
   }
-  
+
   img {
     width: 24px;
     height: 24px;
   }
-  
+
   h1 {
     margin: 0;
     font-size: 18px;
