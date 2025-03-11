@@ -45,4 +45,23 @@ function createTokenState() {
   };
 }
 
+function createAlarmState() {
+  let alarmCount = $state<number>(0);
+
+  return {
+    get alarmCount() {
+      return alarmCount;
+    },
+    set alarmCount(value) {
+      alarmCount = value;
+    },
+    getAlarmCount: async () => {
+      const alarms = await browser.alarms.getAll();
+      alarmCount = alarms.length;
+      return alarmCount;
+    },
+  };
+}
+
 export const tokenState = createTokenState();
+export const alarmState = createAlarmState();

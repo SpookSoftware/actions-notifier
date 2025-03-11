@@ -7,13 +7,12 @@
   import ExtensionToggle from "./components/svelte/popup/ExtensionToggle.svelte";
   import PaymentSection from "./components/svelte/popup/PaymentSection.svelte";
   import browser from "webextension-polyfill";
-  import { tokenState } from "@/helpers/helpers.svelte";
+  import { tokenState, alarmState } from "@/helpers/helpers.svelte";
 
   let authState = $state<"success" | "warning" | "error" | null>(null);
   let isLoading = $state(false);
   let enabled = $state(true);
   let disabledReason = $state<string | undefined>(undefined);
-  let alarmCount = $state(0);
   let paymentStatus = $state({
     paid: false,
     trialStartedAt: null,
@@ -25,7 +24,7 @@
     const paymentStatusIsValid =
       paymentStatus.paid || paymentStatus.trialIsValid;
     const tokenIsValid = authState === "success";
-    const notTooManyAlarms = alarmCount < 50;
+    const notTooManyAlarms = alarmState.alarmCount < 500;
     return hasToken && paymentStatusIsValid && tokenIsValid && notTooManyAlarms;
   });
 
@@ -58,17 +57,6 @@
       disabledReason = String(result.disabledReason);
     } catch (error) {
       console.error("Error fetching extension status:", error);
-    }
-  }
-
-  async function fetchMonitorCount() {
-    try {
-      const alarms = await browser.alarms.getAll();
-      alarmCount = alarms.filter((alarm) =>
-        alarm.name.startsWith("workflow-")
-      ).length;
-    } catch (error) {
-      console.error("Error fetching alarms:", error);
     }
   }
 
@@ -115,7 +103,6 @@
   // Lifecycle
   onMount(() => {
     fetchExtensionStatus();
-    fetchMonitorCount();
     fetchPaymentStatus();
   });
 </script>
@@ -142,7 +129,12 @@
     <GitHubTokenForm {token} onSubmit={handleTokenSubmit} {isLoading} />
   {/await}
 
-  <MonitorsCount {alarmCount} />
+  <!-- Note that this gets alarms on component mount and then never again. So we're re-getting the alarms every time the user opens the popup -->
+  {#await alarmState.getAlarmCount()}
+    <p>Fetching alarm count...</p>
+  {:then alarmCount}
+    <MonitorsCount {alarmCount} />
+  {/await}
 
   <ExtensionToggle {enabled} reason={disabledReason} />
 

@@ -1,9 +1,8 @@
 <script lang="ts">
   import browser from "webextension-polyfill";
 
-  const alarmCount = $props<number>();
+  const { alarmCount } = $props<number>();
 
-  // Functions
   function handleManageClick() {
     browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
   }
@@ -21,15 +20,13 @@
       <span id="alarm-count-error">⚠️ At limit</span>
     {/if}
   </div>
-  {#if alarmCount > 0}
-    <div class="manage-section">
-      <div class="flex-row">
-        <button class="secondary" on:click={handleManageClick}>
-          Manage Active Monitors
-        </button>
-      </div>
+  <div class="manage-section">
+    <div class="flex-row">
+      <button class="secondary" onclick={handleManageClick}>
+        Manage Monitors
+      </button>
     </div>
-  {/if}
+  </div>
 </div>
 
 <style>
