@@ -607,14 +607,20 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
       return;
     }
 
-    const { status, name: taskName, conclusion } = await checkStatus({
+    const {
+      status,
+      name: taskName,
+      conclusion,
+    } = await checkStatus({
       runId,
       owner,
       repository,
       jobId,
     });
 
-    console.debug(`Alarm ${alarm.name} fired with status ${status}, conclusion ${conclusion}`);
+    console.debug(
+      `Alarm ${alarm.name} fired with status ${status}, conclusion ${conclusion}`
+    );
 
     if (status === "completed") {
       await createCompletionNotification(alarm.name, taskName, conclusion);
@@ -642,11 +648,13 @@ export async function createCompletionNotification(
   if (isProperlyEncoded(alarmName)) {
     const decoded = decode(alarmName);
     const isJob = !!decoded.jobId;
-    
+
     // Format conclusion for display - capitalize first letter and handle undefined
     let formattedConclusion = conclusion || "unknown";
-    formattedConclusion = formattedConclusion.charAt(0).toUpperCase() + formattedConclusion.slice(1);
-    
+    formattedConclusion =
+      formattedConclusion.charAt(0).toUpperCase() +
+      formattedConclusion.slice(1);
+
     await browser.notifications.create(alarmName, {
       type: "basic",
       title: isJob ? "Job Completed" : "Action Completed",
