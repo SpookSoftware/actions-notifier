@@ -4,12 +4,11 @@
   import AuthStateMessage from "./components/svelte/popup/AuthStateMessage.svelte";
   import GitHubTokenForm from "./components/svelte/popup/GitHubTokenForm.svelte";
   import MonitorsCount from "./components/svelte/popup/MonitorsCount.svelte";
-  import ExtensionToggle from "./components/svelte/popup/ExtensionToggle.svelte";
+  import EnabledStatus from "./components/svelte/popup/EnabledStatus.svelte";
   import PaymentSection from "./components/svelte/popup/PaymentSection.svelte";
   import browser from "webextension-polyfill";
   import { tokenState, alarmState } from "@/helpers/helpers.svelte";
 
-  let authState = $state<"success" | "warning" | "error" | null>(null);
   let isLoading = $state(false);
   let enabled = $state(true);
   let disabledReason = $state<string | undefined>(undefined);
@@ -23,9 +22,19 @@
     const hasToken = tokenState.token !== "";
     const paymentStatusIsValid =
       paymentStatus.paid || paymentStatus.trialIsValid;
-    const tokenIsValid = authState === "success";
+    const tokenIsValid = tokenState.valid;
     const notTooManyAlarms = alarmState.alarmCount < 500;
-    return hasToken && paymentStatusIsValid && tokenIsValid && notTooManyAlarms;
+
+    let reason = "";
+    if (!hasToken) reason = "no token";
+    if (!paymentStatusIsValid) reason = "payment status invalid";
+    if (!tokenIsValid) reason = "token invalid";
+    if (!notTooManyAlarms) reason = "too many alarms";
+    return {
+      isValid:
+        hasToken && paymentStatusIsValid && tokenIsValid && notTooManyAlarms,
+      reason,
+    };
   });
 
   // Whenever extension validity changes, notify the content script.
@@ -34,7 +43,7 @@
     browser.runtime
       .sendMessage({
         action: "extensionStateChanged",
-        enabled: extensionIsValid,
+        enabled: extensionIsValid.isValid,
       })
       .catch(console.error);
   });
@@ -136,7 +145,10 @@
     <MonitorsCount {alarmCount} />
   {/await}
 
-  <ExtensionToggle {enabled} reason={disabledReason} />
+  <EnabledStatus
+    enabled={extensionIsValid.isValid}
+    reason={extensionIsValid.reason}
+  />
 
   <PaymentSection {paymentStatus} onPaymentClick={handlePaymentClick} />
 </main>

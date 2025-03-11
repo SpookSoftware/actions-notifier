@@ -1,5 +1,4 @@
 <script lang="ts">
-  // Props using Runes
   const { enabled, reason } = $props<boolean>();
 </script>
 
@@ -15,10 +14,11 @@
     </span>
   </div>
   <div class="help-text">
-    {reason ||
-      (enabled
-        ? "The extension is monitoring workflows and adding notification buttons."
-        : "The extension is not monitoring workflows or adding buttons.")}
+    {#if reason}
+      <p>Extension not monitoring workflows because {reason}</p>
+    {:else}
+      <p>Extension is monitoring workflows and adding notification buttons.</p>
+    {/if}
   </div>
 </div>
 
