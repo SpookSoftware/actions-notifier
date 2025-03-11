@@ -1,5 +1,6 @@
 import type { BuildConfig } from "bun";
 import { rm } from "node:fs/promises";
+import { SveltePlugin } from "bun-plugin-svelte"; // NOTE: not published to npm yet
 
 (async () => {
   const outputDir = "./dist";
@@ -10,12 +11,17 @@ import { rm } from "node:fs/promises";
     entrypoints: [
       "./src/addNotificationButton.ts",
       "./src/background.ts",
-      "./src/popup.tsx",
+      "./src/popup.html",
       "./src/manage.tsx",
       "./src/onboarding.tsx",
       "./src/ExtPay_content_script.js",
     ],
     outdir: outputDir,
+    plugins: [
+      SveltePlugin({
+        development: true, // turn off for prod builds. Defaults to false
+      }),
+    ],
     target: "browser",
   };
 
@@ -41,22 +47,5 @@ import { rm } from "node:fs/promises";
     const file = Bun.file(`./src/images/${filePath}`);
     await Bun.write(`${outputDir}/images/${filePath}`, file);
   }
-
-  // Copy and flatten CSS files
-  const cssGlob = new Bun.Glob("**/*.css");
-  for (const filePath of cssGlob.scanSync("./src")) {
-    const file = Bun.file(`./src/${filePath}`);
-    // Extract the basename of the CSS file
-    const basename = filePath.split("/").pop() || filePath;
-    await Bun.write(`${outputDir}/${basename}`, file);
-  }
-
-  // Copy HTML files
-  const htmlGlob = new Bun.Glob("**/*.html");
-  for (const filePath of htmlGlob.scanSync("./src")) {
-    const file = Bun.file(`./src/${filePath}`);
-    await Bun.write(`${outputDir}/${filePath}`, file);
-  }
-
   console.log("Build completed successfully");
 })();
