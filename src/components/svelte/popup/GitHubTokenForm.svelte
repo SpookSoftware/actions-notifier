@@ -1,5 +1,5 @@
 <script lang="ts">
-  const { token, onTokenChange, onSubmit, tokenStatus, isLoading } = $props();
+  const { token, onSubmit, tokenStatus, isLoading } = $props();
 </script>
 
 <form onsubmit={onSubmit}>
@@ -8,7 +8,6 @@
     type="password"
     id="githubToken"
     value={token}
-    oninput={(e) => onTokenChange(e.currentTarget.value)}
     required
     placeholder="ghp_..."
   />

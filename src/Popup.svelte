@@ -7,8 +7,8 @@
   import ExtensionToggle from "./components/svelte/popup/ExtensionToggle.svelte";
   import PaymentSection from "./components/svelte/popup/PaymentSection.svelte";
   import browser from "webextension-polyfill";
+  import { tokenState } from "@/helpers/helpers.svelte";
 
-  let token = $state("");
   let authState = $state<"success" | "warning" | "error" | null>(null);
   let tokenStatus = $state({ message: "", isValid: null as boolean | null });
   let isLoading = $state(false);
@@ -21,69 +21,32 @@
     trialIsValid: false,
   });
 
-  // Functions
-  async function fetchToken() {
-    try {
-      const result = await browser.storage.local.get("githubToken");
-      if (result.githubToken) {
-        token = result.githubToken;
-        validateToken(token);
-      } else {
-        authState = "warning";
-      }
-    } catch (error) {
-      console.error("Error fetching token:", error);
-    }
-  }
+  const extensionIsValid = $derived.by(() => {
+    const hasToken = tokenState.token !== "";
+    const paymentStatusIsValid =
+      paymentStatus.paid || paymentStatus.trialIsValid;
+    const tokenIsValid = authState === "success";
+    const notTooManyAlarms = alarmCount < 50;
+    return hasToken && paymentStatusIsValid && tokenIsValid && notTooManyAlarms;
+  });
 
-  async function validateToken(currentToken: string) {
-    if (!currentToken) {
-      authState = "warning";
-      return;
-    }
-
-    isLoading = true;
-    tokenStatus = { message: "Validating token...", isValid: null };
-
-    try {
-      const response = await fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `token ${currentToken}`,
-        },
-      });
-
-      if (response.ok) {
-        tokenStatus = {
-          message: "Token verified successfully!",
-          isValid: true,
-        };
-        authState = "success";
-        await browser.storage.local.set({ githubToken: currentToken });
-      } else {
-        tokenStatus = {
-          message: `Token validation failed: ${response.statusText}`,
-          isValid: false,
-        };
-        authState = "error";
-      }
-    } catch (error) {
-      tokenStatus = {
-        message: `Error validating token: ${error instanceof Error ? error.message : "Unknown error"}`,
-        isValid: false,
-      };
-      authState = "error";
-    } finally {
-      isLoading = false;
-    }
-  }
-
-  function handleTokenChange(newToken: string) {
-    token = newToken;
-  }
+  // Whenever extension validity changes, notify the content script.
+  $effect(() => {
+    console.log("extension validity changed. Running effect.");
+    browser.runtime
+      .sendMessage({
+        action: "extensionStateChanged",
+        enabled: extensionIsValid,
+      })
+      .catch(console.error);
+  });
 
   async function handleTokenSubmit(e: SubmitEvent) {
     e.preventDefault();
-    await validateToken(token);
+    const submittedToken = e?.currentTarget?.elements.githubToken.value;
+
+    tokenState.token = submittedToken;
+    await browser.storage.local.set({ githubToken: tokenState.token });
   }
 
   async function fetchExtensionStatus() {
@@ -93,7 +56,7 @@
         "disabledReason",
       ]);
       enabled = result.enabled !== false; // Default to true if not set
-      disabledReason = result.disabledReason;
+      disabledReason = String(result.disabledReason);
     } catch (error) {
       console.error("Error fetching extension status:", error);
     }
@@ -152,7 +115,6 @@
 
   // Lifecycle
   onMount(() => {
-    fetchToken();
     fetchExtensionStatus();
     fetchMonitorCount();
     fetchPaymentStatus();
@@ -162,17 +124,29 @@
 <main class="popup">
   <Header />
 
-  <AuthStateMessage {authState} />
+  <!-- This checks token validity on every render. Is there a way to only check validity if the token changes? -->
+  {#await tokenState.checkTokenValidity()}
+    <p>Checking if token is valid...</p>
+  {:then isValid}
+    {#if isValid}
+      <p>Token is valid!</p>
+    {:else}
+      <p>Token is NOT valid!</p>
+    {/if}
+  {:catch error}
+    <p>Error checking token validity: {error.message}</p>
+  {/await}
 
-  {#if authState !== "success"}
+  {#await tokenState.readTokenFromStorage()}
+    <p>Reading token from storage...</p>
+  {:then token}
     <GitHubTokenForm
       {token}
-      onTokenChange={handleTokenChange}
       onSubmit={handleTokenSubmit}
       {tokenStatus}
       {isLoading}
     />
-  {/if}
+  {/await}
 
   <MonitorsCount {alarmCount} />
 

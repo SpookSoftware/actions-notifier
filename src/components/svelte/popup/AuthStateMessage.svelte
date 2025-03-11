@@ -1,26 +1,21 @@
 <script lang="ts">
-  // Define the auth state type
-  type AuthState = "success" | "warning" | "error" | null;
-  
   // Props using Runes
-  const authState = $props<AuthState>();
+  const authState = $props();
 </script>
 
 {#if authState === "success"}
   <div class="auth-state auth-state-success">
     <strong>✓ GitHub token configured</strong>
     <p>
-      Your extension is ready to monitor GitHub workflows. Click the bell
-      icon on any running workflow to receive a notification when it
-      completes.
+      Your extension is ready to monitor GitHub workflows. Click the bell icon
+      on any running workflow to receive a notification when it completes.
     </p>
   </div>
 {:else if authState === "warning"}
   <div class="auth-state auth-state-warning">
     <strong>⚠️ GitHub token required</strong>
     <p>
-      Please add a GitHub token with 'repo' scope to enable workflow
-      monitoring.
+      Please add a GitHub token with 'repo' scope to enable workflow monitoring.
     </p>
   </div>
 {:else if authState === "error"}
