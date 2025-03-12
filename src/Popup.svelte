@@ -4,7 +4,6 @@
   import GitHubTokenForm from "@/components/svelte/popup/GitHubTokenForm.svelte";
   import MonitorsCount from "@/components/svelte/popup/MonitorsCount.svelte";
   import EnabledStatus from "@/components/svelte/popup/EnabledStatus.svelte";
-  import PaymentSection from "@/components/svelte/popup/PaymentSection.svelte";
   import LoadingSpinner from "@/components/svelte/shared/LoadingSpinner.svelte";
 
   import TrialNotStarted from "@/components/svelte/popup/TrialNotStarted.svelte";
@@ -18,10 +17,6 @@
     alarmState,
     paymentState,
   } from "@/helpers/helpers.svelte";
-
-  let isLoading = $state(false);
-  let enabled = $state(true);
-  let disabledReason = $state<string | undefined>(undefined);
 
   const extensionIsValid = $derived.by(() => {
     const hasToken = tokenState.token !== "";
@@ -54,31 +49,19 @@
       .catch(console.error);
   });
 
+  // Can probably push this down
   async function handleTokenSubmit(e: SubmitEvent) {
     e.preventDefault();
-    const submittedToken = e?.currentTarget?.elements.githubToken.value;
-
-    tokenState.token = submittedToken;
-    await browser.storage.local.set({ githubToken: tokenState.token });
-  }
-
-  async function fetchExtensionStatus() {
-    try {
-      const result = await browser.storage.local.get([
-        "enabled",
-        "disabledReason",
-      ]);
-      enabled = result.enabled !== false; // Default to true if not set
-      disabledReason = String(result.disabledReason);
-    } catch (error) {
-      console.error("Error fetching extension status:", error);
+    const form = e.currentTarget as HTMLFormElement;
+    const tokenInput = form.querySelector<HTMLInputElement>(
+      "[name='githubToken']"
+    );
+    if (tokenInput) {
+      const submittedToken = tokenInput.value;
+      tokenState.token = submittedToken;
+      await browser.storage.local.set({ githubToken: tokenState.token });
     }
   }
-
-  // Lifecycle
-  onMount(() => {
-    fetchExtensionStatus();
-  });
 </script>
 
 <main class="popup">
@@ -100,7 +83,7 @@
   {#await tokenState.readTokenFromStorage()}
     <p>Reading token from storage...</p>
   {:then token}
-    <GitHubTokenForm {token} onSubmit={handleTokenSubmit} {isLoading} />
+    <GitHubTokenForm {token} onSubmit={handleTokenSubmit} />
   {/await}
 
   <!-- Note that this gets alarms on component mount and then never again. So we're re-getting the alarms every time the user opens the popup -->

@@ -1,5 +1,5 @@
 <script lang="ts">
-  const { token, onSubmit, isLoading } = $props();
+  const { token, onSubmit } = $props();
 </script>
 
 <form onsubmit={onSubmit}>
@@ -21,9 +21,7 @@
     </a>
   </div>
   <div class="flex-row">
-    <button type="submit" id="saveButton" disabled={isLoading}>
-      Save Token
-    </button>
+    <button type="submit" id="saveButton"> Save Token </button>
   </div>
 </form>
 
