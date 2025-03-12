@@ -1,16 +1,13 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import Header from "@/components/svelte/popup/Header.svelte";
   import GitHubTokenForm from "@/components/svelte/popup/GitHubTokenForm.svelte";
   import MonitorsCount from "@/components/svelte/popup/MonitorsCount.svelte";
   import EnabledStatus from "@/components/svelte/popup/EnabledStatus.svelte";
   import LoadingSpinner from "@/components/svelte/shared/LoadingSpinner.svelte";
-
   import TrialNotStarted from "@/components/svelte/popup/TrialNotStarted.svelte";
   import TrialExpired from "@/components/svelte/popup/TrialExpired.svelte";
   import PaidFor from "@/components/svelte/popup/PaidFor.svelte";
   import TrialInProgress from "@/components/svelte/popup/TrialInProgress.svelte";
-
   import browser from "webextension-polyfill";
   import {
     tokenState,
