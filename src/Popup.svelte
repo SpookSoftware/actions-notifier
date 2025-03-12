@@ -1,27 +1,27 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import Header from "./components/svelte/popup/Header.svelte";
-  import AuthStateMessage from "./components/svelte/popup/AuthStateMessage.svelte";
-  import GitHubTokenForm from "./components/svelte/popup/GitHubTokenForm.svelte";
-  import MonitorsCount from "./components/svelte/popup/MonitorsCount.svelte";
-  import EnabledStatus from "./components/svelte/popup/EnabledStatus.svelte";
-  import PaymentSection from "./components/svelte/popup/PaymentSection.svelte";
+  import Header from "@/components/svelte/popup/Header.svelte";
+  import GitHubTokenForm from "@/components/svelte/popup/GitHubTokenForm.svelte";
+  import MonitorsCount from "@/components/svelte/popup/MonitorsCount.svelte";
+  import EnabledStatus from "@/components/svelte/popup/EnabledStatus.svelte";
+  import PaymentSection from "@/components/svelte/popup/PaymentSection.svelte";
+  import LoadingSpinner from "@/components/svelte/shared/LoadingSpinner.svelte";
   import browser from "webextension-polyfill";
-  import { tokenState, alarmState } from "@/helpers/helpers.svelte";
+  import {
+    tokenState,
+    alarmState,
+    paymentState,
+  } from "@/helpers/helpers.svelte";
 
   let isLoading = $state(false);
   let enabled = $state(true);
   let disabledReason = $state<string | undefined>(undefined);
-  let paymentStatus = $state({
-    paid: false,
-    trialStartedAt: null,
-    trialIsValid: false,
-  });
 
   const extensionIsValid = $derived.by(() => {
     const hasToken = tokenState.token !== "";
     const paymentStatusIsValid =
-      paymentStatus.paid || paymentStatus.trialIsValid;
+      paymentState.paymentStatus.paid ||
+      paymentState.paymentStatus.trialIsValid;
     const tokenIsValid = tokenState.valid;
     const notTooManyAlarms = alarmState.alarmCount < 500;
 
@@ -69,50 +69,9 @@
     }
   }
 
-  async function fetchPaymentStatus() {
-    try {
-      const result = await browser.storage.local.get([
-        "paid",
-        "trialStartedAt",
-      ]);
-
-      paymentStatus = {
-        paid: result.paid === true,
-        trialStartedAt: result.trialStartedAt
-          ? new Date(result.trialStartedAt)
-          : null,
-      };
-    } catch (error) {
-      console.error("Error fetching payment status:", error);
-    }
-  }
-
-  async function handlePaymentClick() {
-    try {
-      if (!paymentStatus.trialStartedAt) {
-        // Start trial
-        const now = new Date();
-        await browser.storage.local.set({ trialStartedAt: now.toISOString() });
-
-        // Update local state
-        paymentStatus = {
-          ...paymentStatus,
-          trialStartedAt: now,
-        };
-      } else {
-        // Handle actual payment
-        // Implementation depends on your payment service
-        console.log("Handle actual payment flow");
-      }
-    } catch (error) {
-      console.error("Error handling payment:", error);
-    }
-  }
-
   // Lifecycle
   onMount(() => {
     fetchExtensionStatus();
-    fetchPaymentStatus();
   });
 </script>
 
@@ -150,7 +109,11 @@
     reason={extensionIsValid.reason}
   />
 
-  <PaymentSection {paymentStatus} onPaymentClick={handlePaymentClick} />
+  {#await paymentState.initialize()}
+    <LoadingSpinner />
+  {:then data}
+    <PaymentSection paymentStatus={data} />
+  {/await}
 </main>
 
 <style>

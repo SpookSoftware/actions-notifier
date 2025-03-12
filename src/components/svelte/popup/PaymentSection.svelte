@@ -1,12 +1,10 @@
 <script lang="ts">
   import { trialIsValid } from "@/services/trial";
-  import LoadingSpinner from "../shared/LoadingSpinner.svelte";
+  import ExtPay from "extpay";
 
-  // Props using Runes
-  const { paymentStatus, onPaymentClick } = $props();
+  const extpay = ExtPay("cicd-workflow-notifications");
 
-  // State
-  let isLoading = $state(true);
+  const { paymentStatus } = $props();
 
   const trialExpired = $derived.by(() => {
     return !trialIsValid(paymentStatus.trialStartedAt);
@@ -25,23 +23,6 @@
     const in7Days = 1000 * 60 * 60 * 24 * 7;
     return trialStartedAt.getTime() + in7Days;
   }
-
-  // Reactive variables
-  $effect(() => {
-    // Set a timeout to stop loading after a reasonable time
-    // This prevents the UI from being stuck in a loading state forever
-    const timeoutId = setTimeout(() => {
-      isLoading = false;
-    }, 3000); // 3 seconds is enough time for normal loading
-
-    // When paymentStatus changes from its initial state, we know it's loaded
-    if (paymentStatus.trialStartedAt !== null || paymentStatus.paid === true) {
-      isLoading = false;
-      clearTimeout(timeoutId);
-    }
-
-    return () => clearTimeout(timeoutId); // Clean up timeout on unmount
-  });
 
   // Calculate trial progress
   function calculateTrialProgress() {
@@ -87,7 +68,7 @@
   }
 </script>
 
-{#if isLoading}
+<!-- {#if isLoading}
   <div class="payment-section">
     <div class="flex-row payment-header">
       <h3>License Status</h3>
@@ -97,47 +78,48 @@
       <LoadingSpinner />
     </div>
   </div>
-{:else}
-  <div class="payment-section">
-    <div class="flex-row payment-header">
-      <h3>License Status</h3>
-      <span
-        class="payment-badge {paymentStatus.paid ? 'paid' : ''}"
-        class:expired={trialExpired}
-      >
-        {#if paymentStatus.paid}
-          Purchased
-        {:else if trialNeverStarted}
-          No Trial Started
-        {:else if trialExpired}
-          Trial Expired
-        {:else}
-          Free Trial
-        {/if}
-      </span>
-    </div>
-    <div class="payment-info">
-      <p>{getPaymentStatusMessage()}</p>
-      {#if shouldShowTrialProgress}
-        <div class="trial-progress-container">
-          <div
-            class="trial-progress-bar"
-            style="width: {calculateTrialProgress()}%"
-          ></div>
-          <span class="trial-days-left">
-            {getDaysLeft()} day{getDaysLeft() !== 1 ? "s" : ""}
-            {trialExpired ? "ago" : "remaining"}
-          </span>
-        </div>
+{:else} -->
+<div class="payment-section">
+  <div class="flex-row payment-header">
+    <h3>License Status</h3>
+    <span
+      class="payment-badge {paymentStatus.paid ? 'paid' : ''}"
+      class:expired={trialExpired}
+    >
+      {#if paymentStatus.paid}
+        Purchased
+      {:else if trialNeverStarted}
+        No Trial Started
+      {:else if trialExpired}
+        Trial Expired
+      {:else}
+        Free Trial
       {/if}
-      {#if !paymentStatus.paid && getPaymentButtonText()}
-        <button class="payment-button" on:click={onPaymentClick}>
-          {getPaymentButtonText()}
-        </button>
-      {/if}
-    </div>
+    </span>
   </div>
-{/if}
+  <div class="payment-info">
+    <p>{getPaymentStatusMessage()}</p>
+    {#if shouldShowTrialProgress}
+      <div class="trial-progress-container">
+        <div
+          class="trial-progress-bar"
+          style="width: {calculateTrialProgress()}%"
+        ></div>
+        <span class="trial-days-left">
+          {getDaysLeft()} day{getDaysLeft() !== 1 ? "s" : ""}
+          {trialExpired ? "ago" : "remaining"}
+        </span>
+      </div>
+    {/if}
+    {#if !paymentStatus.paid && getPaymentButtonText()}
+      <button class="payment-button" onclick={() => extpay.openTrialPage()}>
+        {getPaymentButtonText()}
+      </button>
+    {/if}
+  </div>
+</div>
+
+<!-- {/if} -->
 
 <style>
   .payment-section {
