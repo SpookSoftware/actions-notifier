@@ -3,6 +3,8 @@ import { rm } from "node:fs/promises";
 import { SveltePlugin } from "bun-plugin-svelte";
 
 (async () => {
+  const isProdBuild = Bun.argv.includes("--production");
+
   const outputDir = "./dist";
 
   await rm(outputDir, { recursive: true, force: true });
@@ -19,13 +21,13 @@ import { SveltePlugin } from "bun-plugin-svelte";
     outdir: outputDir,
     plugins: [
       SveltePlugin({
-        development: true, // turn off for prod builds. Defaults to false
+        development: !isProdBuild,
       }),
     ],
     target: "browser",
   };
 
-  if (Bun.argv.includes("--production")) {
+  if (isProdBuild) {
     options.minify = true;
     options.drop = ["console"];
   }
