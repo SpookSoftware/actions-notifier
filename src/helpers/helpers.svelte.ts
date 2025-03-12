@@ -73,18 +73,21 @@ function createPaymentState() {
     trialIsValid: boolean;
     trialExpired: boolean;
     trialExpirationDate: Date | null;
+    trialNeverStarted: boolean;
   }>({
     paid: false,
     trialStartedAt: null,
     trialIsValid: false,
     trialExpired: false,
     trialExpirationDate: null,
+    trialNeverStarted: true,
   });
 
   extpay.onTrialStarted.addListener((user) => {
     // Since we're keying on onTrialStarted, we know there's a trial.
     paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
     paymentStatus.trialIsValid = true;
+    paymentStatus.trialNeverStarted = false;
     paymentStatus.trialExpired = false;
     paymentStatus.trialExpirationDate = new Date(
       new Date(user.trialStartedAt!.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -93,6 +96,7 @@ function createPaymentState() {
   extpay.onPaid.addListener((_user) => {
     paymentStatus.paid = true;
     paymentStatus.trialIsValid = false;
+    paymentStatus.trialNeverStarted = false;
     paymentStatus.trialExpired = false;
     paymentStatus.trialExpirationDate = null;
   });
@@ -110,6 +114,7 @@ function createPaymentState() {
       if (user.paid) {
         paymentStatus.paid = true;
         paymentStatus.trialIsValid = false;
+        paymentStatus.trialNeverStarted = false;
         paymentStatus.trialExpired = false;
         paymentStatus.trialExpirationDate = null;
       }
@@ -119,6 +124,7 @@ function createPaymentState() {
         paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
         paymentStatus.trialIsValid = true;
         paymentStatus.trialExpired = false;
+        paymentStatus.trialNeverStarted = false;
         paymentStatus.trialExpirationDate = sevenDaysAfter(
           paymentStatus.trialStartedAt
         );
@@ -129,6 +135,7 @@ function createPaymentState() {
         paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
         paymentStatus.trialIsValid = false;
         paymentStatus.trialExpired = true;
+        paymentStatus.trialNeverStarted = false;
         paymentStatus.trialExpirationDate = null;
       }
 

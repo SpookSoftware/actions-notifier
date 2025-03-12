@@ -6,6 +6,12 @@
   import EnabledStatus from "@/components/svelte/popup/EnabledStatus.svelte";
   import PaymentSection from "@/components/svelte/popup/PaymentSection.svelte";
   import LoadingSpinner from "@/components/svelte/shared/LoadingSpinner.svelte";
+
+  import TrialNotStarted from "@/components/svelte/popup/TrialNotStarted.svelte";
+  import TrialExpired from "@/components/svelte/popup/TrialExpired.svelte";
+  import PaidFor from "@/components/svelte/popup/PaidFor.svelte";
+  import TrialInProgress from "@/components/svelte/popup/TrialInProgress.svelte";
+
   import browser from "webextension-polyfill";
   import {
     tokenState,
@@ -111,8 +117,16 @@
 
   {#await paymentState.initialize()}
     <LoadingSpinner />
-  {:then data}
-    <PaymentSection paymentStatus={data} />
+  {:then { paid, trialExpired, trialExpirationDate, trialIsValid, trialNeverStarted }}
+    {#if trialNeverStarted}
+      <TrialNotStarted />
+    {:else if trialExpired}
+      <TrialExpired />
+    {:else if paid}
+      <PaidFor />
+    {:else if trialIsValid}
+      <TrialInProgress {trialExpirationDate} />
+    {/if}
   {/await}
 </main>
 
