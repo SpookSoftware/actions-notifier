@@ -1,6 +1,6 @@
 import type { BuildConfig } from "bun";
 import { rm } from "node:fs/promises";
-import { SveltePlugin } from "bun-plugin-svelte"; // NOTE: not published to npm yet
+import { SveltePlugin } from "bun-plugin-svelte";
 
 (async () => {
   const outputDir = "./dist";
