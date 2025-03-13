@@ -60,7 +60,7 @@
 
   onMount(async () => {
     await tokenState.readTokenFromStorage();
-    tokenState.checkTokenValidity();
+    await tokenState.checkTokenValidity();
   });
 </script>
 
