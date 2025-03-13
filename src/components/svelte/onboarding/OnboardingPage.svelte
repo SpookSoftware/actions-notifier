@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onDestroy, onMount } from "svelte";
   import browser from "webextension-polyfill";
   import Header from "./Header.svelte";
   import WelcomeStep from "./WelcomeStep.svelte";
@@ -85,7 +85,7 @@
   <Header />
 
   <ProgressBar
-    steps={["Welcome", "GitHub Token", "Payment or Trial", "Ready"]}
+    steps={["Welcome", "GitHub Token", "Trial or Payment", "Ready"]}
     {currentStep}
   />
 
