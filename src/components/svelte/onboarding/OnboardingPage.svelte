@@ -48,12 +48,36 @@
     }
   }
 
+  let pollingInterval: ReturnType<typeof setInterval>;
+
   onMount(async () => {
     await Promise.all([
       tokenState.readTokenFromStorage(),
       paymentState.initialize(),
     ]);
     await tokenState.checkTokenValidity();
+
+    // Start polling for payment status
+    let pollCount = 0;
+    const maxPolls = 300; // 5 minutes × 60 seconds = 300 polls at 1-second intervals
+
+    pollingInterval = setInterval(async () => {
+      await paymentState.initialize();
+      pollCount++;
+
+      // If payment is confirmed or we've reached the maximum polling time, stop polling
+      if (
+        paymentState.paymentStatus.paid ||
+        paymentState.paymentStatus.trialIsValid ||
+        pollCount >= maxPolls
+      ) {
+        clearInterval(pollingInterval);
+      }
+    }, 1000); // Poll every 1 second
+  });
+
+  onDestroy(() => {
+    clearInterval(pollingInterval);
   });
 </script>
 
