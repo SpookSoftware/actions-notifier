@@ -8,7 +8,8 @@
     <h2>Try or Buy</h2>
     <p>
       To use the extension, you need to either start a no-credit-card-required
-      7-day free trial or purchase a license.
+      7-day free trial or purchase a license. The license is for lifetime use,
+      and costs $2.95.
     </p>
 
     <div
