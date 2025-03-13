@@ -5,7 +5,6 @@
   let refreshing = $state(false);
   let hasMonitors = $derived(monitorCount > 0);
 
-  // Determine status bar class based on monitor count - proper runes usage
   const statusBarClass = $derived(
     monitorCount >= 475
       ? "status-bar error"
