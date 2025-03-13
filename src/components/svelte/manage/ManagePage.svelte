@@ -1,5 +1,4 @@
 <script lang="ts">
-  // Converted from React ManagePage.tsx with proper runes usage
   import Header from "./Header.svelte";
   import StatusBar from "./StatusBar.svelte";
   import MonitorList from "./MonitorList.svelte";
@@ -27,11 +26,11 @@
     try {
       loading = true;
       error = null;
-      
+
       console.log("Fetching monitors...");
       const data = await loadMonitors();
       console.log(`Fetched ${data.length} monitors`);
-      
+
       monitors = data;
     } catch (err) {
       console.error("Error loading monitors:", err);
@@ -59,10 +58,12 @@
       const success = await removeMonitor(id);
       if (success) {
         // Remove from local state instead of full refresh
-        monitors = monitors.filter(monitor => monitor.id !== id);
-        
+        monitors = monitors.filter((monitor) => monitor.id !== id);
+
         // If current page is now empty and not the first page, go to previous page
-        const remainingMonitors = monitors.filter(monitor => monitor.id !== id);
+        const remainingMonitors = monitors.filter(
+          (monitor) => monitor.id !== id
+        );
         const totalPages = Math.ceil(remainingMonitors.length / ITEMS_PER_PAGE);
         if (currentPage > totalPages && currentPage > 1) {
           currentPage = currentPage - 1;
@@ -104,7 +105,7 @@
       currentPage * ITEMS_PER_PAGE
     )
   );
-  
+
   // Derived values for UI conditions
   const isLoading = $derived(loading && monitors.length === 0);
   const isEmpty = $derived(!loading && monitors.length === 0 && !error);
@@ -118,7 +119,7 @@
   {refreshing}
   onRefresh={handleRefresh}
   onClearAll={handleClearAllMonitors}
-  hasMonitors={hasMonitors}
+  {hasMonitors}
 />
 
 <!-- Render content based on state -->
@@ -128,9 +129,7 @@
 {:else if error}
   <div class="error-message">
     {error}
-    <button on:click={handleRefresh} class="retry-button">
-      Retry
-    </button>
+    <button on:click={handleRefresh} class="retry-button"> Retry </button>
   </div>
 {:else if isEmpty}
   <div class="empty-state">
@@ -152,7 +151,7 @@
       {currentPage}
       totalItems={monitors.length}
       itemsPerPage={ITEMS_PER_PAGE}
-      onPageChange={(page) => currentPage = page}
+      onPageChange={(page) => (currentPage = page)}
     />
   </div>
 {/if}

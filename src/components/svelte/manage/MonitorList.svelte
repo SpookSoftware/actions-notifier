@@ -26,11 +26,7 @@
     </div>
 
     {#each monitors as monitor (monitor.id)}
-      <MonitorItem
-        {monitor}
-        {onRemove}
-        {formatTime}
-      />
+      <MonitorItem {monitor} {onRemove} {formatTime} />
     {/each}
   </div>
 {/if}

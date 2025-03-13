@@ -27,10 +27,7 @@
   <div>{monitor.type}</div>
   <div>{formatTime(monitor.createdAt)}</div>
   <div class="buttons">
-    <button
-      class="secondary"
-      on:click={() => openMonitorPage(monitor.url)}
-    >
+    <button class="secondary" on:click={() => openMonitorPage(monitor.url)}>
       View
     </button>
     <button class="danger" on:click={() => onRemove(monitor.id)}>
