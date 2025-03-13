@@ -39,5 +39,11 @@
         * You must start a trial or make a purchase to continue.
       </strong>
     </p>
+    <p>
+      <strong>
+        (If you have already purchased the extension, click "Buy Now" and log in
+        to access.)
+      </strong>
+    </p>
   </div>
 </div>

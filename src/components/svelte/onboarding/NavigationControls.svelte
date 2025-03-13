@@ -46,7 +46,7 @@
       {/if}
     {/if}
 
-    {#if currentStep !== 2 && currentStep !== 3}
+    {#if currentStep !== 2 && currentStep !== 3 && !isLastStep}
       <button class="btn btn-primary" onclick={onNext}> Next </button>
     {/if}
 
