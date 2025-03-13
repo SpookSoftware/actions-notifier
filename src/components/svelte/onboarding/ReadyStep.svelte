@@ -3,37 +3,36 @@
   import { openBuyPage, getPaymentStatus } from "@/services/payment";
   import {
     startFreeTrial as startFreeTrialService,
-    startTrialStatusPolling
+    startTrialStatusPolling,
   } from "@/services/trial";
-  
-  // Payment status handling
-  export let onPaymentStatusChange: (isPaidOrTrialing: boolean) => void = () => {};
-  
+
+  const { onPaymentStatusChange } = $props();
+
   // State variables with runes
   let checkingStatus = $state(false);
   let paymentComplete = $state(false);
   let trialActivated = $state(false);
-  
+
   // Status message states
   let showStatusMessage = $state(false);
   let statusMessage = $state("");
-  
+
   // Reference to store cleanup function
   let pollingCleanup: (() => void) | null = $state(null);
   let safetyTimeoutId: ReturnType<typeof setTimeout> | null = $state(null);
-  
+
   // Button states
   let isTrialLoading = $state(false);
   let trialButtonText = $state("Start Free Trial (no credit card required)");
   let isPurchaseLoading = $state(false);
-  
+
   // Interval for polling
   let intervalId: ReturnType<typeof setInterval> | null = $state(null);
-  
+
   // Start status polling for trial/purchase
   function startStatusPolling() {
     checkingStatus = true;
-    
+
     // Set a safety timeout to reset the checking status if something goes wrong
     safetyTimeoutId = setTimeout(() => {
       checkingStatus = false;
@@ -42,17 +41,19 @@
         if (status.paid) {
           paymentComplete = true;
           showStatusMessage = true;
-          statusMessage = "Thank you for your purchase! You have lifetime access to this extension.";
+          statusMessage =
+            "Thank you for your purchase! You have lifetime access to this extension.";
           onPaymentStatusChange(true);
         } else if (status.trialIsValid) {
           trialActivated = true;
           showStatusMessage = true;
-          statusMessage = "Your 7-day free trial has been activated. Enjoy the extension!";
+          statusMessage =
+            "Your 7-day free trial has been activated. Enjoy the extension!";
           onPaymentStatusChange(true);
         }
       });
     }, 10000);
-    
+
     // Store cleanup function to use in the future
     pollingCleanup = startTrialStatusPolling(
       // On trial/purchase activated
@@ -61,17 +62,19 @@
           clearTimeout(safetyTimeoutId);
           safetyTimeoutId = null;
         }
-        
+
         getPaymentStatus().then((status) => {
           if (status.paid) {
             paymentComplete = true;
             showStatusMessage = true;
-            statusMessage = "Thank you for your purchase! You have lifetime access to this extension.";
+            statusMessage =
+              "Thank you for your purchase! You have lifetime access to this extension.";
             onPaymentStatusChange(true);
           } else if (status.trialIsValid) {
             trialActivated = true;
             showStatusMessage = true;
-            statusMessage = "Your 7-day free trial has been activated. Enjoy the extension!";
+            statusMessage =
+              "Your 7-day free trial has been activated. Enjoy the extension!";
             onPaymentStatusChange(true);
           }
           checkingStatus = false;
@@ -91,14 +94,14 @@
       }
     );
   }
-  
+
   // Trial button handler
   async function handleStartTrial() {
     if (trialActivated) return;
-    
+
     isTrialLoading = true;
     trialButtonText = "Starting Trial...";
-    
+
     try {
       await startFreeTrialService();
       startStatusPolling();
@@ -109,7 +112,7 @@
       isTrialLoading = false;
     }
   }
-  
+
   // Purchase button handler
   async function handlePurchase() {
     isPurchaseLoading = true;
@@ -122,18 +125,19 @@
       isPurchaseLoading = false;
     }
   }
-  
+
   // Check payment/trial status
   async function checkPaymentStatus() {
     try {
       const status = await getPaymentStatus();
-      
+
       if (status.paid) {
         paymentComplete = true;
         showStatusMessage = true;
-        statusMessage = "Thank you for your purchase! You have lifetime access to this extension.";
+        statusMessage =
+          "Thank you for your purchase! You have lifetime access to this extension.";
         onPaymentStatusChange(true);
-        
+
         // If we've detected a successful payment, stop polling
         if (intervalId) {
           clearInterval(intervalId);
@@ -142,9 +146,10 @@
       } else if (status.trialIsValid) {
         trialActivated = true;
         showStatusMessage = true;
-        statusMessage = "Your 7-day free trial has been activated. Enjoy the extension!";
+        statusMessage =
+          "Your 7-day free trial has been activated. Enjoy the extension!";
         onPaymentStatusChange(true);
-        
+
         // If we've detected a successful trial activation, stop polling
         if (intervalId) {
           clearInterval(intervalId);
@@ -158,27 +163,27 @@
       onPaymentStatusChange(false);
     }
   }
-  
+
   // Setup initial check and polling
   $effect(() => {
     // Initial check
     checkPaymentStatus();
-    
+
     // Set up polling with a more reasonable interval (3 seconds)
     intervalId = setInterval(checkPaymentStatus, 3000);
-    
+
     // Clean up on unmount
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
         intervalId = null;
       }
-      
+
       if (safetyTimeoutId) {
         clearTimeout(safetyTimeoutId);
         safetyTimeoutId = null;
       }
-      
+
       if (pollingCleanup) {
         pollingCleanup();
         pollingCleanup = null;
@@ -192,8 +197,8 @@
   <div class="step-content">
     <h2>You're all set!</h2>
     <p>
-      Your GitHub token has been configured successfully. You can now use
-      the extension to monitor your workflows.
+      Your GitHub token has been configured successfully. You can now use the
+      extension to monitor your workflows.
     </p>
 
     <h3>How to use:</h3>
@@ -215,16 +220,14 @@
           <p>{statusMessage}</p>
         </div>
       {:else}
-        <h3 style="margin-top: 0; color: #6f42c1;">
-          💜 Free Trial Period
-        </h3>
+        <h3 style="margin-top: 0; color: #6f42c1;">💜 Free Trial Period</h3>
         <p>
           To use the extension, you need to sign up for a
           <b>
             <i>no-credit-card-required</i> 7-day free trial
           </b>
-          . After the trial period, a one-time purchase is required to
-          continue using the extension.
+          . After the trial period, a one-time purchase is required to continue using
+          the extension.
         </p>
         <p style="margin-bottom: 10px">
           <b>Price:</b> $2.95 (one-time payment, lifetime license)
@@ -236,7 +239,7 @@
           <!-- Trial Button -->
           <button
             class="btn btn-primary"
-            on:click={handleStartTrial}
+            onclick={handleStartTrial}
             disabled={isTrialLoading || trialActivated || checkingStatus}
           >
             {#if isTrialLoading}<span class="spinner"></span>{/if}
@@ -246,7 +249,7 @@
           <!-- Purchase Button -->
           <button
             class="btn"
-            on:click={handlePurchase}
+            onclick={handlePurchase}
             disabled={isPurchaseLoading || checkingStatus}
             style="background: #fff; border: 1px solid #6f42c1; color: #6f42c1;"
           >
