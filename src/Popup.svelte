@@ -52,7 +52,7 @@
     const form = e.currentTarget as HTMLFormElement;
     const tokenInput = form.querySelector<HTMLInputElement>("input");
     if (tokenInput) {
-      const submittedToken = tokenInput.value;
+      const submittedToken = tokenInput.value.trim();
       tokenState.token = submittedToken;
       await browser.storage.local.set({ githubToken: tokenState.token });
     }
