@@ -46,13 +46,10 @@
       .catch(console.error);
   });
 
-  // Can probably push this down
   async function handleTokenSubmit(e: SubmitEvent) {
     e.preventDefault();
     const form = e.currentTarget as HTMLFormElement;
-    const tokenInput = form.querySelector<HTMLInputElement>(
-      "[name='githubToken']"
-    );
+    const tokenInput = form.querySelector<HTMLInputElement>("input");
     if (tokenInput) {
       const submittedToken = tokenInput.value;
       tokenState.token = submittedToken;
@@ -64,24 +61,19 @@
 <main class="popup">
   <Header />
 
-  <!-- This checks token validity on every render. Is there a way to only check validity if the token changes? -->
-  {#await tokenState.checkTokenValidity()}
+  {#if tokenState.isCheckingValidity}
     <p>Checking if token is valid...</p>
-  {:then isValid}
-    {#if isValid}
-      <p>Token is valid!</p>
-    {:else}
-      <p>Token is NOT valid!</p>
-    {/if}
-  {:catch error}
-    <p>Error checking token validity: {error.message}</p>
-  {/await}
+  {:else if tokenState.valid}
+    <p>Token is valid!</p>
+  {:else}
+    <p>Token is NOT valid!</p>
+  {/if}
 
-  {#await tokenState.readTokenFromStorage()}
+  {#if tokenState.isLoadingToken}
     <p>Reading token from storage...</p>
-  {:then token}
-    <GitHubTokenForm {token} onSubmit={handleTokenSubmit} />
-  {/await}
+  {:else}
+    <GitHubTokenForm token={tokenState.token} onSubmit={handleTokenSubmit} />
+  {/if}
 
   <!-- Note that this gets alarms on component mount and then never again. So we're re-getting the alarms every time the user opens the popup -->
   {#await alarmState.getAlarmCount()}

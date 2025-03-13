@@ -5,6 +5,8 @@ import { sevenDaysAfter, trialIsValid } from "@/services/trial";
 function createTokenState() {
   let token = $state<string>("");
   let valid = $state<boolean>(false);
+  let isCheckingValidity = $state<boolean>(false);
+  let isLoadingToken = $state<boolean>(false);
 
   return {
     get token() {
@@ -12,37 +14,63 @@ function createTokenState() {
     },
     set token(value) {
       token = value;
+      // Automatically check validity when token changes
+      this.checkTokenValidity();
     },
-    async readTokenFromStorage() {
-      const result = await browser.storage.local.get("githubToken");
-      if (result.githubToken) {
-        token = String(result.githubToken);
-      } else token = "";
-      return token;
-    },
-
     get valid() {
       return valid;
     },
-    set valid(value) {
-      valid = value;
+    get isCheckingValidity() {
+      return isCheckingValidity;
+    },
+    get isLoadingToken() {
+      return isLoadingToken;
+    },
+    async readTokenFromStorage() {
+      if (isLoadingToken) return token;
+
+      isLoadingToken = true;
+      try {
+        const result = await browser.storage.local.get("githubToken");
+        if (result.githubToken) {
+          token = String(result.githubToken);
+        } else {
+          token = "";
+        }
+        return token;
+      } catch (error) {
+        console.error("Error reading token from storage:", error);
+        token = "";
+        return token;
+      } finally {
+        isLoadingToken = false;
+      }
     },
     async checkTokenValidity() {
-      if (!token) {
+      if (isCheckingValidity) return valid;
+
+      isCheckingValidity = true;
+      try {
+        if (!token) {
+          valid = false;
+          return valid;
+        }
+
+        const response = await fetch("https://api.github.com/user", {
+          headers: {
+            Authorization: `token ${token}`,
+          },
+        });
+
+        valid = response.ok && response.status === 200;
+        return valid;
+      } catch (error) {
+        console.error("Token validation error:", error);
         valid = false;
         return valid;
+      } finally {
+        isCheckingValidity = false;
       }
-      const response = await fetch("https://api.github.com/user", {
-        headers: {
-          Authorization: `token ${token}`,
-        },
-      });
-      if (response.ok) {
-        if (response.status === 200) {
-          valid = true;
-        } else valid = false;
-      } else valid = false;
-      return valid;
     },
   };
 }
