@@ -88,12 +88,6 @@
     <MonitorsCount {alarmCount} />
   {/await}
 
-  <button
-    onclick={() => {
-      browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
-    }}>Debug manage page</button
-  >
-
   <EnabledStatus
     enabled={extensionIsValid.isValid}
     reason={extensionIsValid.reason}
