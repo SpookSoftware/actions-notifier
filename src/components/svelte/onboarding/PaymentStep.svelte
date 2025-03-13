@@ -5,10 +5,10 @@
 <div class="step">
   <div class="step-number">3</div>
   <div class="step-content">
-    <h2>Choose Your Plan</h2>
+    <h2>Try or Buy</h2>
     <p>
-      To use the extension, you need to either start a free trial or purchase a
-      license.
+      To use the extension, you need to either start a no-credit-card-required
+      7-day free trial or purchase a license.
     </p>
 
     <div
@@ -28,9 +28,10 @@
         <p>
           Start with a
           <b>
-            <i>no-credit-card-required</i> 7-day free trial
+            <i>no-credit-card-required</i> 7-day free trial.
           </b>
-          . After the trial period, a one-time purchase is required to continue using
+          {" "}
+          After the trial period, a one-time purchase is required to continue using
           the extension.
         </p>
         <p style="margin-bottom: 10px">
@@ -44,7 +45,7 @@
           <button class="btn btn-primary" onclick={onStartTrial}>
             {paymentState.paymentStatus.trialIsValid
               ? "Trial Activated"
-              : "Start your free trial"}
+              : "Start your no-credit-card-required free trial"}
           </button>
 
           <!-- Purchase Button -->
