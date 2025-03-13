@@ -61,6 +61,7 @@
   onMount(async () => {
     await tokenState.readTokenFromStorage();
     await tokenState.checkTokenValidity();
+    await alarmState.getAlarmCount();
   });
 </script>
 
@@ -81,12 +82,11 @@
     <GitHubTokenForm token={tokenState.token} onSubmit={handleTokenSubmit} />
   {/if}
 
-  <!-- Note that this gets alarms on component mount and then never again. So we're re-getting the alarms every time the user opens the popup -->
-  {#await alarmState.getAlarmCount()}
-    <p>Fetching alarm count...</p>
-  {:then alarmCount}
-    <MonitorsCount {alarmCount} />
-  {/await}
+  {#if alarmState.isLoading}
+    <p>Fetching alarms...</p>
+  {:else}
+    <MonitorsCount alarmCount={alarmState.alarmCount} />
+  {/if}
 
   <EnabledStatus
     enabled={extensionIsValid.isValid}
