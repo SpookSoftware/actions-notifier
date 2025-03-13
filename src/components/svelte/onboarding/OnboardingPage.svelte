@@ -79,6 +79,29 @@
   onDestroy(() => {
     clearInterval(pollingInterval);
   });
+
+  const extensionIsValid = $derived.by(() => {
+    const hasToken = tokenState.token !== "";
+    const paymentStatusIsValid =
+      paymentState.paymentStatus.paid ||
+      paymentState.paymentStatus.trialIsValid;
+    const tokenIsValid = tokenState.valid;
+
+    return {
+      isValid: hasToken && paymentStatusIsValid && tokenIsValid,
+    };
+  });
+
+  // Whenever extension validity changes, notify the content script.
+  $effect(() => {
+    console.log("extension validity changed. Running effect.");
+    browser.runtime
+      .sendMessage({
+        action: "extensionStateChanged",
+        enabled: extensionIsValid.isValid,
+      })
+      .catch(console.error);
+  });
 </script>
 
 <div>
