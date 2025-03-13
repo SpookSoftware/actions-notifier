@@ -32,7 +32,21 @@
       {/if}
     {/if}
 
-    {#if currentStep !== 2}
+    {#if currentStep === 3}
+      {#if !isPaidOrTrialing}
+        <button
+          class="btn btn-primary"
+          disabled
+          title="Please start a trial or make a purchase to continue"
+        >
+          Next
+        </button>
+      {:else}
+        <button class="btn btn-primary" onclick={onNext}> Next </button>
+      {/if}
+    {/if}
+
+    {#if currentStep !== 2 && currentStep !== 3}
       <button class="btn btn-primary" onclick={onNext}> Next </button>
     {/if}
 

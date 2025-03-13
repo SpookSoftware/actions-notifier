@@ -4,6 +4,7 @@
   import Header from "./Header.svelte";
   import WelcomeStep from "./WelcomeStep.svelte";
   import TokenStep from "./TokenStep.svelte";
+  import PaymentStep from "./PaymentStep.svelte";
   import ReadyStep from "./ReadyStep.svelte";
   import NavigationControls from "./NavigationControls.svelte";
   import ProgressBar from "./ProgressBar.svelte";
@@ -25,7 +26,7 @@
     }
   }
   async function goToNextStep() {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       currentStep++;
     }
   }
@@ -59,7 +60,10 @@
 <div>
   <Header />
 
-  <ProgressBar steps={["Welcome", "GitHub Token", "Ready"]} {currentStep} />
+  <ProgressBar
+    steps={["Welcome", "GitHub Token", "Payment or Trial", "Ready"]}
+    {currentStep}
+  />
 
   <div class="steps-container">
     {#if currentStep === 1}
@@ -71,18 +75,22 @@
     {/if}
 
     {#if currentStep === 3}
-      <ReadyStep
+      <PaymentStep
         {paymentState}
         {isPaidOrTrialing}
         onPay={() => extpay.openPaymentPage()}
         onStartTrial={() => extpay.openTrialPage()}
       />
     {/if}
+
+    {#if currentStep === 4}
+      <ReadyStep />
+    {/if}
   </div>
 
   <NavigationControls
     {currentStep}
-    totalSteps={3}
+    totalSteps={4}
     onPrevious={goToPreviousStep}
     onNext={goToNextStep}
     onFinish={handleFinishOnboarding}
