@@ -76,7 +76,9 @@ function createTokenState() {
 }
 
 function createAlarmState() {
+  let alarms = $state<browser.Alarms.Alarm[]>([]);
   let alarmCount = $state<number>(0);
+  let isLoadingAlarms = $state<boolean>(false);
 
   return {
     get alarmCount() {
@@ -86,9 +88,29 @@ function createAlarmState() {
       alarmCount = value;
     },
     getAlarmCount: async () => {
+      if (isLoadingAlarms) return alarmCount;
+      isLoadingAlarms = true;
       const alarms = await browser.alarms.getAll();
       alarmCount = alarms.length;
+      isLoadingAlarms = false;
       return alarmCount;
+    },
+    getAlarms: async () => {
+      if (isLoadingAlarms) return alarms;
+      isLoadingAlarms = true;
+      const alarmsFromBrowser = await browser.alarms.getAll();
+      alarms = alarmsFromBrowser;
+      isLoadingAlarms = false;
+      return alarms;
+    },
+    refresh: async () => {
+      if (isLoadingAlarms) return;
+      isLoadingAlarms = true;
+      const browserAlarms = await browser.alarms.getAll();
+      alarmCount = browserAlarms.length;
+      alarms = browserAlarms;
+      isLoadingAlarms = false;
+      return;
     },
   };
 }
