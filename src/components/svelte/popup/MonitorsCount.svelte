@@ -49,24 +49,4 @@
     color: #cb2431;
     font-size: 14px;
   }
-
-  .manage-section {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #e1e4e8;
-  }
-
-  button.secondary {
-    background-color: #fafbfc;
-    border: 1px solid rgba(27, 31, 35, 0.15);
-    color: #24292e;
-    font-size: 14px;
-    padding: 5px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-
-  button.secondary:hover {
-    background-color: #f3f4f6;
-  }
 </style>
