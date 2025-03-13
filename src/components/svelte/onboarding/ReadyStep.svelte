@@ -1,3 +1,5 @@
+<script lang="ts"></script>
+
 <div class="step">
   <div class="step-number">4</div>
   <div class="step-content">

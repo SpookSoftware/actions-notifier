@@ -1,3 +1,5 @@
+<script lang="ts"></script>
+
 <div class="payment-section">
   <div class="flex-row payment-header">
     <h3>License Status</h3>
