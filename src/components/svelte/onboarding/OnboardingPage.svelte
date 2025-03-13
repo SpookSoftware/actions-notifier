@@ -48,9 +48,9 @@
   onMount(async () => {
     await Promise.all([
       tokenState.readTokenFromStorage(),
-      tokenState.checkTokenValidity(),
       paymentState.initialize(),
     ]);
+    await tokenState.checkTokenValidity();
   });
 </script>
 

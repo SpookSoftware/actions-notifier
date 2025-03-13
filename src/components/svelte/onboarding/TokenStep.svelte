@@ -108,13 +108,13 @@
       </div>
     {/if}
 
-    {#if showValidityMessage && tokenMessage}
+    {#if tokenMessage || tokenState.token}
       <div
-        class="token-feedback {tokenMessage.type === 'success'
+        class="token-feedback {tokenMessage?.type === 'success'
           ? 'success-message'
           : 'error-message'}"
       >
-        {tokenMessage.text}
+        {tokenMessage?.text}
       </div>
     {/if}
   </div>
