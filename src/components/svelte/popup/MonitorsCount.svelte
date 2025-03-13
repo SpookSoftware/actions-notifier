@@ -1,11 +1,5 @@
 <script lang="ts">
-  import browser from "webextension-polyfill";
-
   const { alarmCount } = $props<number>();
-
-  function handleManageClick() {
-    browser.tabs.create({ url: browser.runtime.getURL("manage.html") });
-  }
 </script>
 
 <div class="monitors-count">

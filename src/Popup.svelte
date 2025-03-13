@@ -39,12 +39,7 @@
   // Whenever extension validity changes, notify the content script.
   $effect(() => {
     console.log("extension validity changed. Running effect.");
-    browser.runtime
-      .sendMessage({
-        action: "extensionStateChanged",
-        enabled: extensionIsValid.isValid,
-      })
-      .catch(console.error);
+    browser.storage.sync.set({ extensionIsEnabled: extensionIsValid.isValid });
   });
 
   async function handleTokenSubmit(e: SubmitEvent) {

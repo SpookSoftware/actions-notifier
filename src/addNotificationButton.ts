@@ -40,7 +40,6 @@ import {
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
 
-// Import the notification component
 // import { showInPageNotification } from "./components/svelte/InPageNotification.svelte";
 import { NotificationType } from "./types";
 
@@ -387,6 +386,13 @@ async function processElementForChecksPages(): Promise<void> {
   }
 }
 
+// Is there going to be an issue because this is async?
+let extensionIsEnabled: Boolean | Promise<Boolean> = browser.storage.sync
+  .get("extensionIsEnabled")
+  .then(({ extensionIsEnabled }) => {
+    return Boolean(extensionIsEnabled);
+  });
+
 async function main(): Promise<void> {
   // If there's already a pending execution, don't create another one
   if (pendingMainExecution) {
@@ -400,22 +406,9 @@ async function main(): Promise<void> {
     console.debug(`Running main() for URL: ${window.location.href}`);
 
     // First check if the extension is enabled
-    try {
-      const response = await browser.runtime.sendMessage({
-        action: "getExtensionEnabled",
-      });
-      if (
-        isGetExtensionEnabledResponse(response) &&
-        response.status === "ok" &&
-        response.data &&
-        response.data.enabled === false
-      ) {
-        console.debug("Extension is disabled, not attaching observers");
-        return;
-      }
-    } catch (error) {
-      console.error("Error checking extension state:", error);
-      // Continue anyway in case of error
+    if (!extensionIsEnabled) {
+      console.debug("Extension is disabled, not attaching observers");
+      return;
     }
 
     // Track current URL
@@ -630,9 +623,23 @@ function setupURLChangeTracking() {
   console.debug("URL change tracking initialized");
 }
 
+function onStorageChanged(
+  changes: browser.Storage.StorageAreaWithUsageOnChangedChangesType
+) {
+  console.debug("Storage changed", changes);
+  if (changes.extensionIsEnabled) {
+    const newValue = changes.extensionIsEnabled.newValue;
+    if (typeof newValue === "boolean") {
+      extensionIsEnabled = newValue;
+      console.debug(`Extension enabled status changed to: ${newValue}`);
+    }
+  }
+}
+
 // Initialize if this hasn't been done already
 if (!isInitialized) {
   console.debug("Initializing extension");
+  browser.storage.sync.onChanged.addListener(onStorageChanged);
   setupURLChangeTracking();
   main();
 }
@@ -640,5 +647,6 @@ if (!isInitialized) {
 // Cleanup on unload
 window.addEventListener("unload", () => {
   console.debug("Page unloading, cleaning up observers");
+  browser.storage.sync.onChanged.removeListener(onStorageChanged);
   cleanupObservers();
 });

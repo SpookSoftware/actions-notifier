@@ -9,6 +9,8 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "jsx": "react-jsx",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "paths": {
       "@/*": ["src/*"],
       "@root/*": ["./*"]
