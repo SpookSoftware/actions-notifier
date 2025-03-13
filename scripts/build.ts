@@ -14,7 +14,6 @@ import { SveltePlugin } from "bun-plugin-svelte";
       "./src/addNotificationButton.ts",
       "./src/background.ts",
       "./src/popup.html",
-      "./src/manage.html",
       "./src/onboarding.html",
       "./src/ExtPay_content_script.js",
     ],

@@ -41,7 +41,7 @@ import {
 import browser from "webextension-polyfill";
 
 // Import the notification component
-import { showInPageNotification } from "./components/react/InPageNotification";
+// import { showInPageNotification } from "./components/svelte/InPageNotification.svelte";
 import { NotificationType } from "./types";
 
 // Listen for messages from the background script or other parts of the extension
@@ -69,23 +69,22 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     message.type
   ) {
     // Handle notification requests
-    console.debug(`Showing in-page notification: ${message.type}`);
-
-    if (message.type === "token-expired") {
-      showInPageNotification(NotificationType.TOKEN_EXPIRED);
-    } else if (message.type === "alarm-limit-reached") {
-      showInPageNotification(NotificationType.ALARM_LIMIT_REACHED);
-    } else if (message.type === "trial-expired") {
-      // Pass along metadata about trial status if available
-      if ("metadata" in message) {
-        showInPageNotification(
-          NotificationType.TRIAL_EXPIRED,
-          message.metadata as Record<string, any>
-        );
-      } else {
-        showInPageNotification(NotificationType.TRIAL_EXPIRED);
-      }
-    }
+    // console.debug(`Showing in-page notification: ${message.type}`);
+    // if (message.type === "token-expired") {
+    //   showInPageNotification(NotificationType.TOKEN_EXPIRED);
+    // } else if (message.type === "alarm-limit-reached") {
+    //   showInPageNotification(NotificationType.ALARM_LIMIT_REACHED);
+    // } else if (message.type === "trial-expired") {
+    //   // Pass along metadata about trial status if available
+    //   if ("metadata" in message) {
+    //     showInPageNotification(
+    //       NotificationType.TRIAL_EXPIRED,
+    //       message.metadata as Record<string, any>
+    //     );
+    //   } else {
+    //     showInPageNotification(NotificationType.TRIAL_EXPIRED);
+    //   }
+    // }
   }
 
   return true;
