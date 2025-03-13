@@ -7,8 +7,6 @@
   let showTokenInput = $state(false);
   let showValidityMessage = $state(false);
 
-  const testToken = tokenState.token;
-
   type TokenMessage = { type: "success" | "error"; text: string } | null;
   let tokenMessage = $derived.by<TokenMessage>(() => {
     if (!tokenState.token) {
