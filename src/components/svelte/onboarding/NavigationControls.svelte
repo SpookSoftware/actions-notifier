@@ -6,6 +6,7 @@
     currentStep,
     totalSteps,
     isPaidOrTrialing,
+    tokenIsValid,
   } = $props();
 
   const isLastStep = $derived(currentStep === totalSteps);
@@ -17,7 +18,21 @@
       <button class="btn btn-secondary" onclick={onPrevious}> Previous </button>
     {/if}
 
-    {#if currentStep < totalSteps}
+    {#if currentStep === 2}
+      {#if !tokenIsValid}
+        <button
+          class="btn btn-primary"
+          disabled
+          title="Please ensure you have a valid token to continue"
+        >
+          Please ensure you have a valid token to continue
+        </button>
+      {:else}
+        <button class="btn btn-primary" onclick={onNext}> Next </button>
+      {/if}
+    {/if}
+
+    {#if currentStep !== 2}
       <button class="btn btn-primary" onclick={onNext}> Next </button>
     {/if}
 

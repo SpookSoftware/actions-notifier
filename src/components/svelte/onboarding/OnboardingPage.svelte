@@ -17,10 +17,14 @@
     paymentState.paymentStatus.paid || paymentState.paymentStatus.trialIsValid
   );
 
-  // Navigate to previous step
   function goToPreviousStep() {
     if (currentStep > 1) {
       currentStep--;
+    }
+  }
+  async function goToNextStep() {
+    if (currentStep < 3) {
+      currentStep++;
     }
   }
 
@@ -35,24 +39,18 @@
     }
   }
 
-  // Navigate to next step
-  async function goToNextStep() {
-    if (currentStep < 3) {
-      currentStep++;
-    }
-  }
-
-  // Complete the onboarding process
   async function handleFinishOnboarding() {
-    // Only allow completion if the user has started a trial or made a payment
     if (isPaidOrTrialing) {
       await finishOnboarding();
     }
   }
 
   onMount(async () => {
-    await tokenState.readTokenFromStorage();
-    await paymentState.initialize();
+    await Promise.all([
+      tokenState.readTokenFromStorage(),
+      tokenState.checkTokenValidity(),
+      paymentState.initialize(),
+    ]);
   });
 </script>
 
@@ -71,9 +69,7 @@
     {/if}
 
     {#if currentStep === 3}
-      <ReadyStep
-        onPaymentStatusChange={(status) => (isPaidOrTrialing = status)}
-      />
+      <ReadyStep />
     {/if}
   </div>
 
@@ -84,5 +80,6 @@
     onNext={goToNextStep}
     onFinish={handleFinishOnboarding}
     {isPaidOrTrialing}
+    tokenIsValid={tokenState.valid}
   />
 </div>
