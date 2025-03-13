@@ -20,13 +20,6 @@
       <span id="alarm-count-error">⚠️ At limit</span>
     {/if}
   </div>
-  <div class="manage-section">
-    <div class="flex-row">
-      <button class="secondary" onclick={handleManageClick}>
-        Manage Monitors
-      </button>
-    </div>
-  </div>
 </div>
 
 <style>
