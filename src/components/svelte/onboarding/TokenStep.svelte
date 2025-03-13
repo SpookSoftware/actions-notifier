@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import browser from "webextension-polyfill";
   import { tokenState } from "@/helpers/helpers.svelte";
 
@@ -22,8 +23,19 @@
     return null;
   });
 
-  // When token validity changes, notify the runtime
-  $effect(() => {});
+  onMount(async () => {
+    await tokenState.readTokenFromStorage();
+  });
+
+  // // When token validity changes, notify the runtime
+  // $effect(() => {
+  //   browser.runtime
+  //     .sendMessage({
+  //       action: "extensionStateChanged",
+  //       enabled: tokenState.valid,
+  //     })
+  //     .catch(console.error);
+  // });
 
   async function handleOnSubmit(e: SubmitEvent) {
     e.preventDefault();
@@ -89,7 +101,7 @@
       </button>
     </div>
 
-    {#if showTokenInput}
+    {#if showTokenInput || tokenState.token}
       <div>
         <p>Enter your GitHub token:</p>
         <form onsubmit={handleOnSubmit}>
@@ -97,6 +109,7 @@
             required
             type="password"
             class="token-input"
+            value={tokenState.token}
             placeholder="ghp_..."
           />
           <p class="help-text">
