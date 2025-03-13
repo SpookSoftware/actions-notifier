@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import browser from "webextension-polyfill";
-  import { tokenState } from "@/helpers/helpers.svelte";
+  const { handleTokenSubmit, tokenState } = $props<{
+    handleTokenSubmit: (e: SubmitEvent) => Promise<void>;
+    tokenState: any;
+  }>();
 
   let showTokenInput = $state(false);
-
   let showValidityMessage = $state(false);
 
   type TokenMessage = { type: "success" | "error"; text: string } | null;
@@ -23,30 +23,9 @@
     return null;
   });
 
-  onMount(async () => {
-    await tokenState.readTokenFromStorage();
-  });
-
-  // // When token validity changes, notify the runtime
-  // $effect(() => {
-  //   browser.runtime
-  //     .sendMessage({
-  //       action: "extensionStateChanged",
-  //       enabled: tokenState.valid,
-  //     })
-  //     .catch(console.error);
-  // });
-
-  async function handleOnSubmit(e: SubmitEvent) {
-    e.preventDefault();
-    const form = e.currentTarget as HTMLFormElement;
-    const tokenInput = form.querySelector<HTMLInputElement>("input");
-    if (tokenInput) {
-      const submittedToken = tokenInput.value.trim();
-      tokenState.token = submittedToken;
-      await browser.storage.local.set({ githubToken: tokenState.token });
-      showValidityMessage = true;
-    }
+  async function handleOnSubmitAndUpdateMessages(e: SubmitEvent) {
+    await handleTokenSubmit();
+    showValidityMessage = true;
   }
 </script>
 
@@ -104,7 +83,7 @@
     {#if showTokenInput || tokenState.token}
       <div>
         <p>Enter your GitHub token:</p>
-        <form onsubmit={handleOnSubmit}>
+        <form onsubmit={handleOnSubmitAndUpdateMessages}>
           <input
             required
             type="password"
