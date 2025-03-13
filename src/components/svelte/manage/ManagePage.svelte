@@ -11,46 +11,25 @@
     removeMonitor,
   } from "@/services/monitors";
   import { Monitor } from "@/types";
+  import { alarmState } from "@/helpers/helpers.svelte";
+  import { onMount } from "svelte";
 
   const ITEMS_PER_PAGE = 10;
 
-  // State variables with runes
-  let loading = $state(true);
-  let error = $state<string | null>(null);
-  let monitors = $state<Monitor[]>([]);
-  let refreshing = $state(false);
   let currentPage = $state(1);
 
-  // Load monitors on mount and whenever refresh is triggered
-  async function fetchMonitors() {
-    try {
-      loading = true;
-      error = null;
+  // On first load, get the real monitors, but don't perform that calculation again
+  let optimisticMonitors = $state(alarmState.alarms);
 
-      console.log("Fetching monitors...");
-      const data = await loadMonitors();
-      console.log(`Fetched ${data.length} monitors`);
-
-      monitors = data;
-    } catch (err) {
-      console.error("Error loading monitors:", err);
-      error = "Failed to load monitors. Please try again.";
-    } finally {
-      loading = false;
-      refreshing = false;
-    }
-  }
-
-  // Initial load with effect
-  $effect(() => {
-    fetchMonitors();
+  let currentPageMonitors = $derived.by(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = currentPage * ITEMS_PER_PAGE;
+    return optimisticMonitors.slice(start, end);
   });
 
-  // Handle refreshing the monitors list
-  async function handleRefresh() {
-    refreshing = true;
-    await fetchMonitors();
-  }
+  onMount(async () => {
+    await alarmState.refresh();
+  });
 
   // Handle removing a monitor
   async function handleRemoveMonitor(id: string) {
@@ -58,7 +37,9 @@
       const success = await removeMonitor(id);
       if (success) {
         // Remove from local state instead of full refresh
-        monitors = monitors.filter((monitor) => monitor.id !== id);
+        optimisticMonitors = optimisticMonitors.filter(
+          (monitor) => monitor.id !== id
+        );
 
         // If current page is now empty and not the first page, go to previous page
         const remainingMonitors = monitors.filter(
@@ -100,37 +81,29 @@
 
   // Calculate current page slice of monitors
   const currentMonitors = $derived(
-    monitors.slice(
+    alarmState.alarms.slice(
       (currentPage - 1) * ITEMS_PER_PAGE,
       currentPage * ITEMS_PER_PAGE
     )
   );
 
-  // Derived values for UI conditions
-  const isLoading = $derived(loading && monitors.length === 0);
-  const isEmpty = $derived(!loading && monitors.length === 0 && !error);
-  const hasMonitors = $derived(monitors.length > 0);
+  const isEmpty = $derived(alarmState.alarmCount === 0);
+  const hasMonitors = $derived(alarmState.alarmCount !== 0);
 </script>
 
 <Header />
 
 <StatusBar
-  monitorCount={monitors.length}
-  {refreshing}
+  monitorCount={optimisticMonitors.length}
+  refreshing={alarmState.isLoading}
   onRefresh={handleRefresh}
   onClearAll={handleClearAllMonitors}
   {hasMonitors}
 />
 
-<!-- Render content based on state -->
-{#if isLoading}
+{#if alarmState.isLoading}
   <LoadingIndicator />
   <p style="text-align: center">Loading monitors...</p>
-{:else if error}
-  <div class="error-message">
-    {error}
-    <button on:click={handleRefresh} class="retry-button"> Retry </button>
-  </div>
 {:else if isEmpty}
   <div class="empty-state">
     <p>No active workflow monitors found.</p>
@@ -142,14 +115,14 @@
 {:else}
   <div>
     <MonitorList
-      monitors={currentMonitors}
+      monitors={currentPageMonitors}
       onRemove={handleRemoveMonitor}
       {formatTime}
     />
 
     <Pagination
       {currentPage}
-      totalItems={monitors.length}
+      totalItems={optimisticMonitors.length}
       itemsPerPage={ITEMS_PER_PAGE}
       onPageChange={(page) => (currentPage = page)}
     />
