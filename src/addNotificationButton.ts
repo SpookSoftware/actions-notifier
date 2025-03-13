@@ -623,7 +623,7 @@ function setupURLChangeTracking() {
   console.debug("URL change tracking initialized");
 }
 
-function onStorageChanged(
+function handleExtensionEnabledChange(
   changes: browser.Storage.StorageAreaWithUsageOnChangedChangesType
 ) {
   console.debug("Storage changed", changes);
@@ -639,7 +639,7 @@ function onStorageChanged(
 // Initialize if this hasn't been done already
 if (!isInitialized) {
   console.debug("Initializing extension");
-  browser.storage.sync.onChanged.addListener(onStorageChanged);
+  browser.storage.sync.onChanged.addListener(handleExtensionEnabledChange);
   setupURLChangeTracking();
   main();
 }
@@ -647,6 +647,6 @@ if (!isInitialized) {
 // Cleanup on unload
 window.addEventListener("unload", () => {
   console.debug("Page unloading, cleaning up observers");
-  browser.storage.sync.onChanged.removeListener(onStorageChanged);
+  browser.storage.sync.onChanged.removeListener(handleExtensionEnabledChange);
   cleanupObservers();
 });
