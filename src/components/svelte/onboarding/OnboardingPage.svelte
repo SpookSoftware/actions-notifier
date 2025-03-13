@@ -8,6 +8,8 @@
   import NavigationControls from "./NavigationControls.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import { finishOnboarding } from "@/services/trial";
+  import ExtPay from "extpay";
+  const extpay = ExtPay("cicd-workflow-notifications");
 
   import { tokenState, paymentState } from "@/helpers/helpers.svelte";
 
@@ -69,7 +71,12 @@
     {/if}
 
     {#if currentStep === 3}
-      <ReadyStep />
+      <ReadyStep
+        {paymentState}
+        {isPaidOrTrialing}
+        onPay={() => extpay.openPaymentPage()}
+        onStartTrial={() => extpay.openTrialPage()}
+      />
     {/if}
   </div>
 
