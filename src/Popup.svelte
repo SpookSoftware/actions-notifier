@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import Header from "@/components/svelte/popup/Header.svelte";
   import GitHubTokenForm from "@/components/svelte/popup/GitHubTokenForm.svelte";
   import MonitorsCount from "@/components/svelte/popup/MonitorsCount.svelte";
@@ -56,6 +57,11 @@
       await browser.storage.local.set({ githubToken: tokenState.token });
     }
   }
+
+  onMount(async () => {
+    await tokenState.readTokenFromStorage();
+    tokenState.checkTokenValidity();
+  });
 </script>
 
 <main class="popup">
