@@ -45,21 +45,7 @@ import { NotificationType } from "./types";
 
 // Listen for messages from the background script or other parts of the extension
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.debug("Content script received message:", message);
-
-  if (messageIsEnabledStatusChange(message)) {
-    console.debug(`Extension state changed to: ${message.enabled}`);
-
-    if (!message.enabled) {
-      // If extension is disabled, don't add more buttons.
-      cleanupObservers();
-      console.debug("Extension disabled, observers cleaned up");
-    } else {
-      // If extension is re-enabled, restart the main process
-      console.debug("Extension enabled, restarting main process");
-      debouncedMain();
-    }
-  } else if (
+  if (
     message &&
     typeof message === "object" &&
     "action" in message &&

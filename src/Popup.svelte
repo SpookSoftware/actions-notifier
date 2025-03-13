@@ -49,7 +49,7 @@
     if (tokenInput) {
       const submittedToken = tokenInput.value.trim();
       tokenState.token = submittedToken;
-      await browser.storage.local.set({ githubToken: tokenState.token });
+      await browser.storage.sync.set({ githubToken: tokenState.token });
     }
   }
 

@@ -16,6 +16,9 @@ import {
 } from "@/helpers/pure";
 import { getPaymentStatus } from "@/services/payment";
 import type { MonitorResponse, Encoded, MonitorRequest } from "@/types";
+import ExtPay from "extpay";
+import { trialIsValid } from "@/services/trial";
+const extpay = ExtPay("cicd-workflow-notifications");
 
 /**
  * Notifies all GitHub tabs about an issue
@@ -84,7 +87,7 @@ export async function sendStructuredMessage(
 export async function isExtensionEnabled(): Promise<boolean> {
   try {
     // Get from storage first to avoid circular dependency
-    const data = await browser.storage.local.get(EXTENSION_ENABLED_KEY);
+    const data = await browser.storage.sync.get(EXTENSION_ENABLED_KEY);
     if (EXTENSION_ENABLED_KEY in data) {
       return Boolean(data[EXTENSION_ENABLED_KEY]);
     }
@@ -161,7 +164,7 @@ export async function setExtensionEnabled(enabled: boolean): Promise<void> {
   try {
     // Persist to storage - we still need to save this state to storage
     // since it's used by both background script and content scripts
-    await browser.storage.local.set({ [EXTENSION_ENABLED_KEY]: enabled });
+    await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: enabled });
     console.debug(`Extension enabled state set to: ${enabled}`);
 
     // Broadcast this change to all tabs
@@ -322,7 +325,7 @@ export function createMonitorToggleHandler({
 
           // Store timestamp when monitor was created
           const encoded = encode({ runId, jobId, owner, repository });
-          await browser.storage.local.set({
+          await browser.storage.sync.set({
             [encoded]: Date.now(),
           });
         } else {
@@ -354,7 +357,7 @@ export async function isIdAlreadyMonitored(
 ): Promise<boolean> {
   if (typeof id === "string") {
     try {
-      const result = await browser.storage.local.get(id);
+      const result = await browser.storage.sync.get(id);
       return Object.keys(result).length > 0;
     } catch (error) {
       console.error(
@@ -460,7 +463,7 @@ async function createAlarmForId(
 }
 
 export async function storeMonitoringStatus(id: string): Promise<void> {
-  await browser.storage.local.set({ [id]: Date.now() });
+  await browser.storage.sync.set({ [id]: Date.now() });
 }
 
 async function setupMonitoring(
@@ -474,7 +477,7 @@ async function setupMonitoring(
 }
 
 async function removeMonitoringStatus(id: string): Promise<void> {
-  await browser.storage.local.remove(id);
+  await browser.storage.sync.remove(id);
 }
 
 export async function cancelAlarmForId(id: string): Promise<boolean> {
@@ -577,7 +580,27 @@ export async function onMessageCallback(
 }
 
 export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
-  if (!isProperlyEncoded(alarm.name)) {
+  if (alarm.name === "pollExtensionValidity") {
+    console.log("Running pollExtensionValidity alarm callback");
+    const { githubToken } = await browser.storage.sync.get("githubToken");
+    const tokenIsValid = await validateTokenDirectly(githubToken as string);
+
+    const user = await extpay.getUser();
+    const isPaid = user.paid;
+    const isTrialed = trialIsValid(user.trialStartedAt);
+
+    const extensionIsValid = tokenIsValid && (isPaid || isTrialed);
+    if (!extensionIsValid) {
+      console.debug("Disabling extension due to invalid state");
+      console.debug(`Token valid: ${tokenIsValid}`);
+      console.debug(`User paid: ${isPaid}`);
+      console.debug(`User trialed: ${isTrialed}`);
+      await browser.storage.sync.set({ extensionEnabled: false });
+    } else {
+      console.debug("Enabling extension due to valid state");
+      await browser.storage.sync.set({ extensionEnabled: true });
+    }
+  } else if (!isProperlyEncoded(alarm.name)) {
     throw Error("Unexpected alarm name format: " + alarm.name);
   }
 
@@ -635,7 +658,7 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
 export async function teardown(alarmName: string) {
   await browser.alarms.clear(alarmName);
   console.debug(`Alarm ${alarmName} cleared`);
-  await browser.storage.local.remove(alarmName);
+  await browser.storage.sync.remove(alarmName);
   console.debug(`Monitoring status for ${alarmName} cleared from storage`);
 }
 

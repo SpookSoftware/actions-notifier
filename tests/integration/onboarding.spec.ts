@@ -292,7 +292,7 @@ test.describe("Onboarding Flow", () => {
     // Should have set onboarding completed flag in storage
     const onboardingCompleted = await page.evaluate(() => {
       return new Promise((resolve) => {
-        chrome.storage.local.get("hasCompletedOnboarding", (data) => {
+        chrome.storage.sync.get("hasCompletedOnboarding", (data) => {
           resolve(data.hasCompletedOnboarding);
         });
       });

@@ -128,6 +128,8 @@ self.addEventListener("activate", async (_event: Event) => {
   await browser.alarms.clearAll();
   console.log("Cleared all old alarms.");
 
+  // We're going to poll for extension enabled status every so often to account for tokens that expire.
+  browser.alarms.create("pollExtensionValidity", { periodInMinutes: 10 });
   // Check the extension's validation state and enable/disable accordingly
   await checkAndUpdateExtensionState();
 });

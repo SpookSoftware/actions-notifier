@@ -37,7 +37,7 @@ export async function saveGitHubToken(token: string): Promise<void> {
  */
 export async function checkFirstRun(): Promise<boolean> {
   try {
-    const data = await browser.storage.local.get("hasSeenOnboarding");
+    const data = await browser.storage.sync.get("hasSeenOnboarding");
     return !data.hasSeenOnboarding;
   } catch (error) {
     console.error("Error checking first run:", error);
@@ -51,7 +51,7 @@ export async function checkFirstRun(): Promise<boolean> {
  */
 export async function markOnboardingSeen(): Promise<void> {
   try {
-    await browser.storage.local.set({ hasSeenOnboarding: true });
+    await browser.storage.sync.set({ hasSeenOnboarding: true });
   } catch (error) {
     console.error("Error marking onboarding as seen:", error);
     throw error;

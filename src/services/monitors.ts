@@ -28,22 +28,22 @@ export async function loadMonitors(): Promise<Monitor[]> {
         }
 
         const decodedData = decode(encodedId as Encoded);
-        
+
         // Get time when monitor was created
-        const storageData = await browser.storage.local.get(encodedId);
-        
+        const storageData = await browser.storage.sync.get(encodedId);
+
         // For debugging
         console.log(`Loading alarm data for ${encodedId}:`, storageData);
-        
+
         // Handle different possible data types safely
         let createdTime;
         const storedValue = storageData[encodedId];
-        
+
         if (storedValue === true) {
           createdTime = new Date().toLocaleString(); // fallback if no timestamp stored
-        } else if (typeof storedValue === 'string') {
+        } else if (typeof storedValue === "string") {
           createdTime = new Date(storedValue).toLocaleString();
-        } else if (typeof storedValue === 'number') {
+        } else if (typeof storedValue === "number") {
           createdTime = new Date(storedValue).toLocaleString();
         } else {
           createdTime = new Date().toLocaleString(); // ultimate fallback
@@ -90,7 +90,7 @@ export async function removeMonitor(id: string): Promise<boolean> {
     await browser.alarms.clear(id);
 
     // Remove from storage
-    await browser.storage.local.remove(id);
+    await browser.storage.sync.remove(id);
 
     return true;
   } catch (error) {
@@ -121,7 +121,7 @@ export async function clearAllMonitors(): Promise<boolean> {
 
       // Remove all monitor keys from storage
       if (monitorKeys.length > 0) {
-        await browser.storage.local.remove(monitorKeys);
+        await browser.storage.sync.remove(monitorKeys);
       }
 
       return true;

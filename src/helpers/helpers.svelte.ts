@@ -31,7 +31,7 @@ function createTokenState() {
 
       isLoadingToken = true;
       try {
-        const result = await browser.storage.local.get("githubToken");
+        const result = await browser.storage.sync.get("githubToken");
         if (result.githubToken) {
           token = String(result.githubToken);
         } else {
