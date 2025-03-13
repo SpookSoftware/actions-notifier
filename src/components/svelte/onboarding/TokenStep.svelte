@@ -24,7 +24,7 @@
   });
 
   async function handleOnSubmitAndUpdateMessages(e: SubmitEvent) {
-    await handleTokenSubmit();
+    await handleTokenSubmit(e);
     showValidityMessage = true;
   }
 </script>
