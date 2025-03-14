@@ -337,12 +337,31 @@ async function processElementForChecksPages(): Promise<void> {
   }
 }
 
-// Is there going to be an issue because this is async?
-let extensionIsEnabled: Boolean | Promise<Boolean> = browser.storage.sync
-  .get("extensionIsEnabled")
-  .then(({ extensionIsEnabled }) => {
-    return Boolean(extensionIsEnabled);
-  });
+// Track both enabled state and reason
+let extensionIsEnabled = false;
+let disabledReason: string | null = null;
+
+browser.storage.sync
+  .get(["extensionIsEnabled", "extensionDisabledReason"])
+  .then(
+    ({
+      extensionIsEnabled: extensionIsEnabledFromStorage,
+      extensionDisabledReason,
+    }) => {
+      extensionIsEnabled = Boolean(extensionIsEnabledFromStorage);
+      disabledReason = String(extensionDisabledReason) || null;
+
+      if (!isInitialized) {
+        console.debug("Initializing extension");
+        browser.storage.sync.onChanged.addListener(
+          handleExtensionEnabledChange
+        );
+        setupURLChangeTracking();
+        isInitialized = true;
+        main();
+      }
+    }
+  );
 
 async function main(): Promise<void> {
   // If there's already a pending execution, don't create another one
@@ -351,16 +370,17 @@ async function main(): Promise<void> {
     return;
   }
 
+  if (!isInitialized) {
+    console.debug(
+      "didn't run main because initialization steps haven't completed"
+    );
+    return;
+  }
+
   pendingMainExecution = true;
 
   try {
     console.debug(`Running main() for URL: ${window.location.href}`);
-
-    // First check if the extension is enabled
-    if (!extensionIsEnabled) {
-      console.debug("Extension is disabled, not attaching observers");
-      return;
-    }
 
     // Track current URL
     currentUrl = window.location.href;
@@ -469,8 +489,6 @@ async function main(): Promise<void> {
     } else {
       console.debug("Current URL doesn't match any monitoring paths");
     }
-
-    isInitialized = true;
   } finally {
     pendingMainExecution = false;
   }
@@ -578,21 +596,25 @@ function handleExtensionEnabledChange(
   changes: browser.Storage.StorageAreaWithUsageOnChangedChangesType
 ) {
   console.debug("Storage changed", changes);
+  let stateChanged = false;
+
   if (changes.extensionIsEnabled) {
     const newValue = changes.extensionIsEnabled.newValue;
     if (typeof newValue === "boolean") {
       extensionIsEnabled = newValue;
+      stateChanged = true;
       console.debug(`Extension enabled status changed to: ${newValue}`);
     }
   }
-}
 
-// Initialize if this hasn't been done already
-if (!isInitialized) {
-  console.debug("Initializing extension");
-  browser.storage.sync.onChanged.addListener(handleExtensionEnabledChange);
-  setupURLChangeTracking();
-  main();
+  if (changes.extensionDisabledReason) {
+    disabledReason = String(changes.extensionDisabledReason.newValue);
+    console.debug(`Extension disabled reason changed to: ${disabledReason}`);
+  }
+
+  if (stateChanged) {
+    debouncedMain();
+  }
 }
 
 // Cleanup on unload
@@ -660,14 +682,11 @@ function createMonitorToggleHandler({
     });
 
   async function sendMonitoringMessage(event: MouseEvent) {
-    // First check if the extension is enabled and that the promise is resolved
-    if (typeof extensionIsEnabled !== "boolean" || !extensionIsEnabled) {
+    if (!extensionIsEnabled) {
       event.preventDefault();
       event.stopPropagation();
 
-      debugger;
-      // Show tooltip with the reason
-      const message = "Extension is currently disabled";
+      const message = disabledReason || "Extension is currently disabled";
       const button = event.currentTarget as HTMLElement;
       showButtonTooltip(button, message);
 

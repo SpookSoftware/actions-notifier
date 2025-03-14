@@ -20,39 +20,6 @@ import ExtPay from "extpay";
 import { trialIsValid } from "@/services/trial";
 const extpay = ExtPay("cicd-workflow-notifications");
 
-/**
- * Notifies all GitHub tabs about an issue
- */
-export async function notifyGitHubTabsAboutIssue(
-  type: "token-expired" | "alarm-limit-reached"
-): Promise<void> {
-  try {
-    const githubTabs = await browser.tabs.query({
-      url: "https://github.com/*",
-    });
-
-    console.debug(
-      `Sending ${type} notification to ${githubTabs.length} GitHub tabs`
-    );
-
-    for (const tab of githubTabs) {
-      if (tab.id) {
-        try {
-          await browser.tabs.sendMessage(tab.id, {
-            action: "showNotification",
-            type: type,
-          });
-          console.debug(`Notification sent to tab ${tab.id}`);
-        } catch (error) {
-          console.error(`Error sending notification to tab ${tab.id}:`, error);
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error sending notifications to tabs:", error);
-  }
-}
-
 // Token validation error types
 export type TokenValidationError =
   | "NO_TOKEN_FOUND"
@@ -454,6 +421,7 @@ async function cancelMonitoring(id: string): Promise<[boolean, void]> {
   return await Promise.all([cancelAlarmForId(id), removeMonitoringStatus(id)]);
 }
 
+// todo: How much of this is necessary now?
 export async function onMessageCallback(
   request: unknown,
   _sender: browser.Runtime.MessageSender
@@ -492,9 +460,6 @@ export async function onMessageCallback(
       // Automatically disable the extension on token issues
       await setExtensionEnabled(false);
 
-      // Notify GitHub tabs about token issue
-      await notifyGitHubTabsAboutIssue("token-expired");
-
       return {
         status: "error",
         error: new Error(tokenStatus.errorMessage || "Token validation failed"),
@@ -509,9 +474,6 @@ export async function onMessageCallback(
       );
       // Automatically disable the extension when alarm limit is reached
       await setExtensionEnabled(false);
-
-      // Notify GitHub tabs about alarm limit
-      await notifyGitHubTabsAboutIssue("alarm-limit-reached");
 
       return {
         status: "error",
@@ -594,9 +556,6 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
     const tokenStatus = await validateGitHubToken();
     if (!tokenStatus.isValid) {
       console.error(`Alarm callback failed: ${tokenStatus.errorMessage}`);
-
-      // Show the in-page notification about token issues
-      await notifyGitHubTabsAboutIssue("token-expired");
 
       // Don't cancel monitoring yet - the user might fix their token
       return;

@@ -55,7 +55,36 @@
       return;
     }
     console.log("extension validity changed. Running effect.");
-    browser.storage.sync.set({ extensionIsEnabled: extensionIsValid.isValid });
+
+    // Prepare a more user-friendly message based on the technical reason
+    let userFriendlyReason = null;
+    if (!extensionIsValid.isValid) {
+      switch (extensionIsValid.reason) {
+        case "no token":
+          userFriendlyReason =
+            "Please add a GitHub token in the extension settings";
+          break;
+        case "payment status invalid":
+          userFriendlyReason = paymentState.paymentStatus.trialStartedAt
+            ? "Your free trial has expired"
+            : "Please start a free trial or purchase the extension";
+          break;
+        case "token invalid":
+          userFriendlyReason = "Your GitHub token is invalid or expired";
+          break;
+        case "too many alarms":
+          userFriendlyReason = `You've reached the maximum limit of ${alarmState.alarmCount}/500 active monitors`;
+          break;
+        default:
+          userFriendlyReason = "The extension encountered an unknown issue";
+      }
+    }
+
+    // Save both enabled state and reason
+    browser.storage.sync.set({
+      extensionIsEnabled: extensionIsValid.isValid,
+      extensionDisabledReason: userFriendlyReason,
+    });
   });
 
   onMount(async () => {
