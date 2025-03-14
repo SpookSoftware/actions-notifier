@@ -681,6 +681,10 @@ function applyDisabledStyles(button: HTMLButtonElement) {
 }
 
 function removeDisabledStyles(button: HTMLButtonElement) {
+  if (button.querySelector("svg")) {
+    const svgElement = button.querySelector("svg")!;
+    resetSVGColor(svgElement);
+  }
   button.classList.remove("disabled");
   button.style.opacity = "";
   button.style.cursor = "";

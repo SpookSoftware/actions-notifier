@@ -13,7 +13,6 @@
   import TokenStatusSkeleton from "@/components/svelte/skeletons/TokenStatusSkeleton.svelte";
   import MonitorsCountSkeleton from "@/components/svelte/skeletons/MonitorsCountSkeleton.svelte";
   import EnabledStatusSkeleton from "@/components/svelte/skeletons/EnabledStatusSkeleton.svelte";
-  import PaymentStatusSkeleton from "@/components/svelte/skeletons/PaymentStatusSkeleton.svelte";
   import browser from "webextension-polyfill";
   import {
     tokenState,
