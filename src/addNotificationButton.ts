@@ -613,6 +613,17 @@ function handleExtensionEnabledChange(
   }
 
   if (stateChanged) {
+    // Apply disabled/enabled styles to buttons that already exist
+    document
+      .querySelectorAll(`button.${NOTIFICATION_BUTTON_CLASS}`)
+      .forEach((button) => {
+        if (button instanceof HTMLButtonElement) {
+          extensionIsEnabled
+            ? removeDisabledStyles(button)
+            : applyDisabledStyles(button);
+        }
+      });
+
     debouncedMain();
   }
 }
@@ -658,6 +669,20 @@ function createNotificationButton({
   }
 
   return button;
+}
+
+function applyDisabledStyles(button: HTMLButtonElement) {
+  button.classList.add("disabled");
+  button.style.opacity = "0.6";
+  button.style.cursor = "not-allowed";
+  button.title = "Extension disabled";
+}
+
+function removeDisabledStyles(button: HTMLButtonElement) {
+  button.classList.remove("disabled");
+  button.style.opacity = "";
+  button.style.cursor = "";
+  button.title = "";
 }
 
 function createMonitorToggleHandler({

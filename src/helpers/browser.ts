@@ -36,7 +36,6 @@ export type TokenStatus = {
 
 // Constants
 export const MAX_ALARMS = 500;
-const TOKEN_NOTIFICATION_ID = "github-token-required";
 const EXTENSION_ENABLED_KEY = "extensionEnabled";
 const GITHUB_TOKEN_KEY = "githubToken";
 
