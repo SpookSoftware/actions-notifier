@@ -13,10 +13,10 @@
       Start your free 7-day trial or purchase a license to try all features.
     </p>
     <div class="button-group">
-      <button class="trial-button" on:click={() => extpay.openTrialPage()}>
+      <button class="trial-button" onclick={() => extpay.openTrialPage()}>
         Start Free Trial
       </button>
-      <button class="buy-button" on:click={() => extpay.openPaymentPage()}>
+      <button class="buy-button" onclick={() => extpay.openPaymentPage()}>
         Purchase License<span class="price">($2.95/lifetime)</span>
       </button>
     </div>
