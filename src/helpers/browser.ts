@@ -210,13 +210,6 @@ export async function getActiveAlarmCount(): Promise<number> {
 }
 
 /**
- * Opens the token configuration page
- */
-export function openTokenConfigPage(): void {
-  browser.runtime.openOptionsPage();
-}
-
-/**
  * Creates a callback function that sends a message to the background script to start/stop monitoring
  */
 export function createMonitorToggleHandler({
@@ -628,19 +621,10 @@ export async function createCompletionNotification(
 export async function onNotificationClickedCallback(notificationId: string) {
   console.debug(`Notification ${notificationId} clicked.`);
 
-  // Handle special notification IDs
-  if (notificationId === TOKEN_NOTIFICATION_ID) {
-    // Open token configuration page
-    openTokenConfigPage();
-    return;
-  }
-
   if (!isProperlyEncoded(notificationId)) {
     console.error(`Unexpected notification ID format: ${notificationId}`);
     return;
   }
-
-  // Handle normal workflow notifications
   try {
     const decoded = decode(notificationId);
     await browser.tabs.create({
