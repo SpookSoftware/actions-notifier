@@ -167,10 +167,10 @@
   <!-- Payment status section with skeleton -->
   {#if paymentState.paymentStatus.trialNeverStarted}
     <TrialNotStarted />
-  {:else if paymentState.paymentStatus.trialExpired}
-    <TrialExpired />
   {:else if paymentState.paymentStatus.paid}
     <PaidFor />
+  {:else if paymentState.paymentStatus.trialExpired}
+    <TrialExpired />
   {:else if paymentState.paymentStatus.trialIsValid}
     <TrialInProgress
       trialExpirationDate={paymentState.paymentStatus.trialExpirationDate}

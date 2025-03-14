@@ -203,7 +203,7 @@ function createPaymentState() {
           );
         }
 
-        const trialExpired = user.trialStartedAt! > sevenDaysAfter(new Date());
+        const trialExpired = new Date() > sevenDaysAfter(user.trialStartedAt!);
         if (trialExpired) {
           paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
           paymentStatus.trialIsValid = false;
