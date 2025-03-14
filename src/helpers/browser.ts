@@ -36,7 +36,8 @@ export type TokenStatus = {
 
 // Constants
 export const MAX_ALARMS = 500;
-const EXTENSION_ENABLED_KEY = "extensionEnabled";
+export const EXTENSION_ENABLED_KEY = "extensionEnabled";
+export const DISABLED_REASON_KEY = "extensionDisabledReason";
 const GITHUB_TOKEN_KEY = "githubToken";
 
 /**
@@ -124,15 +125,19 @@ async function validateTokenDirectly(token: string): Promise<boolean> {
   }
 }
 
-/**
- * Set the extension enabled state
- */
-export async function setExtensionEnabled(enabled: boolean): Promise<void> {
-  try {
-    await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: enabled });
-    console.debug(`Extension enabled state set to: ${enabled}`);
-  } catch (error) {
-    console.error("Error setting extension enabled state:", error);
+export async function setExtensionEnabled(
+  enabled: boolean,
+  reason?: string
+): Promise<void> {
+  if (enabled) {
+    console.debug("Setting extension enabled");
+    await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: true });
+  } else {
+    console.debug("Setting extension disabled with reason: ", reason);
+    await browser.storage.sync.set({
+      [EXTENSION_ENABLED_KEY]: false,
+      [DISABLED_REASON_KEY]: reason,
+    });
   }
 }
 
@@ -505,7 +510,7 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
     const { githubToken } = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
     if (!githubToken) {
       console.debug("Disabling extension due to missing token");
-      await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: false });
+      await setExtensionEnabled(false, "Missing or invalid github token");
       return;
     }
     const tokenIsValid = await validateTokenDirectly(String(githubToken));
@@ -520,10 +525,13 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
       console.debug(`Token valid: ${tokenIsValid}`);
       console.debug(`User paid: ${isPaid}`);
       console.debug(`User trialed: ${isTrialed}`);
-      await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: false });
+      await setExtensionEnabled(
+        false,
+        "Invalid state discovered in alarm callback"
+      );
     } else {
       console.debug("Enabling extension due to valid state");
-      await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: true });
+      await setExtensionEnabled(true);
     }
     return;
   } else if (!isProperlyEncoded(alarm.name)) {

@@ -20,6 +20,7 @@
     alarmState,
     paymentState,
   } from "@/helpers/helpers.svelte";
+  import { setExtensionEnabled } from "./helpers/browser";
 
   // We want to avoid sending an update to the browser if the extension state is still loading.
   let isInitializing = $state(true);
@@ -80,11 +81,11 @@
       }
     }
 
-    // Save both enabled state and reason
-    browser.storage.sync.set({
-      extensionIsEnabled: extensionIsValid.isValid,
-      extensionDisabledReason: userFriendlyReason,
-    });
+    if (!extensionIsValid.isValid) {
+      setExtensionEnabled(extensionIsValid.isValid, String(userFriendlyReason));
+    } else {
+      setExtensionEnabled(extensionIsValid.isValid);
+    }
   });
 
   let pollingInterval: ReturnType<typeof setInterval>;

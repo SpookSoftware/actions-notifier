@@ -12,10 +12,12 @@ import {
 import {
   ensureButtonHasHandler,
   isIdAlreadyMonitored,
+  EXTENSION_ENABLED_KEY,
   sendStructuredMessage,
   showButtonTooltip,
   URLAwareMutationObserver,
 } from "./helpers/browser";
+// import { EXTENSION_ENABLED_KEY } from "@/helpers/constants";
 import {
   shouldMonitorActions,
   shouldMonitorJobs,
@@ -342,10 +344,10 @@ let extensionIsEnabled = false;
 let disabledReason: string | null = null;
 
 browser.storage.sync
-  .get(["extensionIsEnabled", "extensionDisabledReason"])
+  .get([EXTENSION_ENABLED_KEY, "extensionDisabledReason"])
   .then(
     ({
-      extensionIsEnabled: extensionIsEnabledFromStorage,
+      [EXTENSION_ENABLED_KEY]: extensionIsEnabledFromStorage,
       extensionDisabledReason,
     }) => {
       extensionIsEnabled = Boolean(extensionIsEnabledFromStorage);
@@ -598,8 +600,8 @@ function handleExtensionEnabledChange(
   console.debug("Storage changed", changes);
   let stateChanged = false;
 
-  if (changes.extensionIsEnabled) {
-    const newValue = changes.extensionIsEnabled.newValue;
+  if (changes[EXTENSION_ENABLED_KEY]) {
+    const newValue = changes[EXTENSION_ENABLED_KEY].newValue;
     if (typeof newValue === "boolean") {
       extensionIsEnabled = newValue;
       stateChanged = true;
