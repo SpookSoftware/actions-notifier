@@ -176,6 +176,15 @@
       trialExpirationDate={paymentState.paymentStatus.trialExpirationDate}
     />
   {/if}
+
+  <div class="support-info">
+    <p>Questions? Problems? Concerns?</p>
+    <p>
+      Please email us at <a href="mailto:actions-notifier@spook.software"
+        >actions-notifier@spook.software</a
+      >
+    </p>
+  </div>
 </main>
 
 <style>
@@ -188,5 +197,22 @@
     font-size: 14px;
     line-height: 1.5;
     color: #24292e;
+  }
+  .support-info {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e1e4e8;
+    text-align: center;
+    font-size: 12px;
+    color: #586069;
+  }
+
+  .support-info a {
+    color: #0366d6;
+    text-decoration: none;
+  }
+
+  .support-info a:hover {
+    text-decoration: underline;
   }
 </style>
