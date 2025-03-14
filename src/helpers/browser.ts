@@ -71,6 +71,7 @@ export type TokenStatus = {
 export const MAX_ALARMS = 500;
 const TOKEN_NOTIFICATION_ID = "github-token-required";
 const EXTENSION_ENABLED_KEY = "extensionEnabled";
+const GITHUB_TOKEN_KEY = "githubToken";
 
 /**
  * Sends a message to the background script
@@ -94,7 +95,7 @@ export async function isExtensionEnabled(): Promise<boolean> {
 
     // If not in storage, calculate based on conditions
     // Get token first to check if it exists
-    const tokenData = await browser.storage.sync.get("githubToken");
+    const tokenData = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
     if (!tokenData.githubToken) {
       return false; // No token = disabled
     }
@@ -207,7 +208,7 @@ export async function broadcastExtensionState(enabled: boolean): Promise<void> {
 export async function validateGitHubToken(): Promise<TokenStatus> {
   try {
     // Check if token exists
-    const data = await browser.storage.sync.get("githubToken");
+    const data = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
 
     if (!data.githubToken) {
       return {
@@ -379,8 +380,8 @@ export async function assertGithubToken() {
   }
 
   // Get the token if valid
-  const token = await browser.storage.sync.get("githubToken");
-  return token.githubToken;
+  const { githubToken } = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
+  return githubToken;
 }
 
 export async function checkActionStatus({
@@ -582,8 +583,13 @@ export async function onMessageCallback(
 export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
   if (alarm.name === "pollExtensionValidity") {
     console.log("Running pollExtensionValidity alarm callback");
-    const { githubToken } = await browser.storage.sync.get("githubToken");
-    const tokenIsValid = await validateTokenDirectly(githubToken as string);
+    const { githubToken } = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
+    if (!githubToken) {
+      console.debug("Disabling extension due to missing token");
+      await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: false });
+      return;
+    }
+    const tokenIsValid = await validateTokenDirectly(String(githubToken));
 
     const user = await extpay.getUser();
     const isPaid = user.paid;
@@ -595,10 +601,10 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
       console.debug(`Token valid: ${tokenIsValid}`);
       console.debug(`User paid: ${isPaid}`);
       console.debug(`User trialed: ${isTrialed}`);
-      await browser.storage.sync.set({ extensionEnabled: false });
+      await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: false });
     } else {
       console.debug("Enabling extension due to valid state");
-      await browser.storage.sync.set({ extensionEnabled: true });
+      await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: true });
     }
     return;
   } else if (!isProperlyEncoded(alarm.name)) {
