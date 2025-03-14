@@ -88,7 +88,7 @@ export async function isExtensionEnabled(): Promise<boolean> {
 }
 
 // Helper to validate token without circular dependency
-async function validateTokenDirectly(token: string): Promise<boolean> {
+export async function validateTokenDirectly(token: string): Promise<boolean> {
   try {
     // Test token with GitHub API
     const response = await fetch("https://api.github.com/user", {

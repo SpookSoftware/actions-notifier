@@ -1,6 +1,7 @@
 import browser from "webextension-polyfill";
 import ExtPay from "extpay";
 import { sevenDaysAfter, trialIsValid } from "@/services/trial";
+import { validateTokenDirectly } from "./browser";
 
 function createTokenState() {
   let token = $state<string>("");
@@ -56,13 +57,9 @@ function createTokenState() {
           return valid;
         }
 
-        const response = await fetch("https://api.github.com/user", {
-          headers: {
-            Authorization: `token ${token}`,
-          },
-        });
+        const result = await validateTokenDirectly(token);
 
-        valid = response.ok && response.status === 200;
+        valid = result;
         return valid;
       } catch (error) {
         console.error("Token validation error:", error);
