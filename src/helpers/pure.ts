@@ -68,33 +68,6 @@ export function shouldMonitorChecks(url: string) {
 
 export const NOTIFICATION_BUTTON_CLASS = "gh-action-notifier-button";
 
-export function createNotificationButton({
-  runId,
-  jobId,
-  owner,
-  repository,
-}: {
-  runId?: string;
-  jobId?: string;
-  owner: string;
-  repository: string;
-}) {
-  const button = document.createElement("button");
-  button.classList.add("Button");
-  button.classList.add(NOTIFICATION_BUTTON_CLASS);
-
-  // Basic styles
-  button.style.display = "inline-flex";
-  button.style.justifyContent = "center";
-  button.style.alignItems = "center";
-
-  button.dataset.runId = runId;
-  button.dataset.jobId = jobId;
-  button.dataset.owner = owner;
-  button.dataset.repository = repository;
-  return button;
-}
-
 export function createNotificationSVG() {
   // Updated path for a thicker notification bell using stroke instead of fill
   const NOTIFICATION_BELL_PATH =

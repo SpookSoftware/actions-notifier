@@ -10,15 +10,15 @@ import {
   NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR,
 } from "./selectors";
 import {
-  createMonitorToggleHandler,
   ensureButtonHasHandler,
   isIdAlreadyMonitored,
+  sendStructuredMessage,
+  showButtonTooltip,
   URLAwareMutationObserver,
 } from "./helpers/browser";
 import {
   shouldMonitorActions,
   shouldMonitorJobs,
-  createNotificationButton,
   createNotificationSVG,
   extractActionDataFromURL,
   getTargetElements,
@@ -35,45 +35,10 @@ import {
   createPRRunCallback,
   shouldMonitorChecks,
   NOTIFICATION_BUTTON_CLASS,
-  messageIsEnabledStatusChange,
-  isGetExtensionEnabledResponse,
+  buildMonitoringPayloads,
+  resetSVGColor,
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
-
-// import { showInPageNotification } from "./components/svelte/InPageNotification.svelte";
-import { NotificationType } from "./types";
-
-// Listen for messages from the background script or other parts of the extension
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (
-    message &&
-    typeof message === "object" &&
-    "action" in message &&
-    message.action === "showNotification" &&
-    "type" in message &&
-    message.type
-  ) {
-    // Handle notification requests
-    // console.debug(`Showing in-page notification: ${message.type}`);
-    // if (message.type === "token-expired") {
-    //   showInPageNotification(NotificationType.TOKEN_EXPIRED);
-    // } else if (message.type === "alarm-limit-reached") {
-    //   showInPageNotification(NotificationType.ALARM_LIMIT_REACHED);
-    // } else if (message.type === "trial-expired") {
-    //   // Pass along metadata about trial status if available
-    //   if ("metadata" in message) {
-    //     showInPageNotification(
-    //       NotificationType.TRIAL_EXPIRED,
-    //       message.metadata as Record<string, any>
-    //     );
-    //   } else {
-    //     showInPageNotification(NotificationType.TRIAL_EXPIRED);
-    //   }
-    // }
-  }
-
-  return true;
-});
 
 declare global {
   interface History {
@@ -636,3 +601,121 @@ window.addEventListener("unload", () => {
   browser.storage.sync.onChanged.removeListener(handleExtensionEnabledChange);
   cleanupObservers();
 });
+
+function createNotificationButton({
+  runId,
+  jobId,
+  owner,
+  repository,
+}: {
+  runId?: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+}) {
+  const button = document.createElement("button");
+  button.classList.add("Button");
+  button.classList.add(NOTIFICATION_BUTTON_CLASS);
+
+  // Basic styles
+  button.style.display = "inline-flex";
+  button.style.justifyContent = "center";
+  button.style.alignItems = "center";
+
+  button.dataset.runId = runId;
+  button.dataset.jobId = jobId;
+  button.dataset.owner = owner;
+  button.dataset.repository = repository;
+
+  // Add disabled styling if extension is disabled
+  if (!extensionIsEnabled) {
+    button.classList.add("disabled");
+    button.style.opacity = "0.6";
+    button.style.cursor = "not-allowed";
+    button.title = "Extension disabled";
+  }
+
+  return button;
+}
+
+function createMonitorToggleHandler({
+  runId,
+  jobId,
+  owner,
+  repository,
+  svg,
+}: {
+  runId: string;
+  jobId?: string;
+  owner: string;
+  repository: string;
+  svg: SVGElement;
+}) {
+  const { start: startMonitorPayload, stop: stopMonitorPayload } =
+    buildMonitoringPayloads({
+      runId,
+      jobId,
+      owner,
+      repository,
+    });
+
+  async function sendMonitoringMessage(event: MouseEvent) {
+    // First check if the extension is enabled and that the promise is resolved
+    if (typeof extensionIsEnabled !== "boolean" || !extensionIsEnabled) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      debugger;
+      // Show tooltip with the reason
+      const message = "Extension is currently disabled";
+      const button = event.currentTarget as HTMLElement;
+      showButtonTooltip(button, message);
+
+      // Update button color
+      setSVGColor(svg, "red");
+
+      // Don't continue with monitoring
+      return;
+    }
+
+    try {
+      const isAlreadyMonitored = await isIdAlreadyMonitored({
+        runId,
+        jobId,
+        owner,
+        repository,
+      });
+
+      if (!isAlreadyMonitored) {
+        // Start monitoring
+        const startResponse = await sendStructuredMessage(startMonitorPayload);
+
+        if (startResponse.status === "ok") {
+          setSVGColor(svg, "yellow");
+
+          // Store timestamp when monitor was created
+          const encoded = encode({ runId, jobId, owner, repository });
+          await browser.storage.sync.set({
+            [encoded]: Date.now(),
+          });
+        } else {
+          setSVGColor(svg, "red");
+        }
+      } else {
+        // Stop monitoring
+        const stopResponse = await sendStructuredMessage(stopMonitorPayload);
+
+        if (stopResponse.status === "ok") {
+          resetSVGColor(svg);
+        } else {
+          setSVGColor(svg, "red");
+        }
+      }
+    } catch (error) {
+      console.error("Error in monitor toggle handler:", error);
+      setSVGColor(svg, "red");
+    }
+  }
+
+  return sendMonitoringMessage;
+}

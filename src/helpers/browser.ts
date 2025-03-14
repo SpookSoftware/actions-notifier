@@ -163,45 +163,10 @@ async function validateTokenDirectly(token: string): Promise<boolean> {
  */
 export async function setExtensionEnabled(enabled: boolean): Promise<void> {
   try {
-    // Persist to storage - we still need to save this state to storage
-    // since it's used by both background script and content scripts
     await browser.storage.sync.set({ [EXTENSION_ENABLED_KEY]: enabled });
     console.debug(`Extension enabled state set to: ${enabled}`);
-
-    // Broadcast this change to all tabs
-    await broadcastExtensionState(enabled);
   } catch (error) {
     console.error("Error setting extension enabled state:", error);
-  }
-}
-
-/**
- * Broadcast extension state to all GitHub tabs
- */
-export async function broadcastExtensionState(enabled: boolean): Promise<void> {
-  try {
-    const githubTabs = await browser.tabs.query({
-      url: "https://github.com/*",
-    });
-
-    console.debug(
-      `Broadcasting extension state (${enabled}) to ${githubTabs.length} GitHub tabs`
-    );
-
-    for (const tab of githubTabs) {
-      if (tab.id) {
-        try {
-          await browser.tabs.sendMessage(tab.id, {
-            action: "extensionStateChanged",
-            enabled,
-          });
-        } catch (error) {
-          console.error(`Error broadcasting to tab ${tab.id}:`, error);
-        }
-      }
-    }
-  } catch (error) {
-    console.error("Error broadcasting extension state:", error);
   }
 }
 
@@ -933,4 +898,144 @@ export function debounce(func: Function, wait: number) {
     }
     timeout = window.setTimeout(later, wait) as unknown as number;
   };
+}
+
+/**
+ * Creates and shows a tooltip near a button element
+ */
+export function showButtonTooltip(button: HTMLElement, message: string): void {
+  // First, remove any existing tooltips
+  removeExistingTooltips();
+
+  // Create tooltip container
+  const tooltip = document.createElement("div");
+  tooltip.className = "cicd-workflow-tooltip";
+  tooltip.style.position = "absolute";
+  tooltip.style.zIndex = "9999";
+  tooltip.style.backgroundColor = "#24292e";
+  tooltip.style.color = "white";
+  tooltip.style.padding = "8px 12px";
+  tooltip.style.borderRadius = "6px";
+  tooltip.style.boxShadow = "0 2px 6px rgba(0, 0, 0, 0.2)";
+  tooltip.style.fontSize = "12px";
+  tooltip.style.maxWidth = "250px";
+  tooltip.style.whiteSpace = "normal";
+  tooltip.style.textAlign = "left";
+
+  // Create content container
+  const content = document.createElement("div");
+  content.style.display = "flex";
+  content.style.alignItems = "flex-start";
+  content.style.gap = "8px";
+
+  // Add message
+  const messageSpan = document.createElement("span");
+  messageSpan.textContent = message;
+  messageSpan.style.flexGrow = "1";
+
+  // Add close button
+  const closeButton = document.createElement("button");
+  closeButton.innerHTML = "&times;";
+  closeButton.style.background = "none";
+  closeButton.style.border = "none";
+  closeButton.style.color = "#959da5";
+  closeButton.style.fontSize = "16px";
+  closeButton.style.cursor = "pointer";
+  closeButton.style.padding = "0 0 0 8px";
+  closeButton.style.lineHeight = "1";
+  closeButton.style.flexShrink = "0";
+  closeButton.title = "Dismiss";
+
+  // Add event listener to close button
+  closeButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (document.body.contains(tooltip)) {
+      document.body.removeChild(tooltip);
+    }
+  });
+
+  // Add close on outside click
+  document.addEventListener(
+    "click",
+    (e) => {
+      if (
+        !tooltip.contains(e.target as Node) &&
+        document.body.contains(tooltip)
+      ) {
+        document.body.removeChild(tooltip);
+      }
+    },
+    { once: true }
+  );
+
+  // Create arrow element
+  const arrow = document.createElement("div");
+  arrow.style.position = "absolute";
+  arrow.style.bottom = "-5px";
+  arrow.style.left = "50%";
+  arrow.style.marginLeft = "-5px";
+  arrow.style.borderWidth = "5px 5px 0";
+  arrow.style.borderStyle = "solid";
+  arrow.style.borderColor = "#24292e transparent transparent";
+
+  // Assemble the tooltip
+  content.appendChild(messageSpan);
+  content.appendChild(closeButton);
+  tooltip.appendChild(content);
+  tooltip.appendChild(arrow);
+
+  // Add auto-dismiss timer
+  setTimeout(() => {
+    if (document.body.contains(tooltip)) {
+      document.body.removeChild(tooltip);
+    }
+  }, 5000);
+
+  // Position the tooltip - above the button
+  document.body.appendChild(tooltip);
+
+  // Get button position
+  const buttonRect = button.getBoundingClientRect();
+  const tooltipRect = tooltip.getBoundingClientRect();
+
+  // Position tooltip centered above button
+  const top = buttonRect.top + window.scrollY - tooltipRect.height - 10;
+  const left =
+    buttonRect.left +
+    window.scrollX +
+    buttonRect.width / 2 -
+    tooltipRect.width / 2;
+
+  tooltip.style.top = `${top}px`;
+  tooltip.style.left = `${left}px`;
+
+  // Ensure the tooltip stays within viewport boundaries
+  const rightEdge = left + tooltipRect.width;
+  const viewportWidth = window.innerWidth;
+
+  if (rightEdge > viewportWidth - 10) {
+    tooltip.style.left = `${viewportWidth - tooltipRect.width - 10}px`;
+    // Adjust arrow position
+    arrow.style.left = `${
+      buttonRect.left +
+      buttonRect.width / 2 -
+      (viewportWidth - tooltipRect.width - 10)
+    }px`;
+  } else if (left < 10) {
+    tooltip.style.left = "10px";
+    // Adjust arrow position
+    arrow.style.left = `${buttonRect.left + buttonRect.width / 2 - 10}px`;
+  }
+}
+
+/**
+ * Removes any existing tooltips from the DOM
+ */
+export function removeExistingTooltips(): void {
+  const existingTooltips = document.querySelectorAll(".cicd-workflow-tooltip");
+  existingTooltips.forEach((tooltip) => {
+    if (tooltip.parentElement) {
+      tooltip.parentElement.removeChild(tooltip);
+    }
+  });
 }
