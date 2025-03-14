@@ -12,12 +12,11 @@ import {
 import {
   ensureButtonHasHandler,
   isIdAlreadyMonitored,
-  EXTENSION_ENABLED_KEY,
   sendStructuredMessage,
   showButtonTooltip,
   URLAwareMutationObserver,
 } from "./helpers/browser";
-// import { EXTENSION_ENABLED_KEY } from "@/helpers/constants";
+import { EXTENSION_ENABLED_KEY } from "@constants";
 import {
   shouldMonitorActions,
   shouldMonitorJobs,

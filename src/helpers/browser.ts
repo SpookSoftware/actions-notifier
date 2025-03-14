@@ -18,6 +18,12 @@ import { getPaymentStatus } from "@/services/payment";
 import type { MonitorResponse, Encoded, MonitorRequest } from "@/types";
 import ExtPay from "extpay";
 import { trialIsValid } from "@/services/trial";
+import {
+  EXTENSION_ENABLED_KEY,
+  GITHUB_TOKEN_KEY,
+  MAX_ALARMS,
+  DISABLED_REASON_KEY,
+} from "@constants";
 const extpay = ExtPay("cicd-workflow-notifications");
 
 // Token validation error types
@@ -33,12 +39,6 @@ export type TokenStatus = {
   errorType?: TokenValidationError;
   errorMessage?: string;
 };
-
-// Constants
-export const MAX_ALARMS = 500;
-export const EXTENSION_ENABLED_KEY = "extensionEnabled";
-export const DISABLED_REASON_KEY = "extensionDisabledReason";
-const GITHUB_TOKEN_KEY = "githubToken";
 
 /**
  * Sends a message to the background script

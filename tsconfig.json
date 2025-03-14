@@ -13,7 +13,8 @@
     "noEmit": true,
     "paths": {
       "@/*": ["src/*"],
-      "@root/*": ["./*"]
+      "@root/*": ["./*"],
+      "@constants": ["src/helpers/constants.ts"]
     }
   },
   "include": ["src/**/*", "tests/**/*", "scripts/**/*"],

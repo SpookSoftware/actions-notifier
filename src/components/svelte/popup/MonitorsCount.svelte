@@ -1,17 +1,28 @@
 <script lang="ts">
+  import { MAX_ALARMS } from "@constants";
+
   const { alarmCount } = $props<number>();
+
+  const nearlyFullAmt = MAX_ALARMS - 25;
+  const approachingFullAmt = MAX_ALARMS - 100;
+
+  const approachingFull = $derived(
+    alarmCount > approachingFullAmt && alarmCount < nearlyFullAmt
+  );
+
+  const nearlyFull = $derived(alarmCount >= nearlyFullAmt);
 </script>
 
 <div class="monitors-count">
   <div class="flex-row">
     <span>
-      Active monitors: <strong>{alarmCount}</strong> / 500
+      Active monitors: <strong>{alarmCount}</strong> / {MAX_ALARMS}
     </span>
-    {#if alarmCount >= 400 && alarmCount < 475}
+    {#if approachingFull}
       <span id="alarm-count-warning">⚠️ Approaching limit</span>
     {/if}
-    {#if alarmCount >= 475}
-      <span id="alarm-count-error">⚠️ At limit</span>
+    {#if nearlyFull}
+      <span id="alarm-count-error">⚠️ Nearly at limit</span>
     {/if}
   </div>
 </div>

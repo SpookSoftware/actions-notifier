@@ -20,6 +20,7 @@
     paymentState,
   } from "@/helpers/helpers.svelte";
   import { setExtensionEnabled } from "./helpers/browser";
+  import { MAX_ALARMS } from "@constants";
 
   // We want to avoid sending an update to the browser if the extension state is still loading.
   let isInitializing = $state(true);
@@ -33,7 +34,7 @@
       paymentState.paymentStatus.paid ||
       paymentState.paymentStatus.trialIsValid;
     const tokenIsValid = tokenState.valid;
-    const notTooManyAlarms = alarmState.alarmCount < 500;
+    const notTooManyAlarms = alarmState.alarmCount < MAX_ALARMS;
 
     let reason = "";
     if (!hasToken) reason = "no token";
@@ -73,7 +74,7 @@
           userFriendlyReason = "Your GitHub token is invalid or expired";
           break;
         case "too many alarms":
-          userFriendlyReason = `You've reached the maximum limit of ${alarmState.alarmCount}/500 active monitors`;
+          userFriendlyReason = `You've reached the maximum limit of ${alarmState.alarmCount}/${MAX_ALARMS} active monitors`;
           break;
         default:
           userFriendlyReason = "The extension encountered an unknown issue";
