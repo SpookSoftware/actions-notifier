@@ -99,29 +99,37 @@ function createAlarmState() {
     getAlarmCount: async () => {
       if (isLoading) return alarmCount;
       isLoading = true;
-      const alarms = await browser.alarms.getAll();
-      alarmCount = alarms.length;
+      const allAlarms = await browser.alarms.getAll();
+      const myAlarms = allAlarms.filter(isFromMyExtension);
+      alarmCount = myAlarms.length;
       isLoading = false;
       return alarmCount;
     },
     getAlarms: async () => {
       if (isLoading) return alarms;
       isLoading = true;
-      const alarmsFromBrowser = await browser.alarms.getAll();
-      alarms = alarmsFromBrowser;
+      const allAlarms = await browser.alarms.getAll();
+      const myAlarms = allAlarms.filter(isFromMyExtension);
+      alarms = myAlarms;
       isLoading = false;
       return alarms;
     },
     refresh: async () => {
       if (isLoading) return;
       isLoading = true;
-      const browserAlarms = await browser.alarms.getAll();
-      alarmCount = browserAlarms.length;
-      alarms = browserAlarms;
+      const allAlarms = await browser.alarms.getAll();
+      const myAlarms = allAlarms.filter(isFromMyExtension);
+      alarmCount = myAlarms.length;
+      alarms = myAlarms;
       isLoading = false;
       return;
     },
   };
+}
+
+function isFromMyExtension(alarm: browser.Alarms.Alarm): boolean {
+  const numOfPipes = alarm.name.split("|").length;
+  return numOfPipes === 3 || numOfPipes === 4;
 }
 
 function createPaymentState() {
