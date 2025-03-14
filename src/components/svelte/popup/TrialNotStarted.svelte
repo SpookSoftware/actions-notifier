@@ -5,116 +5,97 @@
 </script>
 
 <div class="payment-section">
-  <div class="flex-row payment-header">
+  <div class="payment-header">
     <h3>License Status</h3>
   </div>
   <div class="payment-info">
-    <p>Start your free 7-day trial to try all features.</p>
-    <button class="payment-button" onclick={() => extpay.openTrialPage()}>
-      Start Free Trial (no credit card required)
-    </button>
+    <p>
+      Start your free 7-day trial or purchase a license to try all features.
+    </p>
+    <div class="button-group">
+      <button class="trial-button" on:click={() => extpay.openTrialPage()}>
+        Start Free Trial
+      </button>
+      <button class="buy-button" on:click={() => extpay.openPaymentPage()}>
+        Purchase License<span class="price">($2.95/lifetime)</span>
+      </button>
+    </div>
   </div>
 </div>
 
 <style>
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+
   .payment-section {
-    margin-bottom: 16px;
     border: 1px solid #e1e4e8;
     border-radius: 6px;
     overflow: hidden;
   }
 
   .payment-header {
-    padding: 12px;
+    padding: 12px 16px;
     background-color: #f6f8fa;
     border-bottom: 1px solid #e1e4e8;
-  }
-
-  .flex-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
   }
 
   h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
-  }
-
-  .payment-badge {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
-    background-color: #f1f8ff;
-    color: #0366d6;
-  }
-
-  .payment-badge.paid {
-    background-color: #dcffe4;
-    color: #28a745;
-  }
-
-  .payment-badge.expired {
-    background-color: #ffeef0;
-    color: #cb2431;
+    color: #24292e;
   }
 
   .payment-info {
     padding: 16px;
   }
 
-  .loading-container {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  p {
-    margin: 0 0 16px 0;
-    line-height: 1.5;
-  }
-
-  .trial-progress-container {
-    height: 8px;
-    background-color: #eaecef;
-    border-radius: 3px;
+  .payment-info p {
     margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
   }
 
-  .trial-progress-bar {
-    height: 100%;
-    background-color: #0366d6;
+  .button-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
   }
 
-  .trial-days-left {
-    position: absolute;
-    right: 0;
-    top: 12px;
-    font-size: 12px;
-    color: #586069;
-  }
-
-  .payment-button {
-    display: block;
-    width: 100%;
-    padding: 8px 16px;
-    margin-top: 16px;
+  .trial-button {
     background-color: #2ea44f;
-    color: white;
-    border: none;
+    color: #fff;
+    border: 1px solid rgba(27, 31, 35, 0.15);
     border-radius: 6px;
+    padding: 5px 16px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    text-align: center;
   }
 
-  .payment-button:hover {
+  .trial-button:hover {
     background-color: #2c974b;
+  }
+
+  .buy-button {
+    background-color: #fff;
+    color: #6f42c1;
+    border: 1px solid #6f42c1;
+    border-radius: 6px;
+    padding: 5px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  .buy-button:hover {
+    background-color: #f6f8fa;
+  }
+
+  .price {
+    margin-left: 5px;
+    font-weight: normal;
   }
 </style>
