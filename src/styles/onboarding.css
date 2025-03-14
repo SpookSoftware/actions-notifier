@@ -243,3 +243,39 @@ h1 {
   font-size: 0.8rem;
   color: var(--github-gray);
 }
+
+button:disabled,
+.btn:disabled,
+.btn[disabled],
+.payment-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  background-color: #e1e4e8 !important;
+  color: #6a737d !important;
+  border-color: #d1d5da !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  pointer-events: none;
+  position: relative;
+}
+
+button:disabled::after,
+.btn:disabled::after,
+.btn[disabled]::after,
+.payment-button:disabled::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 5px,
+    rgba(0, 0, 0, 0.05) 5px,
+    rgba(0, 0, 0, 0.05) 10px
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
