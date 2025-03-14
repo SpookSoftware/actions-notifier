@@ -600,6 +600,7 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
       console.debug("Enabling extension due to valid state");
       await browser.storage.sync.set({ extensionEnabled: true });
     }
+    return;
   } else if (!isProperlyEncoded(alarm.name)) {
     throw Error("Unexpected alarm name format: " + alarm.name);
   }
