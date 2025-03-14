@@ -87,6 +87,7 @@
     });
   });
 
+  let pollingInterval: ReturnType<typeof setInterval>;
   onMount(async () => {
     await Promise.all([
       tokenState.readTokenFromStorage(),
@@ -96,6 +97,30 @@
     // Comes after because we can't check token validity until we have the token.
     await tokenState.checkTokenValidity();
     isInitializing = false;
+
+    // Poll for payment state change when this opens
+    const paymentStatusIsValid =
+      paymentState.paymentStatus.paid ||
+      paymentState.paymentStatus.trialIsValid;
+    if (!paymentStatusIsValid) {
+      // Start polling for payment status
+      let pollCount = 0;
+      const maxPolls = 300; // 5 minutes × 60 seconds = 300 polls at 1-second intervals
+
+      pollingInterval = setInterval(async () => {
+        await paymentState.initialize();
+        pollCount++;
+
+        // If payment is confirmed or we've reached the maximum polling time, stop polling
+        if (
+          paymentState.paymentStatus.paid ||
+          paymentState.paymentStatus.trialIsValid ||
+          pollCount >= maxPolls
+        ) {
+          clearInterval(pollingInterval);
+        }
+      }, 1000); // Poll every 1 second
+    }
   });
 
   async function handleTokenSubmit(e: SubmitEvent) {
@@ -139,9 +164,7 @@
   {/if}
 
   <!-- Payment status section with skeleton -->
-  {#if paymentState.isLoading || isInitializing}
-    <PaymentStatusSkeleton />
-  {:else if paymentState.paymentStatus.trialNeverStarted}
+  {#if paymentState.paymentStatus.trialNeverStarted}
     <TrialNotStarted />
   {:else if paymentState.paymentStatus.trialExpired}
     <TrialExpired />
