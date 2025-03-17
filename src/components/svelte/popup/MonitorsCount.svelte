@@ -1,6 +1,8 @@
 <script lang="ts">
   import { MAX_ALARMS } from "@constants";
 
+  import ClearAllButton from "./ClearAllButton.svelte";
+
   const { alarmCount } = $props<number>();
 
   const nearlyFullAmt = MAX_ALARMS - 25;
@@ -23,6 +25,10 @@
     {/if}
     {#if nearlyFull}
       <span id="alarm-count-error">⚠️ Nearly at limit</span>
+    {/if}
+
+    {#if alarmCount > 0}
+      <ClearAllButton />
     {/if}
   </div>
 </div>
