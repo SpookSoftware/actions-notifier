@@ -24,7 +24,7 @@
     "service_worker": "./background.js",
     "type": "module"
   },
-  "permissions": ["notifications", "alarms", "storage", "tabs"],
+  "permissions": ["notifications", "alarms", "storage"],
   "action": {
     "default_icon": {
       "16": "images/icon-16.png",
