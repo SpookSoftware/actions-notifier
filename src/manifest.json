@@ -2,7 +2,7 @@
   "name": "CI/CD Workflow Notifications",
   "description": "Adds a button to the Github UI that will trigger a notification when an action or job completes when clicked.",
   "author": "Spook Software",
-  "version": "0.101.0",
+  "version": "0.101.1",
   "manifest_version": 3,
   "icons": {
     "16": "images/icon-16.png",
