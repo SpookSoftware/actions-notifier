@@ -256,7 +256,7 @@ async function main() {
         "✅ Test completed successfully! The extension was uploaded but not submitted for review."
       );
       console.log(
-        "✅ You can view the draft in the Chrome Web Store Developer Dashboard."
+        "✅ You can view the draft in the Chrome Web Store Developer Dashboard at https://chrome.google.com/webstore/devconsole/7b7da69b-86d1-45b4-957d-a3864630eb19/deghkmeogdmhafeaekcebnnpncnapkjb/edit/package."
       );
     }
   } catch (error) {
