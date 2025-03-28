@@ -1,11 +1,9 @@
-// scripts/publish.ts
 import { existsSync } from "fs";
 import { unlink } from "fs/promises";
 import path from "path";
 import archiver from "archiver";
 
-// Check if test mode is enabled (upload only, no publish)
-const TEST_MODE = true;
+const TEST_MODE = process.env.TEST_MODE === "true";
 
 // Configuration
 const EXTENSION_ID = process.env.EXTENSION_ID;
@@ -40,9 +38,9 @@ async function getAccessToken() {
       "Content-Type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      refresh_token: REFRESH_TOKEN,
+      client_id: CLIENT_ID!,
+      client_secret: CLIENT_SECRET!,
+      refresh_token: REFRESH_TOKEN!,
       grant_type: "refresh_token",
     }),
   });
@@ -83,29 +81,38 @@ async function zipExtension() {
     await unlink("dist.zip");
   }
 
-  const output = Bun.file("dist.zip").writer();
-  const archive = archiver("zip", {
-    zlib: { level: 9 }, // Maximum compression
-  });
-
-  // Listen for archive events
-  archive.pipe(output);
-
-  // Add the entire dist directory to the zip
-  archive.directory("dist/", false);
-
   return new Promise<void>((resolve, reject) => {
-    output.on("close", () => {
-      console.log(`✅ Zip created successfully (${archive.pointer()} bytes)`);
-      resolve();
-    });
+    try {
+      // Use Node's fs for compatibility with archiver
+      const fs = require("fs");
+      const output = fs.createWriteStream("dist.zip");
+      const archive = archiver("zip", {
+        zlib: { level: 9 }, // Maximum compression
+      });
 
-    archive.on("error", (err) => {
-      console.error("❌ Zip creation failed:", err);
-      reject(err);
-    });
+      // Set up event handlers
+      output.on("close", () => {
+        console.log(`✅ Zip created successfully (${archive.pointer()} bytes)`);
+        resolve();
+      });
 
-    archive.finalize();
+      archive.on("error", (err) => {
+        console.error("❌ Zip creation failed:", err);
+        reject(err);
+      });
+
+      // Pipe archive data to the file
+      archive.pipe(output);
+
+      // Add the entire dist directory to the zip
+      archive.directory("dist/", false);
+
+      // Finalize the archive
+      archive.finalize();
+    } catch (error) {
+      console.error("❌ Zip creation error:", error);
+      reject(error);
+    }
   });
 }
 
