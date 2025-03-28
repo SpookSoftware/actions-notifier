@@ -250,7 +250,9 @@ async function main() {
     // Step 6: Publish to Web Store (submit for review) - only if not in test mode
     if (!TEST_MODE) {
       await publishToWebStore(accessToken);
-      console.log("🎉 All done! The extension has been submitted for review.");
+      console.log(
+        "🎉 All done! The extension has been submitted for review. View the draft at https://chrome.google.com/webstore/devconsole/7b7da69b-86d1-45b4-957d-a3864630eb19/deghkmeogdmhafeaekcebnnpncnapkjb/edit/package."
+      );
     } else {
       console.log(
         "✅ Test completed successfully! The extension was uploaded but not submitted for review."
