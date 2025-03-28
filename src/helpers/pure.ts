@@ -17,6 +17,7 @@ import type {
   StartMonitorRequest,
   StopMonitorRequest,
 } from "@/types";
+import { ALARM_PREFIX } from "./constants";
 
 export function shouldMonitorActions(url: string) {
   // Normalize the URL by removing query parameters for pattern matching
@@ -395,7 +396,8 @@ export function encodeRequest(request: MonitorRequest): Encoded {
 }
 
 export function decode(name: Encoded) {
-  const split = name.split("|");
+  const nameWithoutPrefix = name.split(ALARM_PREFIX)[1];
+  const split = nameWithoutPrefix.split("|");
   if (split.length === 3) {
     const [runId, owner, repository] = split;
     return { runId, owner, repository };

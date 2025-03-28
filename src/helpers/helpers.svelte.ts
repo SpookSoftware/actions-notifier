@@ -2,6 +2,7 @@ import browser from "webextension-polyfill";
 import ExtPay from "extpay";
 import { sevenDaysAfter, trialIsValid } from "@/services/trial";
 import { validateTokenDirectly } from "./browser";
+import { ALARM_PREFIX } from "@constants";
 
 function createTokenState() {
   let token = $state<string>("");
@@ -126,7 +127,10 @@ function createAlarmState() {
 
 function isFromMyExtension(alarm: browser.Alarms.Alarm): boolean {
   const numOfPipes = alarm.name.split("|").length;
-  return numOfPipes === 3 || numOfPipes === 4;
+  return (
+    (numOfPipes === 3 || numOfPipes === 4) &&
+    alarm.name.startsWith(ALARM_PREFIX)
+  );
 }
 
 function createPaymentState() {

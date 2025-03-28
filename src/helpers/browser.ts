@@ -23,6 +23,7 @@ import {
   GITHUB_TOKEN_KEY,
   MAX_ALARMS,
   DISABLED_REASON_KEY,
+  ALARM_PREFIX,
 } from "@constants";
 const extpay = ExtPay("cicd-workflow-notifications");
 
@@ -205,8 +206,11 @@ export async function validateGitHubToken(): Promise<TokenStatus> {
  */
 export async function getActiveAlarmCount(): Promise<number> {
   try {
-    const alarms = await browser.alarms.getAll();
-    return alarms.length;
+    const allAlarms = await browser.alarms.getAll();
+    const myAlarms = allAlarms.filter((alarm) =>
+      alarm.name.startsWith("actions-notifier_")
+    );
+    return myAlarms.length;
   } catch (error) {
     console.error("Error getting alarm count:", error);
     return 0;
@@ -387,7 +391,7 @@ async function createAlarmForId(
   id: string,
   lengthInMinutes: number
 ): Promise<void> {
-  browser.alarms.create(id, {
+  browser.alarms.create(ALARM_PREFIX + id, {
     periodInMinutes: lengthInMinutes,
   });
 }
@@ -505,7 +509,7 @@ export async function onMessageCallback(
 }
 
 export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
-  if (alarm.name === "pollExtensionValidity") {
+  if (alarm.name === "actions-notifier_pollExtensionValidity") {
     console.log("Running pollExtensionValidity alarm callback");
     const { githubToken } = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
     if (!githubToken) {

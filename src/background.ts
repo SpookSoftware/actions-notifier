@@ -5,6 +5,7 @@ import {
   onMessageCallback,
   onNotificationClickedCallback,
 } from "@/helpers/browser";
+import { ALARM_PREFIX } from "@constants";
 
 let extpay = ExtPay("cicd-workflow-notifications");
 extpay.startBackground();
@@ -18,7 +19,9 @@ self.addEventListener("activate", async (_event: Event) => {
   console.log("Cleared all old alarms.");
 
   // We're going to poll for extension enabled status every so often to account for tokens and trials that expire.
-  browser.alarms.create("pollExtensionValidity", { periodInMinutes: 10 });
+  browser.alarms.create(ALARM_PREFIX + "pollExtensionValidity", {
+    periodInMinutes: 10,
+  });
 });
 
 browser.runtime.onMessage.addListener(onMessageCallback);
