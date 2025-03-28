@@ -27,8 +27,8 @@
     "bump:patch": "bun ./scripts/bump-version.ts patch",
     "bump:minor": "bun ./scripts/bump-version.ts minor",
     "bump:major": "bun ./scripts/bump-version.ts major",
-    "publish": "bun ./scripts/publish.ts",
-    "publish:test": "TEST_MODE=true bun ./scripts/publish.ts"
+    "webstore-publish": "bun ./scripts/publish.ts",
+    "webstore-publish:test": "TEST_MODE=true bun ./scripts/publish.ts"
   },
   "dependencies": {
     "-": "^0.0.1",
