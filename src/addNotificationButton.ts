@@ -354,15 +354,48 @@ browser.storage.sync
 
       if (!isInitialized) {
         console.debug("Initializing extension");
-        browser.storage.sync.onChanged.addListener(
-          handleExtensionEnabledChange
-        );
+        browser.storage.sync.onChanged.addListener(handleStorageChange);
         setupURLChangeTracking();
         isInitialized = true;
         main();
       }
     }
   );
+
+async function synchronizeButtonStates() {
+  // Find all notification buttons on the page
+  const notificationButtons = document.querySelectorAll(
+    `button.${NOTIFICATION_BUTTON_CLASS}`
+  );
+
+  for (const button of notificationButtons) {
+    if (button instanceof HTMLButtonElement) {
+      // Extract monitoring data
+      const runId = button.dataset.runId;
+      const jobId = button.dataset.jobId;
+      const owner = button.dataset.owner;
+      const repository = button.dataset.repository;
+
+      if (runId && owner && repository) {
+        // Check if this button corresponds to an active monitor
+        const encoded = encode({ runId, jobId, owner, repository });
+        const isMonitored = await isIdAlreadyMonitored(encoded);
+
+        // Get the SVG element
+        const svg = button.querySelector("svg");
+
+        if (svg instanceof SVGElement) {
+          // Update button appearance based on monitoring state
+          if (isMonitored) {
+            setSVGColor(svg, "yellow");
+          } else {
+            resetSVGColor(svg);
+          }
+        }
+      }
+    }
+  }
+}
 
 async function main(): Promise<void> {
   // If there's already a pending execution, don't create another one
@@ -385,6 +418,9 @@ async function main(): Promise<void> {
 
     // Track current URL
     currentUrl = window.location.href;
+
+    // Synchronize button states with storage
+    await synchronizeButtonStates();
 
     // First clean up any existing observers
     cleanupObservers();
@@ -593,12 +629,14 @@ function setupURLChangeTracking() {
   console.debug("URL change tracking initialized");
 }
 
-function handleExtensionEnabledChange(
+function handleStorageChange(
   changes: browser.Storage.StorageAreaWithUsageOnChangedChangesType
 ) {
   console.debug("Storage changed", changes);
   let stateChanged = false;
+  let alarmRemoved = false;
 
+  // Check for extension enabled status change
   if (changes[EXTENSION_ENABLED_KEY]) {
     const newValue = changes[EXTENSION_ENABLED_KEY].newValue;
     if (typeof newValue === "boolean") {
@@ -608,11 +646,30 @@ function handleExtensionEnabledChange(
     }
   }
 
+  // Check for disabled reason change
   if (changes.extensionDisabledReason) {
     disabledReason = String(changes.extensionDisabledReason.newValue);
     console.debug(`Extension disabled reason changed to: ${disabledReason}`);
   }
 
+  // Check if any alarms were removed
+  for (const key in changes) {
+    // Check if key matches our encoded format (runId|owner|repository or runId|jobId|owner|repository)
+    const parts = key.split("|");
+    if (parts.length === 3 || parts.length === 4) {
+      const change = changes[key];
+      // If oldValue exists but newValue is undefined, the alarm was removed
+      if (
+        typeof change.oldValue === "number" &&
+        change.newValue === undefined
+      ) {
+        console.debug(`Monitor removed: ${key}`);
+        alarmRemoved = true;
+      }
+    }
+  }
+
+  // Update UI if extension state changed
   if (stateChanged) {
     // Apply disabled/enabled styles to buttons that already exist
     document
@@ -624,7 +681,10 @@ function handleExtensionEnabledChange(
             : applyDisabledStyles(button);
         }
       });
+  }
 
+  // Run main if state changed or alarms were removed
+  if (stateChanged || alarmRemoved) {
     debouncedMain();
   }
 }
@@ -632,7 +692,7 @@ function handleExtensionEnabledChange(
 // Cleanup on unload
 window.addEventListener("unload", () => {
   console.debug("Page unloading, cleaning up observers");
-  browser.storage.sync.onChanged.removeListener(handleExtensionEnabledChange);
+  browser.storage.sync.onChanged.removeListener(handleStorageChange);
   cleanupObservers();
 });
 
