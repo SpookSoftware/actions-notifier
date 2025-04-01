@@ -2,7 +2,7 @@
   "name": "Actions Notifier",
   "description": "Adds a button to the Github UI that lets you get notified when an action or job completes.",
   "author": "Spook Software",
-  "version": "0.102.1",
+  "version": "0.103.0",
   "manifest_version": 3,
   "icons": {
     "16": "images/icon-16.png",
