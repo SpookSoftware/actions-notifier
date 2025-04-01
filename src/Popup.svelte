@@ -4,7 +4,7 @@
   import GitHubTokenForm from "@/components/svelte/popup/GitHubTokenForm.svelte";
   import MonitorsCount from "@/components/svelte/popup/MonitorsCount.svelte";
   import EnabledStatus from "@/components/svelte/popup/EnabledStatus.svelte";
-  import LoadingSpinner from "@/components/svelte/shared/LoadingSpinner.svelte";
+  import TokenState from "./components/svelte/popup/TokenState.svelte";
   import TrialNotStarted from "@/components/svelte/popup/TrialNotStarted.svelte";
   import TrialExpired from "@/components/svelte/popup/TrialExpired.svelte";
   import PaidFor from "@/components/svelte/popup/PaidFor.svelte";
@@ -143,7 +143,7 @@
   {#if tokenState.isLoadingToken || tokenState.isCheckingValidity || isInitializing}
     <TokenStatusSkeleton />
   {:else}
-    <p>{tokenState.valid ? "Token is valid!" : "Token is NOT valid!"}</p>
+    <TokenState isValid={tokenState.valid} />
     <GitHubTokenForm token={tokenState.token} onSubmit={handleTokenSubmit} />
   {/if}
 
