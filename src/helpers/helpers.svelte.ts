@@ -75,15 +75,12 @@ function createTokenState() {
 
 function createAlarmState() {
   let alarms = $state<browser.Alarms.Alarm[]>([]);
-  let alarmCount = $state<number>(0);
+  const alarmCount = $derived(alarms.length);
   let isLoading = $state<boolean>(false);
 
   return {
     get alarmCount() {
       return alarmCount;
-    },
-    set alarmCount(value) {
-      alarmCount = value;
     },
     get alarms() {
       return alarms;
@@ -93,15 +90,6 @@ function createAlarmState() {
     },
     get isLoading() {
       return isLoading;
-    },
-    getAlarmCount: async function () {
-      if (isLoading) return alarmCount;
-      isLoading = true;
-      const allAlarms = await browser.alarms.getAll();
-      const myAlarms = allAlarms.filter(isFromMyExtension);
-      alarmCount = myAlarms.length;
-      isLoading = false;
-      return alarmCount;
     },
     getAlarms: async function () {
       if (isLoading) return alarms;
@@ -117,7 +105,6 @@ function createAlarmState() {
       isLoading = true;
       const allAlarms = await browser.alarms.getAll();
       const myAlarms = allAlarms.filter(isFromMyExtension);
-      alarmCount = myAlarms.length;
       alarms = myAlarms;
       isLoading = false;
       return;
@@ -157,7 +144,6 @@ function createAlarmState() {
         );
 
         alarms = [];
-        alarmCount = 0;
       } catch (error) {
         console.error("Error clearing alarms:", error);
       } finally {

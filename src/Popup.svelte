@@ -92,7 +92,7 @@
   onMount(async () => {
     await Promise.all([
       tokenState.readTokenFromStorage(),
-      alarmState.getAlarmCount(),
+      alarmState.getAlarms(),
       paymentState.initialize(),
     ]);
     // Comes after because we can't check token validity until we have the token.
