@@ -2,7 +2,7 @@
   "name": "Actions Notifier",
   "description": "Adds a button to the Github UI that lets you get notified when an action or job completes.",
   "author": "Spook Software",
-  "version": "0.102.0",
+  "version": "0.102.1",
   "manifest_version": 3,
   "icons": {
     "16": "images/icon-16.png",
@@ -11,12 +11,20 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://github.com/*"],
-      "js": ["./addNotificationButton.js"]
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": [
+        "./addNotificationButton.js"
+      ]
     },
     {
-      "matches": ["https://extensionpay.com/*"],
-      "js": ["./ExtPay_content_script.js"],
+      "matches": [
+        "https://extensionpay.com/*"
+      ],
+      "js": [
+        "./ExtPay_content_script.js"
+      ],
       "run_at": "document_start"
     }
   ],
@@ -24,7 +32,11 @@
     "service_worker": "./background.js",
     "type": "module"
   },
-  "permissions": ["notifications", "alarms", "storage"],
+  "permissions": [
+    "notifications",
+    "alarms",
+    "storage"
+  ],
   "action": {
     "default_icon": {
       "16": "images/icon-16.png",
@@ -40,8 +52,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["images/*"],
-      "matches": ["https://github.com/*"]
+      "resources": [
+        "images/*"
+      ],
+      "matches": [
+        "https://github.com/*"
+      ]
     }
   ]
 }
