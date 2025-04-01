@@ -9,8 +9,10 @@
   import NavigationControls from "./NavigationControls.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import { setExtensionEnabled } from "@/helpers/browser";
+  import { EXTPAY_ID } from "@constants";
   import ExtPay from "extpay";
-  const extpay = ExtPay("cicd-workflow-notifications");
+
+  const extpay = ExtPay(EXTPAY_ID);
 
   import { tokenState, paymentState } from "@/helpers/helpers.svelte";
 

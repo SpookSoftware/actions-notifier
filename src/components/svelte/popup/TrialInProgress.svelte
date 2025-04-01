@@ -1,7 +1,8 @@
 <script lang="ts">
   import ExtPay from "extpay";
+  import { EXTPAY_ID } from "@constants";
 
-  const extpay = ExtPay("cicd-workflow-notifications");
+  const extpay = ExtPay(EXTPAY_ID);
 
   const { trialExpirationDate } = $props();
 

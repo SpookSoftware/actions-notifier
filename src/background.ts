@@ -5,9 +5,9 @@ import {
   onMessageCallback,
   onNotificationClickedCallback,
 } from "@/helpers/browser";
-import { ALARM_PREFIX } from "@constants";
+import { ALARM_PREFIX, EXTPAY_ID } from "@constants";
 
-let extpay = ExtPay("cicd-workflow-notifications");
+let extpay = ExtPay(EXTPAY_ID);
 extpay.startBackground();
 
 // On extension activation

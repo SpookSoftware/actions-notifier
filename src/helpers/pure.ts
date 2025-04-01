@@ -457,9 +457,6 @@ export function createURL({
   }
 }
 
-const GENERATE_TOKEN_URL =
-  "https://github.com/settings/tokens/new?description=CICD%20Workflow%20Notifications&scopes=repo";
-
 export function isStartMonitoringRequest(
   request: unknown
 ): request is StartMonitorRequest {

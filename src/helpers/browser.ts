@@ -24,8 +24,9 @@ import {
   MAX_ALARMS,
   DISABLED_REASON_KEY,
   ALARM_PREFIX,
+  EXTPAY_ID,
 } from "@constants";
-const extpay = ExtPay("cicd-workflow-notifications");
+const extpay = ExtPay(EXTPAY_ID);
 
 // Token validation error types
 export type TokenValidationError =
@@ -863,7 +864,7 @@ export function showButtonTooltip(button: HTMLElement, message: string): void {
 
   // Create tooltip container
   const tooltip = document.createElement("div");
-  tooltip.className = "cicd-workflow-tooltip";
+  tooltip.className = "actions-notifier-tooltip";
   tooltip.style.position = "absolute";
   tooltip.style.zIndex = "9999";
   tooltip.style.backgroundColor = "#24292e";
@@ -986,7 +987,9 @@ export function showButtonTooltip(button: HTMLElement, message: string): void {
  * Removes any existing tooltips from the DOM
  */
 export function removeExistingTooltips(): void {
-  const existingTooltips = document.querySelectorAll(".cicd-workflow-tooltip");
+  const existingTooltips = document.querySelectorAll(
+    ".actions-notifier-tooltip"
+  );
   existingTooltips.forEach((tooltip) => {
     if (tooltip.parentElement) {
       tooltip.parentElement.removeChild(tooltip);

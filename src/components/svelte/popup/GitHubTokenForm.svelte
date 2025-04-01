@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { PREFILLED_TOKEN_URL } from "@constants";
+
   const { token, onSubmit } = $props();
 </script>
 
@@ -12,11 +14,7 @@
     placeholder="ghp_..."
   />
   <div class="help-text">
-    <a
-      href="https://github.com/settings/tokens/new?description=CICD%20Workflow%20Notifications&scopes=repo"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+    <a href={PREFILLED_TOKEN_URL} target="_blank" rel="noopener noreferrer">
       Create a new token with repo scope →
     </a>
   </div>

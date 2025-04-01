@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 
-test.describe("CI/CD Workflow Notifications Extension", () => {
+test.describe("Actions Notifier Extension", () => {
   test("Extension should load correctly", async ({ context, extensionId }) => {
     // Check if the extension's service worker is loaded
     const workers = context.serviceWorkers();

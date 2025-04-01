@@ -3,10 +3,10 @@
 <div class="step">
   <div class="step-number">1</div>
   <div class="step-content">
-    <h2>Welcome to CI/CD Workflow Notifications</h2>
+    <h2>Welcome to Actions Notifier</h2>
     <p>
-      This extension enhances GitHub's Actions interface by adding notification
-      support for your CI/CD workflows.
+      This extension enhances GitHub's Actions interface by adding toggleable
+      notification support.
     </p>
     <p>
       <strong>Key Features:</strong>

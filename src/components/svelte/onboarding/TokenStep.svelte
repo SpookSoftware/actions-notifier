@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { PREFILLED_TOKEN_URL } from "@constants";
+
   const { handleTokenSubmit, tokenState } = $props<{
     handleTokenSubmit: (e: SubmitEvent) => Promise<void>;
     tokenState: any;
@@ -70,7 +72,7 @@
 
     <div class="token-options">
       <a
-        href="https://github.com/settings/tokens/new?description=CI/CD%20Workflow%20Notifications&scopes=repo"
+        href={PREFILLED_TOKEN_URL}
         target="_blank"
         rel="noopener noreferrer"
         class="btn btn-primary"

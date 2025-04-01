@@ -1,5 +1,5 @@
 /**
- * Version bump script for CI/CD Workflow Notifications
+ * Version bump script for Actions Notifier
  *
  * Usage:
  *   bun run scripts/bump-version.ts [major|minor|patch] [--no-commit] [--no-tag]

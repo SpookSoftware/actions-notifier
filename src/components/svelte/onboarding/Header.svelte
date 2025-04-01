@@ -3,6 +3,6 @@
 </script>
 
 <div class="header">
-  <img src="images/icon-128.png" alt="CI/CD Workflow Notifications" />
-  <h1>Welcome to CI/CD Workflow Notifications</h1>
+  <img src="images/icon-128.png" alt="Actions Notifier" />
+  <h1>Welcome to Actions Notifier</h1>
 </div>

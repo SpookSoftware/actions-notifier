@@ -2,7 +2,7 @@ import browser from "webextension-polyfill";
 import ExtPay from "extpay";
 import { sevenDaysAfter, trialIsValid } from "@/services/trial";
 import { validateTokenDirectly } from "./browser";
-import { ALARM_PREFIX } from "@constants";
+import { ALARM_PREFIX, EXTPAY_ID } from "@constants";
 
 function createTokenState() {
   let token = $state<string>("");
@@ -134,7 +134,7 @@ function isFromMyExtension(alarm: browser.Alarms.Alarm): boolean {
 }
 
 function createPaymentState() {
-  const extpay = ExtPay("cicd-workflow-notifications");
+  const extpay = ExtPay(EXTPAY_ID);
   let isLoading = $state(false);
   let paymentStatus = $state<{
     paid: boolean;

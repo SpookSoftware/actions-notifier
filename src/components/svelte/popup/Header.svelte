@@ -3,7 +3,7 @@
 
 <header>
   <img src="images/icon-48.png" alt="Extension icon" />
-  <h1>CI/CD Workflow Notifications</h1>
+  <h1>Actions Notifier</h1>
 </header>
 
 <style>

@@ -6,9 +6,9 @@ import ExtPay from "extpay";
 import { trialIsValid } from "./trial";
 import { isPaymentStatusResponse } from "@/helpers/pure";
 import { PaymentStatus } from "@/types";
+import { EXTPAY_ID } from "@constants";
 
-// Initialize ExtPay
-const extpay = ExtPay("cicd-workflow-notifications");
+const extpay = ExtPay(EXTPAY_ID);
 
 /**
  * Gets the current payment status
