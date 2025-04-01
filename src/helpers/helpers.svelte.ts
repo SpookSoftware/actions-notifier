@@ -94,7 +94,7 @@ function createAlarmState() {
     get isLoading() {
       return isLoading;
     },
-    getAlarmCount: async () => {
+    getAlarmCount: async function () {
       if (isLoading) return alarmCount;
       isLoading = true;
       const allAlarms = await browser.alarms.getAll();
@@ -103,7 +103,7 @@ function createAlarmState() {
       isLoading = false;
       return alarmCount;
     },
-    getAlarms: async () => {
+    getAlarms: async function () {
       if (isLoading) return alarms;
       isLoading = true;
       const allAlarms = await browser.alarms.getAll();
@@ -112,7 +112,7 @@ function createAlarmState() {
       isLoading = false;
       return alarms;
     },
-    refresh: async () => {
+    refresh: async function () {
       if (isLoading) return;
       isLoading = true;
       const allAlarms = await browser.alarms.getAll();
@@ -120,6 +120,50 @@ function createAlarmState() {
       alarmCount = myAlarms.length;
       alarms = myAlarms;
       isLoading = false;
+      return;
+    },
+    clearAlarms: async function () {
+      if (isLoading) return;
+      isLoading = true;
+      try {
+        const allAlarms = await browser.alarms.getAll();
+        const myAlarms = allAlarms.filter(isFromMyExtension);
+
+        // Clear alarms from the alarms API
+        const alarmNames = myAlarms.map((alarm) => alarm.name);
+        const clearAlarmPromises = alarmNames.map((alarmName) =>
+          browser.alarms.clear(alarmName)
+        );
+
+        // Extract the encoded part for storage removal
+        // If your alarm names are like "actions-notifier_runId|owner|repo"
+        // You need to remove "actions-notifier_" prefix to match storage keys
+        const storageKeys = myAlarms.map((alarm) => {
+          // Remove the ALARM_PREFIX if it exists
+          if (alarm.name.startsWith(ALARM_PREFIX)) {
+            return alarm.name.substring(ALARM_PREFIX.length);
+          }
+          return alarm.name;
+        });
+
+        const clearStoragePromises = storageKeys.map((key) =>
+          browser.storage.sync.remove(key)
+        );
+
+        await Promise.all([...clearAlarmPromises, ...clearStoragePromises]);
+
+        console.debug(
+          `Cleared ${myAlarms.length} alarms and their storage entries`
+        );
+
+        alarms = [];
+        alarmCount = 0;
+      } catch (error) {
+        console.error("Error clearing alarms:", error);
+      } finally {
+        isLoading = false;
+      }
+
       return;
     },
   };
