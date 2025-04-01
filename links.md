@@ -1,2 +1,3 @@
 - [Figma logo design](https://www.figma.com/design/lGN6lv4KFcVTejY7sf7e2Q/Revamped-logo?node-id=3-16&m=dev&t=SiSjmSX2Lc9IC6X8-1)
 - [Dev store url](https://chrome.google.com/webstore/devconsole/7b7da69b-86d1-45b4-957d-a3864630eb19/deghkmeogdmhafeaekcebnnpncnapkjb/edit)
+- [Edit uninstall survey](https://docs.google.com/forms/d/1B0hGs62KW0RvrnBzCXGfJQLNGee_MNANTypWv4V2c9o/edit)

@@ -5,7 +5,7 @@ import {
   onMessageCallback,
   onNotificationClickedCallback,
 } from "@/helpers/browser";
-import { ALARM_PREFIX, EXTPAY_ID } from "@constants";
+import { ALARM_PREFIX, EXTPAY_ID, UNINSTALL_FEEDBACK_URL } from "@constants";
 
 let extpay = ExtPay(EXTPAY_ID);
 extpay.startBackground();
@@ -35,3 +35,5 @@ browser.runtime.onInstalled.addListener((details) => {
     browser.tabs.create({ url: browser.runtime.getURL("onboarding.html") });
   }
 });
+
+browser.runtime.setUninstallURL(UNINSTALL_FEEDBACK_URL);
