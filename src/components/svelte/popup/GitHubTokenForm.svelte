@@ -1,7 +1,7 @@
 <script lang="ts">
   import { PREFILLED_TOKEN_URL } from "@constants";
 
-  const { token, onSubmit } = $props();
+  const { onSubmit, tokenState } = $props();
 </script>
 
 <form onsubmit={onSubmit}>
@@ -9,17 +9,45 @@
   <input
     type="password"
     id="githubToken"
-    value={token}
+    value={tokenState.token}
     required
     placeholder="ghp_..."
   />
-  <div class="help-text">
+  <div class="help-text-container">
     <a href={PREFILLED_TOKEN_URL} target="_blank" rel="noopener noreferrer">
       Create a new token with repo scope →
     </a>
+
+    {#if tokenState && (tokenState.valid !== undefined || tokenState.isCheckingValidity)}
+      <span
+        class="token-status {tokenState.valid
+          ? 'token-valid'
+          : 'token-invalid'}"
+        id="token-status-indicator"
+      >
+        {#if tokenState.isCheckingValidity}
+          <span class="spinner-mini"></span>
+          Validating...
+        {:else if tokenState.valid}
+          ✓ Valid token
+        {:else}
+          ✗ Invalid token
+        {/if}
+      </span>
+    {/if}
   </div>
+
   <div class="flex-row">
-    <button type="submit" id="saveButton"> Save Token </button>
+    <button
+      type="submit"
+      id="saveButton"
+      disabled={tokenState?.isCheckingValidity}
+    >
+      {#if tokenState?.isCheckingValidity}
+        <span class="spinner"></span>
+      {/if}
+      Save Token
+    </button>
   </div>
 </form>
 
@@ -49,25 +77,31 @@
     box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.3);
   }
 
-  .help-text {
+  .help-text-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 12px;
     margin-bottom: 12px;
   }
 
-  .help-text a {
+  .help-text-container a {
     color: #0366d6;
     text-decoration: none;
   }
 
-  .help-text a:hover {
+  .help-text-container a:hover {
     text-decoration: underline;
   }
 
-  #token-status {
-    padding: 8px 12px;
-    margin-bottom: 12px;
-    border-radius: 6px;
-    font-size: 14px;
+  .token-status {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .token-valid {
@@ -94,6 +128,10 @@
     border-radius: 6px;
     font-size: 14px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
 
   button:hover {
@@ -109,8 +147,18 @@
     display: inline-block;
     width: 16px;
     height: 16px;
-    border: 2px solid rgba(0, 0, 0, 0.1);
-    border-left-color: #0366d6;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-left-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  .spinner-mini {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid rgba(0, 0, 0, 0.2);
+    border-left-color: currentColor;
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
