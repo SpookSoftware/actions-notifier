@@ -176,9 +176,19 @@
   {/if}
 
   <div class="support-info">
+    <p>
+      <a href={browser.runtime.getURL("onboarding.html")} target="_blank"
+        >Click here to redo onboarding</a
+      >
+    </p>
+  </div>
+
+  <div class="support-info">
     <p>Questions? Problems? Concerns?</p>
     <p>
-      Please email us at <a href="mailto:actions-notifier@spook.software"
+      Please email us at <a
+        target="_blank"
+        href="mailto:actions-notifier@spook.software"
         >actions-notifier@spook.software</a
       >
     </p>
