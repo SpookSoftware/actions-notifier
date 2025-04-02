@@ -230,18 +230,24 @@ function createPaymentState() {
 
         const trialIsActive = trialIsValid(user.trialStartedAt);
         if (trialIsActive) {
-          paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
+          paymentStatus.trialStartedAt = user.trialStartedAt
+            ? new Date(user.trialStartedAt)
+            : null;
           paymentStatus.trialIsValid = true;
           paymentStatus.trialExpired = false;
           paymentStatus.trialNeverStarted = false;
-          paymentStatus.trialExpirationDate = sevenDaysAfter(
-            paymentStatus.trialStartedAt
-          );
+          paymentStatus.trialExpirationDate = paymentStatus.trialStartedAt
+            ? sevenDaysAfter(paymentStatus.trialStartedAt)
+            : null;
         }
 
-        const trialExpired = new Date() > sevenDaysAfter(user.trialStartedAt!);
+        const trialExpired = user.trialStartedAt
+          ? new Date() > sevenDaysAfter(user.trialStartedAt)
+          : false;
         if (trialExpired) {
-          paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
+          paymentStatus.trialStartedAt = user.trialStartedAt
+            ? new Date(user.trialStartedAt)
+            : null;
           paymentStatus.trialIsValid = false;
           paymentStatus.trialExpired = true;
           paymentStatus.trialNeverStarted = false;

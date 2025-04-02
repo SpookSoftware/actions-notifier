@@ -54,7 +54,7 @@
       console.debug("Skipping effect because initializing");
       return;
     }
-    console.log("extension validity changed. Running effect.");
+    console.log("extension validity changed. Running effect (inside popup)");
 
     let userFriendlyReason = "";
     if (!extensionIsValid.isValid) {
@@ -65,11 +65,12 @@
           break;
         case "payment status invalid":
           userFriendlyReason = paymentState.paymentStatus.trialStartedAt
-            ? "Your free trial has expired. Please open the extension settings and purchase the extension to continue using."
-            : "Please open the extension settings to start a free trial or purchase the extension";
+            ? "Your free trial has expired. Please open the extension settings and purchase the extension to continue using it."
+            : "You haven't paid or started a trial. Please open the extension settings to start a free trial or purchase the extension.";
           break;
         case "token invalid":
-          userFriendlyReason = "Your GitHub token is invalid or expired.";
+          userFriendlyReason =
+            "Your GitHub token is invalid or expired. Please open the extension settings and enter a valid token.";
           break;
         case "too many alarms":
           userFriendlyReason = `You've reached the maximum limit of ${alarmState.alarmCount}/${MAX_ALARMS} active monitors. Please clear all monitors from the extension settings or wait a few minutes for monitors to clear.`;

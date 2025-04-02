@@ -134,7 +134,9 @@
   });
 
   $effect(() => {
-    console.log("extension validity changed. Running effect.");
+    console.log(
+      "extension validity changed. Running effect (inside OnboardingPage)"
+    );
     if (!extensionIsValid.isValid) {
       setExtensionEnabled(extensionIsValid.isValid, extensionIsValid.reason);
     } else setExtensionEnabled(extensionIsValid.isValid);
