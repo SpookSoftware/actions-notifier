@@ -4,17 +4,17 @@
   "description": "Adds a button to the Github UI that lets you get notified when an action or job completes.",
   "author": "Spook Software",
   "devDependencies": {
-    "@happy-dom/global-registrator": "^17.1.1",
-    "@playwright/test": "^1.50.1",
+    "@happy-dom/global-registrator": "^17.4.4",
+    "@playwright/test": "^1.51.1",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/bun": "latest",
     "@types/chrome": "^0.0.243",
-    "@types/node": "^22.9.0",
-    "@types/webextension-polyfill": "^0.12.2",
-    "playwright": "^1.50.1"
+    "@types/node": "^22.13.17",
+    "@types/webextension-polyfill": "^0.12.3",
+    "playwright": "^1.51.1"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.6.3"
   },
   "scripts": {
     "test:unit": "bun test",
@@ -32,14 +32,14 @@
   },
   "dependencies": {
     "-": "^0.0.1",
-    "@anthropic-ai/claude-code": "^0.2.9",
+    "@anthropic-ai/claude-code": "^0.2.59",
     "@types/archiver": "^6.0.3",
-    "@types/react": "^19.0.10",
-    "@types/react-dom": "^19.0.4",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
     "archiver": "^7.0.1",
     "bun-plugin-svelte": "^0.0.5",
     "extpay": "^3.1.1",
-    "svelte": "^5.22.6",
+    "svelte": "^5.25.6",
     "webextension-polyfill": "^0.12.0"
   }
 }
