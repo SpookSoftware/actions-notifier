@@ -38,7 +38,7 @@
     "@types/react-dom": "^19.0.4",
     "archiver": "^7.0.1",
     "bun-plugin-svelte": "^0.0.5",
-    "extpay": "^3.0.7",
+    "extpay": "^3.1.1",
     "svelte": "^5.22.6",
     "webextension-polyfill": "^0.12.0"
   }
