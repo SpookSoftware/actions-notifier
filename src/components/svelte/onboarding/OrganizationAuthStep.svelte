@@ -121,7 +121,7 @@
     <div class="actions">
       <button
         class="btn btn-primary"
-        on:click={loadUserOrganizations}
+        onclick={loadUserOrganizations}
         disabled={isLoadingOrgs}
       >
         {#if isLoadingOrgs}
