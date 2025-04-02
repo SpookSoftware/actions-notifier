@@ -4,6 +4,7 @@
   import Header from "./Header.svelte";
   import WelcomeStep from "./WelcomeStep.svelte";
   import TokenStep from "./TokenStep.svelte";
+  import OrganizationAuthStep from "./OrganizationAuthStep.svelte";
   import PaymentStep from "./PaymentStep.svelte";
   import ReadyStep from "./ReadyStep.svelte";
   import NavigationControls from "./NavigationControls.svelte";
@@ -17,6 +18,7 @@
   import { tokenState, paymentState } from "@/helpers/helpers.svelte";
 
   let currentStep = $state(1);
+  let showOrgAuthStep = $state(false); // Flag to control showing org auth step
 
   let isPaidOrTrialing = $derived(
     paymentState.paymentStatus.paid || paymentState.paymentStatus.trialIsValid
@@ -41,12 +43,28 @@
 
   function goToPreviousStep() {
     if (currentStep > 1) {
-      currentStep--;
+      // If we're on the org auth sub-step, go back to the token step
+      if (currentStep === 2 && showOrgAuthStep) {
+        showOrgAuthStep = false;
+      } else {
+        currentStep--;
+      }
     }
   }
+
   async function goToNextStep() {
-    if (currentStep < 4) {
-      currentStep++;
+    if (currentStep === 2 && tokenState.valid && !showOrgAuthStep) {
+      // When token is validated, show org auth step before proceeding to next main step
+      showOrgAuthStep = true;
+    } else if (currentStep < 5) {
+      // Increased max steps to 5
+      if (currentStep === 2 && showOrgAuthStep) {
+        // When moving from org auth step, reset flag and proceed to next main step
+        showOrgAuthStep = false;
+        currentStep++;
+      } else {
+        currentStep++;
+      }
     }
   }
 
@@ -58,6 +76,13 @@
       const submittedToken = tokenInput.value.trim();
       tokenState.token = submittedToken;
       await browser.storage.sync.set({ githubToken: tokenState.token });
+
+      // Auto-advance to organization check when token is valid
+      if (tokenState.valid) {
+        setTimeout(() => {
+          showOrgAuthStep = true;
+        }, 1000);
+      }
     }
   }
 
@@ -120,7 +145,7 @@
   <Header />
 
   <ProgressBar
-    steps={["Welcome", "GitHub Token", "Trial or Payment", "Ready"]}
+    steps={["Welcome", "GitHub Token", "Try or Payment", "Ready"]}
     {currentStep}
   />
 
@@ -130,7 +155,11 @@
     {/if}
 
     {#if currentStep === 2}
-      <TokenStep {handleTokenSubmit} {tokenState} />
+      {#if !showOrgAuthStep}
+        <TokenStep {handleTokenSubmit} {tokenState} />
+      {:else}
+        <OrganizationAuthStep token={tokenState.token} />
+      {/if}
     {/if}
 
     {#if currentStep === 3}
