@@ -56,24 +56,23 @@
     }
     console.log("extension validity changed. Running effect.");
 
-    // Prepare a more user-friendly message based on the technical reason
-    let userFriendlyReason = null;
+    let userFriendlyReason = "";
     if (!extensionIsValid.isValid) {
       switch (extensionIsValid.reason) {
         case "no token":
           userFriendlyReason =
-            "Please add a GitHub token in the extension settings";
+            "No token. Please add a GitHub token in the extension settings";
           break;
         case "payment status invalid":
           userFriendlyReason = paymentState.paymentStatus.trialStartedAt
-            ? "Your free trial has expired"
-            : "Please start a free trial or purchase the extension";
+            ? "Your free trial has expired. Please open the extension settings and purchase the extension to continue using."
+            : "Please open the extension settings to start a free trial or purchase the extension";
           break;
         case "token invalid":
-          userFriendlyReason = "Your GitHub token is invalid or expired";
+          userFriendlyReason = "Your GitHub token is invalid or expired.";
           break;
         case "too many alarms":
-          userFriendlyReason = `You've reached the maximum limit of ${alarmState.alarmCount}/${MAX_ALARMS} active monitors`;
+          userFriendlyReason = `You've reached the maximum limit of ${alarmState.alarmCount}/${MAX_ALARMS} active monitors. Please clear all monitors from the extension settings or wait a few minutes for monitors to clear.`;
           break;
         default:
           userFriendlyReason = "The extension encountered an unknown issue";
@@ -81,7 +80,7 @@
     }
 
     if (!extensionIsValid.isValid) {
-      setExtensionEnabled(extensionIsValid.isValid, String(userFriendlyReason));
+      setExtensionEnabled(extensionIsValid.isValid, userFriendlyReason);
     } else {
       setExtensionEnabled(extensionIsValid.isValid);
     }
