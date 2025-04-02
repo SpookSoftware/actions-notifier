@@ -188,9 +188,11 @@ function createPaymentState() {
     paymentStatus.trialIsValid = true;
     paymentStatus.trialNeverStarted = false;
     paymentStatus.trialExpired = false;
-    paymentStatus.trialExpirationDate = new Date(
-      new Date(user.trialStartedAt!.getTime() + 30 * 24 * 60 * 60 * 1000)
-    );
+    paymentStatus.trialExpirationDate = user.trialStartedAt
+      ? new Date(
+          new Date(user.trialStartedAt.getTime() + 30 * 24 * 60 * 60 * 1000)
+        )
+      : null;
   });
 
   extpay.onPaid.addListener((_user) => {
