@@ -43,7 +43,7 @@ function bumpVersion(
     case "patch":
       return `${major}.${minor}.${patch + 1}`;
     default:
-      return version; // Should never happen due to earlier validation
+      throw new Error(`Unexpected patch type: ${type}`);
   }
 }
 
