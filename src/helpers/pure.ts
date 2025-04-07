@@ -278,8 +278,36 @@ export function buildMonitoringPayloads({
   return { start, stop };
 }
 
+/**
+ * Detects if GitHub is using dark mode
+ * @returns boolean indicating if dark mode is active
+ */
+export function isGitHubDarkMode(): boolean {
+  // Check for the data-color-mode attribute on the html element
+  const htmlElement = document.documentElement;
+  return htmlElement.getAttribute("data-color-mode") === "dark";
+}
+
+/**
+ * Gets the appropriate color for the notification button based on GitHub's theme
+ * @param color The base color to use (yellow or red)
+ * @returns The theme-appropriate color
+ */
+export function getThemeAppropriateColor(color: string): string {
+  const isDarkMode = isGitHubDarkMode();
+
+  if (color === "yellow") {
+    return isDarkMode ? "#ffd700" : "#ffdf5d"; // Brighter yellow for dark mode
+  } else if (color === "red") {
+    return isDarkMode ? "#ff6b6b" : "#d73a49"; // Brighter red for dark mode
+  }
+
+  return color; // Return original color if not yellow or red
+}
+
 export function setSVGColor(svg: SVGElement, color: string) {
-  svg.style.color = color;
+  const themeAppropriateColor = getThemeAppropriateColor(color);
+  svg.style.color = themeAppropriateColor;
   svg.classList.remove("color-fg-muted");
 
   // Add a subtle transition effect
@@ -287,9 +315,15 @@ export function setSVGColor(svg: SVGElement, color: string) {
 
   // Add a small outline/glow when active
   if (color === "yellow") {
-    svg.style.filter = "drop-shadow(0 0 2px rgba(255, 204, 0, 0.5))";
+    const glowColor = isGitHubDarkMode()
+      ? "rgba(255, 215, 0, 0.5)" // Brighter glow for dark mode
+      : "rgba(255, 204, 0, 0.5)";
+    svg.style.filter = `drop-shadow(0 0 2px ${glowColor})`;
   } else if (color === "red") {
-    svg.style.filter = "drop-shadow(0 0 2px rgba(255, 0, 0, 0.5))";
+    const glowColor = isGitHubDarkMode()
+      ? "rgba(255, 107, 107, 0.5)" // Brighter glow for dark mode
+      : "rgba(255, 0, 0, 0.5)";
+    svg.style.filter = `drop-shadow(0 0 2px ${glowColor})`;
   }
 }
 

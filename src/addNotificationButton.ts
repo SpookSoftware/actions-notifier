@@ -38,6 +38,7 @@ import {
   NOTIFICATION_BUTTON_CLASS,
   buildMonitoringPayloads,
   resetSVGColor,
+  isGitHubDarkMode,
 } from "./helpers/pure";
 import browser from "webextension-polyfill";
 
@@ -710,8 +711,6 @@ function createNotificationButton({
   const button = document.createElement("button");
   button.classList.add("Button");
   button.classList.add(NOTIFICATION_BUTTON_CLASS);
-
-  // Basic styles
   button.style.display = "inline-flex";
   button.style.justifyContent = "center";
   button.style.alignItems = "center";
@@ -720,6 +719,27 @@ function createNotificationButton({
   button.dataset.jobId = jobId;
   button.dataset.owner = owner;
   button.dataset.repository = repository;
+
+  // Apply theme-appropriate styling
+  const isDarkMode = isGitHubDarkMode();
+
+  // Base styles that work for both themes
+  button.style.border = "none";
+  button.style.background = "transparent";
+  button.style.cursor = "pointer";
+  button.style.padding = "4px";
+  button.style.borderRadius = "4px";
+
+  // Theme-specific styles
+  if (isDarkMode) {
+    button.style.color = "#c9d1d9"; // GitHub dark mode text color
+    button.style.transition = "background-color 0.2s ease";
+
+    // Hover effect for dark mode
+  } else {
+    button.style.color = "#24292e"; // GitHub light mode text color
+    button.style.transition = "background-color 0.2s ease";
+  }
 
   // Add disabled styling if extension is disabled
   if (!extensionIsEnabled) {
