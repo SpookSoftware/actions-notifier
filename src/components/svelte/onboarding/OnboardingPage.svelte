@@ -61,10 +61,10 @@
       tokenState.token = submittedToken;
       await browser.storage.sync.set({ githubToken: tokenState.token });
 
-      // Auto-advance to next step when token is valid
+      // Auto-advance to organization auth step when token is valid
       if (tokenState.valid) {
         setTimeout(() => {
-          currentStep++;
+          currentStep = 3; // Go directly to organization auth step
         }, 1000);
       }
     }
