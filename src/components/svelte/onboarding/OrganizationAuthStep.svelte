@@ -57,7 +57,7 @@
 </script>
 
 <div class="step">
-  <div class="step-number">2b</div>
+  <div class="step-number">3</div>
   <div class="step-content">
     <h2>GitHub Organization Access</h2>
     <p>

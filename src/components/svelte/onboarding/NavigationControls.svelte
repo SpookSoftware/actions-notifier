@@ -7,7 +7,6 @@
     totalSteps,
     isPaidOrTrialing,
     tokenIsValid,
-    showOrgAuthStep = false, // New prop with default value
   } = $props();
 
   const isLastStep = $derived(currentStep === totalSteps);
@@ -15,12 +14,12 @@
 
 <div class="controls">
   <div class="buttons-container">
-    {#if currentStep > 1 || showOrgAuthStep}
+    {#if currentStep > 1}
       <button class="btn btn-secondary" onclick={onPrevious}> Previous </button>
     {/if}
 
     {#if currentStep === 2}
-      {#if !tokenIsValid && !showOrgAuthStep}
+      {#if !tokenIsValid}
         <button
           class="btn btn-primary"
           disabled
@@ -29,13 +28,11 @@
           Please ensure you have a valid token to continue
         </button>
       {:else}
-        <button class="btn btn-primary" onclick={onNext}>
-          {showOrgAuthStep ? "Continue" : "Next"}
-        </button>
+        <button class="btn btn-primary" onclick={onNext}> Next </button>
       {/if}
     {/if}
 
-    {#if currentStep === 3}
+    {#if currentStep === 4}
       {#if !isPaidOrTrialing}
         <button
           class="btn btn-primary"
@@ -49,31 +46,12 @@
       {/if}
     {/if}
 
-    {#if currentStep !== 2 && currentStep !== 3 && !isLastStep}
+    {#if currentStep !== 2 && currentStep !== 4 && !isLastStep}
       <button class="btn btn-primary" onclick={onNext}> Next </button>
     {/if}
 
     {#if isLastStep}
-      <div style="position: relative">
-        <button
-          class="btn btn-primary"
-          onclick={onFinish}
-          disabled={!isPaidOrTrialing}
-          title={!isPaidOrTrialing
-            ? "Please start a trial or make a purchase to continue"
-            : ""}
-        >
-          Get Started
-        </button>
-
-        {#if !isPaidOrTrialing}
-          <div
-            style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); background-color: #e25822; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap"
-          >
-            Start trial or buy first
-          </div>
-        {/if}
-      </div>
+      <button class="btn btn-primary" onclick={onFinish}> Finish </button>
     {/if}
   </div>
 </div>
