@@ -17,7 +17,31 @@
 
   import { tokenState, paymentState } from "@/helpers/helpers.svelte";
 
-  let currentStep = $state(1);
+  // Get initial step from URL or default to 1
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialStep = parseInt(urlParams.get("step") || "1", 10);
+  let currentStep = $state(Math.min(Math.max(initialStep, 1), 5)); // Ensure step is between 1 and 5
+
+  // Update URL when step changes
+  function updateUrlWithStep(step: number) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("step", step.toString());
+    window.history.pushState({ step }, "", url.toString());
+  }
+
+  // Handle browser back/forward navigation
+  function handlePopState(event: PopStateEvent) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const step = parseInt(urlParams.get("step") || "1", 10);
+    currentStep = Math.min(Math.max(step, 1), 5);
+  }
+
+  onMount(() => {
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  });
 
   let isPaidOrTrialing = $derived(
     paymentState.paymentStatus.paid || paymentState.paymentStatus.trialIsValid
@@ -43,12 +67,14 @@
   function goToPreviousStep() {
     if (currentStep > 1) {
       currentStep--;
+      updateUrlWithStep(currentStep);
     }
   }
 
   async function goToNextStep() {
     if (currentStep < 5) {
       currentStep++;
+      updateUrlWithStep(currentStep);
     }
   }
 
@@ -65,6 +91,7 @@
       if (tokenState.valid) {
         setTimeout(() => {
           currentStep = 3; // Go directly to organization auth step
+          updateUrlWithStep(currentStep);
         }, 1000);
       }
     }
