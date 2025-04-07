@@ -51,7 +51,15 @@
     {/if}
 
     {#if isLastStep}
-      <button class="btn btn-primary" onclick={onFinish}> Finish </button>
+      <a
+        href="https://github.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn btn-primary"
+        onclick={onFinish}
+      >
+        Finish
+      </a>
     {/if}
   </div>
 </div>

@@ -101,8 +101,6 @@
     if (extensionIsValid) {
       try {
         await setExtensionEnabled(true);
-
-        window.location.href = "https://github.com";
       } catch (error) {
         console.error("Error finishing onboarding:", error);
         throw error;
