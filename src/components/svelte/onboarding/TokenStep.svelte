@@ -102,6 +102,10 @@
         target="_blank"
         rel="noopener noreferrer"
         class="btn btn-primary"
+        onclick={() => {
+          showTokenInput = true;
+          showPassword = true;
+        }}
       >
         Create New Token
         <ExternalLinkIcon />
