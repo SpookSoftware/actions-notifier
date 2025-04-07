@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ExternalLinkIcon from "@/components/svelte/shared/ExternalLinkIcon.svelte";
+
   const {
     onPrevious,
     onNext,
@@ -59,6 +61,7 @@
         onclick={onFinish}
       >
         Finish
+        <ExternalLinkIcon />
       </a>
     {/if}
   </div>
@@ -92,6 +95,9 @@
     background-color: var(--github-green);
     color: white;
     border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 
   .btn-primary:hover {

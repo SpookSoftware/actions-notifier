@@ -1,5 +1,6 @@
 <script lang="ts">
   import { PREFILLED_TOKEN_URL } from "@constants";
+  import ExternalLinkIcon from "@/components/svelte/shared/ExternalLinkIcon.svelte";
 
   const { handleTokenSubmit, tokenState } = $props<{
     handleTokenSubmit: (e: SubmitEvent) => Promise<void>;
@@ -102,6 +103,7 @@
         class="btn btn-primary"
       >
         Create New Token
+        <ExternalLinkIcon />
       </a>
       <span>or</span>
       <button class="btn btn-secondary" onclick={() => (showTokenInput = true)}>
@@ -191,5 +193,14 @@
 
   .error-message {
     color: var(--github-red);
+  }
+
+  .btn-primary {
+    background-color: var(--github-green);
+    color: white;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
   }
 </style>

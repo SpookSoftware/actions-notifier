@@ -1,5 +1,6 @@
 <script lang="ts">
   import { testRepositoryAccess } from "@/services/github-organization";
+  import ExternalLinkIcon from "@/components/svelte/shared/ExternalLinkIcon.svelte";
 
   const { organization, token, onRefresh } = $props<{
     organization: {
@@ -63,8 +64,10 @@
             href={organization.authUrl}
             target="_blank"
             rel="noopener noreferrer"
+            class="auth-link"
           >
             Visit organization's authorization page
+            <ExternalLinkIcon />
           </a>
         </li>
         <li>
@@ -235,5 +238,17 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  .auth-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--github-link);
+    text-decoration: none;
+  }
+
+  .auth-link:hover {
+    text-decoration: underline;
   }
 </style>
