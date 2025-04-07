@@ -340,11 +340,11 @@ export const createPRRunCallback = (
       if (mutation.type === "childList") {
         for (const addedNode of mutation.addedNodes) {
           if (addedNode instanceof Element) {
-            const wholeContainerChanged = addedNode.classList
-              .entries()
-              .some(([_idx, value]) => {
-                return value.includes("MergeBox-module__mergePartialContainer");
-              });
+            const wholeContainerChanged = Array.from(
+              addedNode.classList.entries()
+            ).some(([_, value]) => {
+              return value.includes("MergeBox-module__mergePartialContainer");
+            });
 
             const singleElementChanged =
               isQueuedRunningAndNotButtonedPR(addedNode) &&
