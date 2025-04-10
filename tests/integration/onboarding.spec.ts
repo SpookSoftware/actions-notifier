@@ -109,7 +109,7 @@ test.describe("Onboarding Flow", () => {
     });
   });
 
-  test.describe.only("GitHub Token Step", () => {
+  test.describe("GitHub Token Step", () => {
     test.beforeEach(async ({ page, extensionId }) => {
       // Navigate directly to step 2
       await page.goto(
@@ -199,6 +199,256 @@ test.describe("Onboarding Flow", () => {
 
       // Verify Next button becomes enabled after validation
       await expect(nextButton).toBeEnabled();
+    });
+  });
+
+  test.describe("Organization Access Step", () => {
+    test.beforeEach(async ({ page, extensionId, context }) => {
+      // Mock organization API responses
+      await page.route("https://api.github.com/user/orgs", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            { login: "test-org-1", id: 1001, node_id: "N1" },
+            { login: "test-org-2", id: 1002, node_id: "N2" },
+            { login: "test-org-3", id: 1003, node_id: "N3" },
+          ]),
+        });
+      });
+
+      // Mock repositories API for org access testing
+      await page.route(
+        /https:\/\/api\.github\.com\/orgs\/.*\/repos/,
+        async (route) => {
+          const url = route.request().url();
+          const orgName = url.match(/\/orgs\/(.*?)\/repos/)?.[1];
+
+          // Let's say test-org-1 and test-org-2 have access, but test-org-3 doesn't
+          if (orgName === "test-org-1" || orgName === "test-org-2") {
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify([{ name: "test-repo" }]),
+            });
+          } else {
+            await route.fulfill({
+              status: 403,
+              contentType: "application/json",
+              body: JSON.stringify({ message: "Not authorized" }),
+            });
+          }
+        }
+      );
+
+      await page.route(
+        "https://api.github.com/repos/test-org-1/test-repo",
+        async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              name: "test-repo",
+            }),
+          });
+        }
+      );
+
+      await page.route(
+        "https://api.github.com/repos/test-org-3/test-repo",
+        async (route) => {
+          await route.fulfill({
+            status: 403,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "Not authorized" }),
+          });
+        }
+      );
+
+      // Navigate directly to step 3
+      // First, we need to set a valid token in storage
+      await page.evaluate((token) => {
+        return new Promise<void>((resolve) => {
+          chrome.storage.sync.set({ githubToken: token }, resolve);
+        });
+      }, MOCK_VALID_TOKEN);
+
+      // Now navigate to step 3
+      await page.goto(
+        `chrome-extension://${extensionId}/onboarding.html?step=3`,
+        {
+          waitUntil: "domcontentloaded",
+        }
+      );
+
+      // Verify we are on the correct step
+      await expect(page.locator("h2").first()).toHaveText(
+        "GitHub Organization Access"
+      );
+    });
+
+    test("should display user organizations", async ({ page }) => {
+      // Check that organizations are displayed
+      await expect(
+        page.locator('div.org-name:has-text("test-org-1")')
+      ).toBeVisible();
+      await expect(
+        page.locator('div.org-name:has-text("test-org-2")')
+      ).toBeVisible();
+      await expect(
+        page.locator('div.org-name:has-text("test-org-3")')
+      ).toBeVisible();
+    });
+
+    test("should indicate organization access status correctly", async ({
+      page,
+    }) => {
+      // Wait for authorization checks to complete (may need adjustment based on UI)
+      await page.waitForTimeout(1000);
+
+      // Check for authorized organizations (test-org-1 and test-org-2)
+      // Adjust selectors based on how authorization status is displayed
+      await expect(
+        page
+          .locator('div.org-name:has-text("test-org-1")')
+          .locator("..")
+          .getByText("✓")
+      ).toBeVisible();
+      await expect(
+        page
+          .locator('div.org-name:has-text("test-org-2")')
+          .locator("..")
+          .getByText("✓")
+      ).toBeVisible();
+
+      // Check for unauthorized organization (test-org-3)
+      await expect(
+        page
+          .locator('div.org-name:has-text("test-org-3")')
+          .locator("..")
+          .getByText("❌")
+      ).toBeVisible();
+    });
+
+    test("should allow manual repository access check", async ({ page }) => {
+      // Find the test repository input for the first organization
+      const firstRepoInput = page
+        .locator('input[placeholder="repository-name"]')
+        .first();
+      await expect(firstRepoInput).toBeVisible();
+
+      const thirdRepoInput = page
+        .locator('input[placeholder="repository-name"]')
+        .nth(2);
+      await expect(thirdRepoInput).toBeVisible();
+
+      // Test with an authorized organization
+      await page.locator('div.org-name:has-text("test-org-1")').click(); // Select org
+      await firstRepoInput.fill("test-repo");
+      await page
+        .getByRole("button", { name: /test access/i })
+        .first()
+        .click();
+
+      // Check for success message
+      await expect(page.getByText(/access verified/i)).toBeVisible();
+
+      // Test with an unauthorized organization
+      await page.locator('div.org-name:has-text("test-org-3")').click(); // Select org
+      await thirdRepoInput.fill("test-repo");
+      await page
+        .getByRole("button", { name: /test access/i })
+        .nth(2)
+        .click();
+
+      // Check for error message
+      await expect(page.getByText(/access failed/i)).toBeVisible();
+    });
+
+    test("should enable Next button after verifying at least one organization", async ({
+      page,
+    }) => {
+      // Wait for authorization checks to complete
+      await page.waitForTimeout(1000);
+
+      // Next button should be enabled because we have at least one organization with access
+      const nextButton = page.getByRole("button", { name: "Next" });
+      await expect(nextButton).toBeEnabled();
+
+      // Click Next and verify we go to step 4
+      await nextButton.click();
+      await expect(page.locator("h2").first()).toHaveText("Try or Buy");
+      await expect(page).toHaveURL(/step=4/);
+    });
+
+    test("should navigate back to token step when clicking Previous", async ({
+      page,
+    }) => {
+      const prevButton = page.getByRole("button", { name: "Previous" });
+      await expect(prevButton).toBeEnabled();
+
+      await prevButton.click();
+      await expect(page.locator("h2").first()).toHaveText("GitHub Token Setup");
+      await expect(page).toHaveURL(/step=2/);
+    });
+
+    test("should handle repository API errors gracefully during manual checks", async ({
+      page,
+    }) => {
+      // Override the repository API mock for this specific test to simulate different error scenarios
+      await page.route(
+        /https:\/\/api\.github\.com\/repos\/.*\/test-repo/,
+        async (route) => {
+          const url = route.request().url();
+          if (url.includes("test-org-1/network-error")) {
+            // Simulate a network error
+            await route.abort("failed");
+          } else if (url.includes("test-org-1/server-error")) {
+            // Simulate a server error
+            await route.fulfill({
+              status: 500,
+              contentType: "application/json",
+              body: JSON.stringify({ message: "Internal server error" }),
+            });
+          } else if (url.includes("test-org-1/rate-limit")) {
+            // Simulate rate limiting
+            await route.fulfill({
+              status: 403,
+              contentType: "application/json",
+              body: JSON.stringify({
+                message: "API rate limit exceeded",
+                documentation_url:
+                  "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting",
+              }),
+            });
+          }
+        }
+      );
+
+      await page.route(
+        "https://api.github.com/repos/octocat/hello-world",
+        async (route) => {
+          await route.fulfill({
+            status: 403,
+            contentType: "application/json",
+            body: JSON.stringify({ message: "Not authorized" }),
+          });
+        }
+      );
+
+      // Get the repository input element once
+      const firstRepoInput = page.getByPlaceholder("repository-name").first();
+
+      // Select organization first
+      await page.locator('div.org-name:has-text("test-org-1")').click();
+
+      // Test with network error
+      await firstRepoInput.fill("network-error");
+      await page
+        .getByRole("button", { name: /test access/i })
+        .first()
+        .click();
+      await expect(page.getByText(/not authorized/i)).toBeVisible();
     });
   });
 });
