@@ -9,9 +9,10 @@ import {
   FAILED_JOB_RUN_SELECTOR,
   JOB_RUNS_CONTAINER_SELECTOR,
   PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR,
-  PR_CHECKS_CONTAINER_SELECTOR,
-  PR_CHECKS_CONTAINER_PARENT_SELECTOR,
-  CHECKS_PAGE_CONTAINER_SELECTOR,
+  NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR,
+  NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR,
+  NEW_PR_RUN_SELECTOR,
+  NEW_PR_CURRENTLY_RUNNING_SELECTOR,
 } from "@/selectors";
 
 if (!process.env.SANDBOX_REPO_GITHUB_TOKEN) {
@@ -158,7 +159,7 @@ test.describe("Job selectors", () => {
   }
 });
 
-test.describe.only("PR selectors", () => {
+test.describe("PR selectors", () => {
   for (const colorScheme of ["light", "dark"] as const) {
     test(`PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR selects the PR checks container in ${colorScheme} mode`, async ({
       page,
@@ -176,7 +177,7 @@ test.describe.only("PR selectors", () => {
       expect(matches).toBe(1);
     });
 
-    test(`PR_CHECKS_CONTAINER_PARENT_SELECTOR selects the proper container in ${colorScheme} mode`, async ({
+    test(`NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR selects the proper container in ${colorScheme} mode`, async ({
       page,
     }) => {
       await page.emulateMedia({ colorScheme });
@@ -186,28 +187,75 @@ test.describe.only("PR selectors", () => {
       await page.waitForTimeout(1000);
 
       await page
-        .locator(PR_CHECKS_CONTAINER_PARENT_SELECTOR)
+        .locator(NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR)
         .first()
         .scrollIntoViewIfNeeded();
-      await page.waitForSelector(PR_CHECKS_CONTAINER_PARENT_SELECTOR);
+      await page.waitForSelector(NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR);
       const matches = await page
-        .locator(PR_CHECKS_CONTAINER_PARENT_SELECTOR)
+        .locator(NEW_PR_CHECKS_CONTAINER_PARENT_SELECTOR)
         .count();
       expect(matches).toBe(1);
     });
 
-    test(`PR_CHECKS_CONTAINER_SELECTOR selects the PR checks container in ${colorScheme} mode`, async ({
+    test(`NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR selects the proper container in ${colorScheme} mode`, async ({
       page,
     }) => {
       await page.emulateMedia({ colorScheme });
-      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1/checks");
+      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1");
 
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await page.waitForTimeout(1000);
 
-      await page.waitForSelector(PR_CHECKS_CONTAINER_SELECTOR);
-      const matches = await page.locator(PR_CHECKS_CONTAINER_SELECTOR).count();
+      await page
+        .locator(NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR)
+        .first()
+        .scrollIntoViewIfNeeded();
+      await page.waitForSelector(NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR);
+      const matches = await page
+        .locator(NEW_PR_CHECKS_CONTAINER_IS_OPEN_SELECTOR)
+        .count();
       expect(matches).toBe(1);
+    });
+
+    test(`NEW_PR_RUN_SELECTOR selects the proper container in ${colorScheme} mode`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1");
+
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(1000);
+
+      await page.locator(NEW_PR_RUN_SELECTOR).first().scrollIntoViewIfNeeded();
+      await page.waitForSelector(NEW_PR_RUN_SELECTOR);
+      const matches = await page.locator(NEW_PR_RUN_SELECTOR).count();
+      expect(matches).toBeGreaterThan(0);
+    });
+
+    test(`NEW_PR_CURRENTLY_RUNNING_SELECTOR selects the proper container in ${colorScheme} mode`, async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme });
+      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1");
+
+      const reRunCheckbox = await page.waitForSelector(
+        'input[type="checkbox"].task-list-item-checkbox'
+      );
+      await reRunCheckbox?.click();
+      await page.waitForTimeout(10000);
+
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(1000);
+
+      await page
+        .locator(NEW_PR_CURRENTLY_RUNNING_SELECTOR)
+        .first()
+        .scrollIntoViewIfNeeded();
+      await page.waitForSelector(NEW_PR_CURRENTLY_RUNNING_SELECTOR);
+      const matches = await page
+        .locator(NEW_PR_CURRENTLY_RUNNING_SELECTOR)
+        .count();
+      expect(matches).toBeGreaterThanOrEqual(1);
     });
   }
 });
