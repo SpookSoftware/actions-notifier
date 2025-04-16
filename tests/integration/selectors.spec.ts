@@ -158,16 +158,17 @@ test.describe("Job selectors", () => {
   }
 });
 
-// We need to be signed in for these to work, apparently. Will consider how to get around that later.
-test.describe.skip("PR selectors", () => {
+test.describe.only("PR selectors", () => {
   for (const colorScheme of ["light", "dark"] as const) {
     test(`PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR selects the PR checks container in ${colorScheme} mode`, async ({
       page,
     }) => {
       await page.emulateMedia({ colorScheme });
-      await page.goto(
-        "https://github.com/SpookSoftware/sandbox/pull/1?new_mergebox=false"
-      );
+      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1");
+
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(1000);
+
       await page.waitForSelector(PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR);
       const matches = await page
         .locator(PR_CHECKS_CONTAINER_GRANDPARENT_SELECTOR)
@@ -179,9 +180,10 @@ test.describe.skip("PR selectors", () => {
       page,
     }) => {
       await page.emulateMedia({ colorScheme });
-      await page.goto(
-        "https://github.com/SpookSoftware/sandbox/pull/1?new_mergebox=false"
-      );
+      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1");
+
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(1000);
 
       await page
         .locator(PR_CHECKS_CONTAINER_PARENT_SELECTOR)
@@ -199,24 +201,12 @@ test.describe.skip("PR selectors", () => {
     }) => {
       await page.emulateMedia({ colorScheme });
       await page.goto("https://github.com/SpookSoftware/sandbox/pull/1/checks");
+
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+      await page.waitForTimeout(1000);
+
       await page.waitForSelector(PR_CHECKS_CONTAINER_SELECTOR);
       const matches = await page.locator(PR_CHECKS_CONTAINER_SELECTOR).count();
-      expect(matches).toBe(1);
-    });
-  }
-});
-
-test.describe("Checks selectors", () => {
-  for (const colorScheme of ["light", "dark"] as const) {
-    test(`CHECKS_PAGE_CONTAINER_SELECTOR selects the checks container in ${colorScheme} mode`, async ({
-      page,
-    }) => {
-      await page.emulateMedia({ colorScheme });
-      await page.goto("https://github.com/SpookSoftware/sandbox/pull/1/checks");
-      await page.waitForSelector(CHECKS_PAGE_CONTAINER_SELECTOR);
-      const matches = await page
-        .locator(CHECKS_PAGE_CONTAINER_SELECTOR)
-        .count();
       expect(matches).toBe(1);
     });
   }

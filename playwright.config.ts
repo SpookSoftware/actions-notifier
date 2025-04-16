@@ -18,8 +18,16 @@ export default defineConfig({
   // Define multiple projects for different test scenarios
   projects: [
     {
+      name: "auth",
+      testMatch: /auth\.setup\.ts/,
+    },
+    {
       name: "selectors",
       testMatch: /selectors\.spec\.ts/,
+      use: {
+        storageState: "./tests/playwright/.auth/user.json",
+      },
+      dependencies: ["auth"],
     },
     {
       name: "extension",
@@ -27,6 +35,7 @@ export default defineConfig({
       use: {
         headless: false, // Extension tests require head
       },
+      dependencies: ["auth"],
     },
   ],
 });
