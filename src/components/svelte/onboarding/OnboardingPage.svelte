@@ -160,7 +160,7 @@
       "Welcome",
       "GitHub Token",
       "Organization Access",
-      "Try or Payment",
+      "Trial or Payment",
       "Ready",
     ]}
     {currentStep}
