@@ -528,9 +528,11 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
     if (!extensionIsValid) {
       let disabledReason = "";
       if (!tokenIsValid) {
-        disabledReason = "Invalid GitHub token";
+        disabledReason =
+          "Invalid GitHub token. Please click the extension icon to re-authenticate.";
       } else if (!isPaid && !isTrialed) {
-        disabledReason = "Subscription expired or trial ended";
+        disabledReason =
+          "Subscription expired or trial ended. Please click the extension icon to upgrade.";
       }
       console.debug("Disabling extension due to invalid state");
       console.debug(`Token valid: ${tokenIsValid}`);
