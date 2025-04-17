@@ -526,14 +526,17 @@ export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
 
     const extensionIsValid = tokenIsValid && (isPaid || isTrialed);
     if (!extensionIsValid) {
+      let disabledReason = "";
+      if (!tokenIsValid) {
+        disabledReason = "Invalid GitHub token";
+      } else if (!isPaid && !isTrialed) {
+        disabledReason = "Subscription expired or trial ended";
+      }
       console.debug("Disabling extension due to invalid state");
       console.debug(`Token valid: ${tokenIsValid}`);
       console.debug(`User paid: ${isPaid}`);
       console.debug(`User trialed: ${isTrialed}`);
-      await setExtensionEnabled(
-        false,
-        "Invalid state discovered in alarm callback"
-      );
+      await setExtensionEnabled(false, disabledReason);
     } else {
       console.debug("Enabling extension due to valid state");
       await setExtensionEnabled(true);
