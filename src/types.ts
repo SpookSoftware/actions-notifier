@@ -72,15 +72,8 @@ export interface Monitor {
   url: string;
 }
 
-export type PaymentStatus = {
-  paid: boolean;
-  trialStartedAt: Date | null;
-  trialIsValid: boolean;
-};
-
 // Notification types
 export enum NotificationType {
   TOKEN_EXPIRED = "token-expired",
   ALARM_LIMIT_REACHED = "alarm-limit-reached",
-  TRIAL_EXPIRED = "trial-expired",
 }

@@ -15,7 +15,6 @@ import { SveltePlugin } from "bun-plugin-svelte";
       "./src/background.ts",
       "./src/popup.html",
       "./src/onboarding.html",
-      "./src/ExtPay_content_script.js",
     ],
     outdir: outputDir,
     plugins: [

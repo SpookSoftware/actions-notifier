@@ -1,8 +1,6 @@
 import browser from "webextension-polyfill";
-import ExtPay from "extpay";
-import { sevenDaysAfter, trialIsValid } from "@/services/trial";
 import { validateTokenDirectly } from "./browser";
-import { ALARM_PREFIX, EXTPAY_ID } from "@constants";
+import { ALARM_PREFIX } from "@constants";
 
 function createTokenState() {
   let token = $state<string>("");
@@ -163,116 +161,5 @@ function isFromMyExtension(alarm: browser.Alarms.Alarm): boolean {
   );
 }
 
-function createPaymentState() {
-  const extpay = ExtPay(EXTPAY_ID);
-  let isLoading = $state(false);
-  let paymentStatus = $state<{
-    paid: boolean;
-    trialStartedAt: Date | null;
-    trialIsValid: boolean;
-    trialExpired: boolean;
-    trialExpirationDate: Date | null;
-    trialNeverStarted: boolean;
-  }>({
-    paid: false,
-    trialStartedAt: null,
-    trialIsValid: false,
-    trialExpired: false,
-    trialExpirationDate: null,
-    trialNeverStarted: true,
-  });
-
-  extpay.onTrialStarted.addListener((user) => {
-    // Since we're keying on onTrialStarted, we know there's a trial.
-    paymentStatus.trialStartedAt = new Date(user.trialStartedAt!);
-    paymentStatus.trialIsValid = true;
-    paymentStatus.trialNeverStarted = false;
-    paymentStatus.trialExpired = false;
-    paymentStatus.trialExpirationDate = user.trialStartedAt
-      ? new Date(
-          new Date(user.trialStartedAt.getTime() + 30 * 24 * 60 * 60 * 1000)
-        )
-      : null;
-  });
-
-  extpay.onPaid.addListener((_user) => {
-    paymentStatus.paid = true;
-    paymentStatus.trialIsValid = false;
-    paymentStatus.trialNeverStarted = false;
-    paymentStatus.trialExpired = false;
-    paymentStatus.trialExpirationDate = null;
-  });
-
-  return {
-    get paymentStatus() {
-      return paymentStatus;
-    },
-    set paymentStatus(value) {
-      paymentStatus = value;
-    },
-    get isLoading() {
-      return isLoading;
-    },
-    async initialize() {
-      // If already loading, return the current status
-      if (isLoading) return paymentStatus;
-
-      isLoading = true;
-      try {
-        const user = await extpay.getUser();
-        if (user.paid) {
-          paymentStatus.paid = true;
-          paymentStatus.trialIsValid = false;
-          paymentStatus.trialNeverStarted = false;
-          paymentStatus.trialExpired = false;
-          paymentStatus.trialExpirationDate = null;
-        }
-
-        const trialIsActive = trialIsValid(user.trialStartedAt);
-        if (trialIsActive) {
-          paymentStatus.trialStartedAt = user.trialStartedAt
-            ? new Date(user.trialStartedAt)
-            : null;
-          paymentStatus.trialIsValid = true;
-          paymentStatus.trialExpired = false;
-          paymentStatus.trialNeverStarted = false;
-          paymentStatus.trialExpirationDate = paymentStatus.trialStartedAt
-            ? sevenDaysAfter(paymentStatus.trialStartedAt)
-            : null;
-        }
-
-        const trialExpired = user.trialStartedAt
-          ? new Date() > sevenDaysAfter(user.trialStartedAt)
-          : false;
-        if (trialExpired) {
-          paymentStatus.trialStartedAt = user.trialStartedAt
-            ? new Date(user.trialStartedAt)
-            : null;
-          paymentStatus.trialIsValid = false;
-          paymentStatus.trialExpired = true;
-          paymentStatus.trialNeverStarted = false;
-          paymentStatus.trialExpirationDate = null;
-        }
-
-        const trialNeverStarted = !user.trialStartedAt && !user.paid;
-        if (trialNeverStarted) {
-          paymentStatus.trialStartedAt = null;
-          paymentStatus.trialIsValid = false;
-          paymentStatus.trialExpired = false;
-          paymentStatus.trialExpirationDate = null;
-        }
-
-        return paymentStatus;
-      } catch (error) {
-        console.error("Error getting payment status:", error);
-        return paymentStatus;
-      } finally {
-        isLoading = false;
-      }
-    },
-  };
-}
-
 export const tokenState = createTokenState();
 export const alarmState = createAlarmState();
-export const paymentState = createPaymentState();

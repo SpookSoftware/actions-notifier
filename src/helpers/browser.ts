@@ -14,19 +14,14 @@ import {
   isStopMonitoringRequest,
   hasClickHandler,
 } from "@/helpers/pure";
-import { getPaymentStatus } from "@/services/payment";
 import type { MonitorResponse, Encoded, MonitorRequest } from "@/types";
-import ExtPay from "extpay";
-import { trialIsValid } from "@/services/trial";
 import {
   EXTENSION_ENABLED_KEY,
   GITHUB_TOKEN_KEY,
   MAX_ALARMS,
   DISABLED_REASON_KEY,
   ALARM_PREFIX,
-  EXTPAY_ID,
 } from "@constants";
-const extpay = ExtPay(EXTPAY_ID);
 
 // Token validation error types
 export type TokenValidationError =
@@ -70,17 +65,13 @@ export async function isExtensionEnabled(): Promise<boolean> {
     }
 
     const tooManyAlarms = (await getActiveAlarmCount()) >= MAX_ALARMS;
-    const paymentStatus = await getPaymentStatus();
-    const userHasPaid = paymentStatus.paid;
-    const userHasValidTrial = paymentStatus.trialIsValid;
 
     // Validate token directly to avoid circular reference
     const tokenIsValid = await validateTokenDirectly(
       String(tokenData.githubToken)
     );
 
-    const extensionEnabled =
-      tokenIsValid && !tooManyAlarms && (userHasPaid || userHasValidTrial);
+    const extensionEnabled = tokenIsValid && !tooManyAlarms;
 
     return extensionEnabled;
   } catch (error) {
@@ -510,41 +501,7 @@ export async function onMessageCallback(
 }
 
 export const onAlarmCallback = async (alarm: browser.Alarms.Alarm) => {
-  if (alarm.name === "actions-notifier_pollExtensionValidity") {
-    console.log("Running pollExtensionValidity alarm callback");
-    const { githubToken } = await browser.storage.sync.get(GITHUB_TOKEN_KEY);
-    if (!githubToken) {
-      console.debug("Disabling extension due to missing token");
-      await setExtensionEnabled(false, "Missing or invalid github token");
-      return;
-    }
-    const tokenIsValid = await validateTokenDirectly(String(githubToken));
-
-    const user = await extpay.getUser();
-    const isPaid = user.paid;
-    const isTrialed = trialIsValid(user.trialStartedAt);
-
-    const extensionIsValid = tokenIsValid && (isPaid || isTrialed);
-    if (!extensionIsValid) {
-      let disabledReason = "";
-      if (!tokenIsValid) {
-        disabledReason =
-          "Invalid GitHub token. Please click the extension icon to re-authenticate.";
-      } else if (!isPaid && !isTrialed) {
-        disabledReason =
-          "Subscription expired or trial ended. Please click the extension icon to upgrade.";
-      }
-      console.debug("Disabling extension due to invalid state");
-      console.debug(`Token valid: ${tokenIsValid}`);
-      console.debug(`User paid: ${isPaid}`);
-      console.debug(`User trialed: ${isTrialed}`);
-      await setExtensionEnabled(false, disabledReason);
-    } else {
-      console.debug("Enabling extension due to valid state");
-      await setExtensionEnabled(true);
-    }
-    return;
-  } else if (!isProperlyEncoded(alarm.name)) {
+  if (!isProperlyEncoded(alarm.name)) {
     throw Error("Unexpected alarm name format: " + alarm.name);
   }
 

@@ -1,1 +1,0 @@
-import ExtPay from "extpay";

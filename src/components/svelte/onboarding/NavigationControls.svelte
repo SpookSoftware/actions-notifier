@@ -7,7 +7,6 @@
     onFinish,
     currentStep,
     totalSteps,
-    isPaidOrTrialing,
     tokenIsValid,
   } = $props();
 
@@ -34,21 +33,7 @@
       {/if}
     {/if}
 
-    {#if currentStep === 4}
-      {#if !isPaidOrTrialing}
-        <button
-          class="btn btn-primary"
-          disabled
-          title="Please start a trial or make a purchase to continue"
-        >
-          Next
-        </button>
-      {:else}
-        <button class="btn btn-primary" onclick={onNext}> Next </button>
-      {/if}
-    {/if}
-
-    {#if currentStep !== 2 && currentStep !== 4 && !isLastStep}
+    {#if currentStep !== 2 && !isLastStep}
       <button class="btn btn-primary" onclick={onNext}> Next </button>
     {/if}
 

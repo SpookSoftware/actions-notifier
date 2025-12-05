@@ -1,26 +1,21 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte";
+  import { onMount } from "svelte";
   import browser from "webextension-polyfill";
   import Header from "./Header.svelte";
   import WelcomeStep from "./WelcomeStep.svelte";
   import TokenStep from "./TokenStep.svelte";
   import OrganizationAuthStep from "./OrganizationAuthStep.svelte";
-  import PaymentStep from "./PaymentStep.svelte";
   import ReadyStep from "./ReadyStep.svelte";
   import NavigationControls from "./NavigationControls.svelte";
   import ProgressBar from "./ProgressBar.svelte";
   import { setExtensionEnabled } from "@/helpers/browser";
-  import { EXTPAY_ID } from "@constants";
-  import ExtPay from "extpay";
 
-  const extpay = ExtPay(EXTPAY_ID);
-
-  import { tokenState, paymentState } from "@/helpers/helpers.svelte";
+  import { tokenState } from "@/helpers/helpers.svelte";
 
   // Get initial step from URL or default to 1
   const urlParams = new URLSearchParams(window.location.search);
   const initialStep = parseInt(urlParams.get("step") || "1", 10);
-  let currentStep = $state(Math.min(Math.max(initialStep, 1), 5)); // Ensure step is between 1 and 5
+  let currentStep = $state(Math.min(Math.max(initialStep, 1), 4)); // Ensure step is between 1 and 4
 
   // Update URL when step changes
   function updateUrlWithStep(step: number) {
@@ -33,7 +28,7 @@
   function handlePopState(event: PopStateEvent) {
     const urlParams = new URLSearchParams(window.location.search);
     const step = parseInt(urlParams.get("step") || "1", 10);
-    currentStep = Math.min(Math.max(step, 1), 5);
+    currentStep = Math.min(Math.max(step, 1), 4);
   }
 
   onMount(() => {
@@ -43,23 +38,15 @@
     };
   });
 
-  let isPaidOrTrialing = $derived(
-    paymentState.paymentStatus.paid || paymentState.paymentStatus.trialIsValid
-  );
-
   const extensionIsValid = $derived.by(() => {
     const hasToken = tokenState.token !== "";
-    const paymentStatusIsValid =
-      paymentState.paymentStatus.paid ||
-      paymentState.paymentStatus.trialIsValid;
     const tokenIsValid = tokenState.valid;
 
     let reason = "";
     if (!hasToken) reason = "no token";
-    if (!paymentStatusIsValid) reason = "payment status invalid";
     if (!tokenIsValid) reason = "token invalid";
     return {
-      isValid: hasToken && paymentStatusIsValid && tokenIsValid,
+      isValid: hasToken && tokenIsValid,
       reason,
     };
   });
@@ -72,7 +59,7 @@
   }
 
   async function goToNextStep() {
-    if (currentStep < 5) {
+    if (currentStep < 4) {
       currentStep++;
       updateUrlWithStep(currentStep);
     }
@@ -108,38 +95,11 @@
     }
   }
 
-  let pollingInterval: ReturnType<typeof setInterval>;
-
   onMount(async () => {
     await setExtensionEnabled(false, "Didn't complete onboarding");
 
-    await Promise.all([
-      tokenState.readTokenFromStorage(),
-      paymentState.initialize(),
-    ]);
+    await tokenState.readTokenFromStorage();
     await tokenState.checkTokenValidity();
-
-    // Start polling for payment status
-    let pollCount = 0;
-    const maxPolls = 300; // 5 minutes × 60 seconds = 300 polls at 1-second intervals
-
-    pollingInterval = setInterval(async () => {
-      await paymentState.initialize();
-      pollCount++;
-
-      // If payment is confirmed or we've reached the maximum polling time, stop polling
-      if (
-        paymentState.paymentStatus.paid ||
-        paymentState.paymentStatus.trialIsValid ||
-        pollCount >= maxPolls
-      ) {
-        clearInterval(pollingInterval);
-      }
-    }, 1000); // Poll every 1 second
-  });
-
-  onDestroy(() => {
-    clearInterval(pollingInterval);
   });
 
   $effect(() => {
@@ -156,13 +116,7 @@
   <Header />
 
   <ProgressBar
-    steps={[
-      "Welcome",
-      "GitHub Token",
-      "Organization Access",
-      "Trial or Payment",
-      "Ready",
-    ]}
+    steps={["Welcome", "GitHub Token", "Organization Access", "Ready"]}
     {currentStep}
   />
 
@@ -180,26 +134,16 @@
     {/if}
 
     {#if currentStep === 4}
-      <PaymentStep
-        {paymentState}
-        {isPaidOrTrialing}
-        onPay={() => extpay.openPaymentPage()}
-        onStartTrial={() => extpay.openTrialPage()}
-      />
-    {/if}
-
-    {#if currentStep === 5}
       <ReadyStep />
     {/if}
   </div>
 
   <NavigationControls
     {currentStep}
-    totalSteps={5}
+    totalSteps={4}
     onPrevious={goToPreviousStep}
     onNext={goToNextStep}
     onFinish={handleFinishOnboarding}
-    {isPaidOrTrialing}
     tokenIsValid={tokenState.valid}
   />
 </div>

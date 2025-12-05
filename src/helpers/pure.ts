@@ -13,7 +13,6 @@ import type {
   Encoded,
   MonitorRequest,
   MonitorRequestType,
-  PaymentStatus,
   StartMonitorRequest,
   StopMonitorRequest,
 } from "@/types";
@@ -691,10 +690,4 @@ export function isGetExtensionEnabledResponse(response: unknown): response is {
       typeof response.data === "object" &&
       "enabled" in response.data
   );
-}
-
-export function isPaymentStatusResponse(
-  response: any
-): response is { status: "ok"; data: PaymentStatus } {
-  return response && response.status === "ok";
 }

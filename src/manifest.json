@@ -17,15 +17,6 @@
       "js": [
         "./addNotificationButton.js"
       ]
-    },
-    {
-      "matches": [
-        "https://extensionpay.com/*"
-      ],
-      "js": [
-        "./ExtPay_content_script.js"
-      ],
-      "run_at": "document_start"
     }
   ],
   "background": {

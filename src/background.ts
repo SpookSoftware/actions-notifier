@@ -1,14 +1,10 @@
 import browser from "webextension-polyfill";
-import ExtPay from "extpay";
 import {
   onAlarmCallback,
   onMessageCallback,
   onNotificationClickedCallback,
 } from "@/helpers/browser";
-import { ALARM_PREFIX, EXTPAY_ID, UNINSTALL_FEEDBACK_URL } from "@constants";
-
-let extpay = ExtPay(EXTPAY_ID);
-extpay.startBackground();
+import { UNINSTALL_FEEDBACK_URL } from "@constants";
 
 // On extension activation
 self.addEventListener("activate", async (_event: Event) => {
@@ -17,11 +13,6 @@ self.addEventListener("activate", async (_event: Event) => {
   // Clear all old alarms for a clean start
   await browser.alarms.clearAll();
   console.log("Cleared all old alarms.");
-
-  // We're going to poll for extension enabled status every so often to account for tokens and trials that expire.
-  browser.alarms.create(ALARM_PREFIX + "pollExtensionValidity", {
-    periodInMinutes: 10,
-  });
 });
 
 browser.runtime.onMessage.addListener(onMessageCallback);
