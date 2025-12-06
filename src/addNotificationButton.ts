@@ -21,6 +21,7 @@ import {
   shouldMonitorActions,
   shouldMonitorJobs,
   createNotificationSVG,
+  createNotificationButton,
   extractActionDataFromURL,
   getTargetElements,
   createActionRunCallback,
@@ -103,7 +104,7 @@ async function processElementsForActionRunPages() {
 
     const { owner, repository, runId } = extractActionDataFromURL(link.href);
 
-    const button = createNotificationButton({ runId, owner, repository });
+    const button = createNotificationButton({ runId, owner, repository, disabled: !extensionIsEnabled });
     const svg = createNotificationSVG();
 
     button.appendChild(svg);
@@ -172,6 +173,7 @@ async function processElementsForJobPages() {
       owner,
       repository,
       jobId,
+      disabled: !extensionIsEnabled,
     });
 
     const svg = createNotificationSVG();
@@ -222,6 +224,7 @@ async function processSinglePRPageElement(node: Element) {
     owner,
     repository,
     jobId,
+    disabled: !extensionIsEnabled,
   });
 
   const svg = createNotificationSVG();
@@ -314,6 +317,7 @@ async function processElementForChecksPages(): Promise<void> {
       owner,
       repository,
       jobId,
+      disabled: !extensionIsEnabled,
     });
 
     const svg = createNotificationSVG();
@@ -696,61 +700,6 @@ window.addEventListener("unload", () => {
   browser.storage.sync.onChanged.removeListener(handleStorageChange);
   cleanupObservers();
 });
-
-function createNotificationButton({
-  runId,
-  jobId,
-  owner,
-  repository,
-}: {
-  runId?: string;
-  jobId?: string;
-  owner: string;
-  repository: string;
-}) {
-  const button = document.createElement("button");
-  button.classList.add("Button");
-  button.classList.add(NOTIFICATION_BUTTON_CLASS);
-  button.style.display = "inline-flex";
-  button.style.justifyContent = "center";
-  button.style.alignItems = "center";
-
-  button.dataset.runId = runId;
-  button.dataset.jobId = jobId;
-  button.dataset.owner = owner;
-  button.dataset.repository = repository;
-
-  // Apply theme-appropriate styling
-  const isDarkMode = isGitHubDarkMode();
-
-  // Base styles that work for both themes
-  button.style.border = "none";
-  button.style.background = "transparent";
-  button.style.cursor = "pointer";
-  button.style.padding = "4px";
-  button.style.borderRadius = "4px";
-
-  // Theme-specific styles
-  if (isDarkMode) {
-    button.style.color = "#c9d1d9"; // GitHub dark mode text color
-    button.style.transition = "background-color 0.2s ease";
-
-    // Hover effect for dark mode
-  } else {
-    button.style.color = "#24292e"; // GitHub light mode text color
-    button.style.transition = "background-color 0.2s ease";
-  }
-
-  // Add disabled styling if extension is disabled
-  if (!extensionIsEnabled) {
-    button.classList.add("disabled");
-    button.style.opacity = "0.6";
-    button.style.cursor = "not-allowed";
-    button.title = "Extension disabled";
-  }
-
-  return button;
-}
 
 function applyDisabledStyles(button: HTMLButtonElement) {
   button.classList.add("disabled");
